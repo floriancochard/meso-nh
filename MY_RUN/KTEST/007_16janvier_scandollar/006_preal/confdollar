@@ -1,0 +1,39 @@
+###############################################################
+#  Import Global Variables                                    #
+###############################################################
+. ../confdollar_${CONFEXP}
+
+##############################################################
+## Run Parameters                                            #
+##############################################################
+
+## job parameters
+export NBP=1
+export TIME=3600
+#export MEM="3gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="# "
+export NEXTDIR="\${SUBDIR}/../../008_run2"
+export NEXTRUN="run_mesonh_xyz"
+
+###############################################################
+# INTERFACE :: Input  Files/Parameters                        #
+###############################################################
+
+## input files
+
+#export INDIR_HATMFILE="${RMINDIR}"
+export INP_HATMFILE=${HATMFILE2} SUF=".???" 
+
+export INP_HPGDFILE=${HPGDFILE2} 
+export INP_CFILE=${CINIFILE1} 
+export INP_CFILEPGD=${YDOMAIN1}
+export LISTGET="${INP_HPGDFILE} ${INP_CFILE} ${INP_CFILEPGD}"
+
+###############################################################
+# INTERFACE :: Output Files                                   #
+###############################################################
+
+## output files
+export OUT_CINIFILE=${CINIFILE2}               

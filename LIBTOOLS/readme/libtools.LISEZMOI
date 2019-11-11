@@ -1,0 +1,160 @@
+0) Repertoires presents dans le paquetage LIBTOOLS
+
+
+conf/            : contient les fichiers de configuration des Makefiles 
+                   sous la forme 'config.$ARCH'.
+
+bin/             : scripts utilises par les outils (a mettre dans le PATH)
+bin/gmaketools   : pour recompiler un programme personnel de tools/diachro
+bin/rmlink       : pour supprimer les liens crees par l usage de la variable
+                  DIRLFI
+bin/tonetcdf     : appel par extractdia a ncgen pour transformer en fichier NetCDF 
+
+lib/NEWLFI       : sources librairie LFI
+lib/COMPRESS     : sources librairie compression
+lib/MPIvide      : sources librairie MPIvide
+lib/rad2         : sources librairie rayonnement
+lib/gribex_1302b : sources librairie GRIB
+lib/SURCOUCHE    : sources de la surcouche
+
+tools/diachro    : outils diaprog, conv2dia, lfi2grb, extractdia, exrwdia
+tools/fmmore     : outil fmmore
+tools/lfi2cdf    : outils lfi2cdf/cdf2lfi
+tools/lfiz       : outils lfiz/unlfiz
+tools/vergrid    : outil vergrid
+
+1) Principe de gestion avec les Makefiles :
+
+Chaque sous-repertoire dans 'lib' et 'tools' contient un Makefile qui
+a besoin de deux fichiers pour fonctionner :
+
+- config.$ARCH : present dans le repertoire 'conf/' qui definit les
+                 variables CPP,F90,F77... suivant l'architecture ou l'on
+                 se trouve. Ce fichier de configuration est commun a 
+                 toutes les librairies et outils pour une architecture
+                 donnee.
+
+- Rules.$ARCH : present dans le repertoire ou se trouve le Makefile de
+                la librairie ou de l'outil que l'on desire generer.
+                Il contient les variables associees aux options de
+                compilation et directives specifiques (CPPFLAGS...)
+                a une librairie/application donnée. 
+
+$ARCH est le contenu de la variable d'environnement ARCH a definir
+comme suit avant toute compilation du paquetage : 
+
+export ARCH=LXNAGf95    sur Linux avec Fortran NAG f95
+export ARCH=LXpgf90     sur Linux avec Fortran PGI
+export ARCH=HPNAGf95    sur HP avec Fortran NAG f95
+export ARCH=HPf90       sur HP avec Fortran HP f90
+export ARCH=SGI32       sur Silicon avec gestion 32bits memoire
+export ARCH=SGI64       sur Silicon avec gestion 64bits memoire
+export ARCH=SX5         sur NEC SX5
+export ARCH=VPP         sur Fujitsu VPP
+export ARCH=AIX         sur IBM
+
+
+Remarque : 
+
+Dans chaque Makefile, le fichier Rules.$ARCH est inclus
+APRES le fichier config.$ARCH. Par consequent, si une variable est
+definie a la fois dans le fichier config.$ARCH et Rules.$ARCH par le
+signe '=', la definition dans Rules.$ARCH ecrase la valeur de la
+variable definie dans config.$ARCH. Il est quand meme possible de
+conserver la valeur d'une variable definie dans config.$ARCH en
+redefinissant la variable dans Rules.$ARCH par le signe '+=' auquel
+cas, on concatene la valeur de la variable dans Rules.$ARCH a la
+valeur qui etait presente dans config.$ARCH.
+
+2) Generation des libraries :
+
+  - fixer la valeur de la variable d'environnement ARCH
+  - se placer dans le repertoire 'lib/'
+  - lancer la commande : make/gmake (GNU Make)
+    
+Les repertoires NEWLFI,COMPRESS,MPIvide et rad2 sont alors parcourus
+et les librairies associees sont creees. Pour creer une librairie
+particuliere on peut, soit se placer dans le repertoire correspondant
+(par exemple lib/NEWLFI) et lancer 'make/gmake' soit lancer la
+commande 'make/gmake <repertoire>' dans 'lib/' pour compiler la
+librairie du repertoire 'lib/<repertoire>'.
+
+Noter que pour l'instant, il faut generer manuellement la librairie
+GRIB en se placant dans le repertoire 'lib/gribex_1302b/', en fixant
+la variable d'env. R64 et en redefinissant la variable ARCH. Il faut
+reprendre cela pour le rendre homogene avec le reste.
+ 
+
+3) Generation des outils : identique a la generation des libraries en
+   remplacant le repertoire 'lib/' par le repertoire 'tools/'. 
+
+  - fixer la valeur de la variable d'environnement ARCH
+  - se placer dans le repertoire 'tools/'
+  - lancer la commande : make/gmake (GNU Make)
+
+Les repertoires lfiz,lfi2cdf et diachro sont parcourus pour generer
+les differents outils. Les outils conv2dia et diaprog sont crees l'un
+apres l'autre dans le repertoire 'diachro'. On peut se placer dans
+chacun des repertoires lfiz, lfi2cdf ou diaprog pour construire un
+outil particulier ou lancer gmake <repertoire> dans 'tools' pour creer
+les executables des outils dans <repertoire>.
+
+Si l'on tente de generer ces outils avant de creer les librairies
+NEWLFI et COMPRESS, ces dernieres sont automatiquement generees.
+
+Remarque concernant le repertoire 'diachro' (conv2dia et diaprog): il
+se peut que sur certaines architectures, on ne veuille pas generer
+conv2dia ou diaprog. Pour cela, il faut specifier dans le fichier
+Rules.$ARCH, la variable PROGALL et l'initialiser avec le programme
+que l'on desire generer : 'conv2dia' ou 'diaprog' (Cf. Rules.SX5 pour
+exemple). La variable "PROGALL=conv2dia diaprog" par defaut.
+
+4) Ou se trouvent les libraries/executables apres compilation ?
+
+Dans chaque sous-repertoire lib/NEWLFI...,tools/diachro,... est créé
+un repertoire $ARCH qui contient le resultat de la compilation. 
+
+5) Nettoyage des fichiers objets, librairies, executables : 
+
+Se placer dans les repertoires 'lib' ou 'tools'. 
+Il existe 2 solutions decrites ci-dessous :
+
+- la premiere permet de supprimer les fichiers *.o cpp_*.f90 mais
+conserve le repertoire $ARCH avec les librairies ou les executables:
+
+make/gmake clean
+
+
+- la seconde efface tous les repertoires $ARCH et restitue les libtools
+tels qu'ils apparaissent a l'installation du fichier TAR :
+
+make/gmake distclean
+
+
+On peut egalement utiliser plus specifiquement le make/gmake
+clean/distclean dans chacun des sous-repertoires a partir de 'lib' et
+'tools'.
+
+6) Quelques remarques pour la generation des outils :
+
+- lfiz : necessite les librairies COMPRESS et NEWLFI presentes dans le
+repertoire 'lib'. A priori, pas de pb lors de l'edition de liens.
+
+- lfi2cdf : necessite la librairie NEWLFI ainsi que la librairie
+NetCDF. Pour generer l'executable avec succes, il faut s'assurer que
+le repertoire specifie dans Rules.$ARCH pour acceder a NetCDF est
+correct (variable NETCDFHOME) sinon la commande Make echoue avec un
+message clair a ce sujet.
+
+- conv2dia (repertoire 'diachro') : necessite les librairies COMPRESS
+et NEWLFI. A priori pas de pb a l'edition de lien
+
+- diaprog (repertoire 'diachro') : necessite en plus des librairies
+NEWLFI et COMPRESS, de libraries externes : ncar et X11. L'emplacement
+de la librairie NCAR est definie a partir de la variable
+d'environnment NCARG_ROOT qui doit etre valide. L'emplacement de la
+librairie X11 est definie par la variable LIBEXT de chaque fichier
+Rules.$ARCH dans 'diachro'.
+
+
+

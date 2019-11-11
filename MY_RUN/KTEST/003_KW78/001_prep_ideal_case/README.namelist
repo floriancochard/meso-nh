@@ -1,0 +1,155 @@
+Description of namelist variables used for prep_ideal_case
+###########################################################
+
+This namelist is made of two parts :
+
+    * A namelist-part with directives for the preparation of an idealized case (always present). The order of namelists is free and unset namelists can be ommited.
+    * A free-formatted part describing a vertical profile of n layers of constant moist Brunt-Vaisala frequency or a radiosounding and sometimes the explicit list of the heights of the vertical levels. This part can be present or absent in the other cases. 
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+
+Details of the namelist-part 
+#############################
+
+&NAM_DIMn_PRE (dimensions)
+NIMAX		=24     	; number of points in x-direction 
+NJMAX		=24          	; number of points in y-direction
+
+&NAM_VER_GRID  (vertical grid definition)
+NKMAX		=20 		; number of points in z-direction 
+ZDZGRD		=500.		; gridsize in z-direction near the ground (in meter)
+ZDZTOP		=500.		; gridsize in z-direction near the top of the model (in meter)
+
+&NAM_CONF_PRE 
+LCARTESIAN	=.TRUE.		; switch for cartesian geometry (.TRUE. for cartesian geometry 
+								.FALSE. for conformal projection)
+LBOUSS		=.FALSE. 	; switch for a Boussinesq version (.FALSE. The reference anelastic state 
+									varies with the altitude)
+LPERTURB	=.TRUE.		; switch to add a perturbation to the initial horizontally homogeneous fields
+					(if true need the namelist NAM_PERT_PRE)
+CEQNSYS		='LHE'		; system of equations 
+					('LHE' : Lipps and Hemler anelastic system
+					 'DUR' : Duran version of the anelastic sytem
+					 'MAE' : classical Modified Anelastic Equations )
+NVERB		=5              ; verbosity level 	(0 for minimum of prints
+							5 for intermediate level of prints
+							10 for maximum of prints)
+CIDEAL		='RSOU'         ; type of of idealized fields 	('CSTN' for constant moist Brunt Vaisala frequency case
+								'RSOU'  for radiosounding case )
+CZS		='FLAT'         ; type of orography 	('FLAT' for constant XHMAX orography-zero by default
+							'SINE' for sine-shaped orography 
+							'BELL' for bell-shaped orography
+							'DATA' for discretized orography)
+
+&NAM_PERT_PRE (if LPERTURB=.TRUE.)  
+CPERT_KIND	= 'TH' 		; type of the perturbation
+				( 'TH' the perturbation is on the thermodynamical fields theta and rv
+				  'UV' the perturbation is on the horizontal wind fields 
+				  'WH' the perturbation is a white noise applied to theta)
+XAMPLITH	= 1.5 		; maximum perturbation amplitude for theta
+LSET_RHU	= .FALSE. 	; Conservation of the relative humidity
+    				( .TRUE. the relative humidity is conserved in the theta perturbation
+    				.FALSE. the rv perturbation is computed with the XAMPLIRV amplitude)
+XAMPLIRV	= 0. 		; maximum perturbation amplitude for rv
+XCENTERZ	= 1692.31	; height of the maximum perturbation of theta
+XRADX		= 10800. 	; radius of the perturbation along the x-axis
+XRADY		= 10800.	; radius of the perturbation along the y-axis
+XRADZ		= 1538.46 	; radius of the perturbation along the z-axis
+
+&NAM_CONFn (configuration variables for modeln)
+LUSERV		=.FALSE. 	; switch to write vapor mixing ratio in initial file (TRUE when CIDEAL='RSOU')
+LUSERC		=.FALSE.	; switch to write cloud mixing ratio in initial file (only allowed when CIDEAL ='RSOU' 
+							and KIND='PUVTHDMR' or KIND='ZUVTHLMR')
+LUSERI		=.FALSE.	; switch to write ice mixing ratio in initial file (only allowed when CIDEAL ='RSOU' 
+							and KIND='PUVTHDMR' 
+&NAM_GRID_PRE (projection definition)
+XLAT0		=43.29 		; reference latitude for conformal projection and cartesian plane
+
+&NAM_GRIDH_PRE (horizontal grid definition)
+XDELTAX		=1.E3		; gridsize in x-direction (in meter)
+XDELTAY		=1.E3		; gridsize in y-direction (in meter)
+
+&NAM_LUNITn 
+CINIFILE	='KWRAIN.48' 	; name of the initial file produced by PREP_IDEAL_CASE 
+				and used as initial file for MESONH numerical simulation. 
+
+&NAM_DYNn_PRE (pressure solver)
+CPRESOPT 	='RICHA' 	; type of pressure solver used for the elliptic equation
+					('RICHA', 'CGRAD', 'CRESI')
+NITR		=4 		; number of iterations
+XRELAX		=1.		; relaxation factor used by the Richardson method
+
+&NAM_LBCn_PRE (lateral boundary conditions)
+CLBCX		= 2*'OPEN' 	; type of lateral boundary condition at the left and right boundaries along x
+					("CYCL" for cyclic boundary conditions
+					"OPEN" for open boundqary conditions
+					"WALL" for rigid boundary conditions)
+CLBCY		= 2*'OPEN' 	; type of lateral boundary condition at the left and right boundaries along y
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+
+
+&NAM_VPROF_PRE (variables for CIDEAL ='CSTN' or 'RSOU') 
+CTYPELOC	='IJGRID'	; type of informations used to give the location of vertical profile 
+				 (string of 6 characters)
+    				 ('IJGRID' for (i,j) point on index space
+			    	 'XYHATM' for (x,y) coordinates on conformal plane or cartesian plane
+			    	 'LATLON' for (latitude,longitude) on spherical earth)
+
+NILOC		=10		; i-position of the vertical profile (used in cases CTYPELOC='IJGRID')
+NJLOC		=1		; j-position of the vertical profile (used in cases CTYPELOC='IJGRID')
+CFUNU		='ZZZ'		; type of function for the x-component of the wind
+				 ('ZZZ' : U = U(z) taken from the Radio-Sounding 
+					or analitycal profile given in the free-formatted part)
+				  'Y*Z' : U= F(Y)*U(Z)
+				  'Y,Z' : U= G(Y,Z))
+CFUNV		='ZZZ'		; type of function for the y-component of the wind
+				 ('ZZZ' : V = V(z) taken from the Radio-Sounding
+                                        or analitycal profile given in the free-formatted part)
+                                  'X*Z' : V= F(X)*V(Z)
+                                  'X,Z' : V= G(X,Z))
+LGEOSBAL	=.FALSE.	; switch for the geostrophic balance
+
+
+Details of the free-formatted part
+##################################
+RSOU				; radiosounding data are written in the free-format part
+1978 1 1 0.			; YEAR MONTH DAY TIME (in seconds)
+'PUVTHVMR'			; type of data used for the radiosounding
+                                ('STANDARD' ,'PUVTHVMR', 'PUVTHVHU', 'ZUVTHVMR', 'ZUVTHVHU',
+                                'PUVTHDMR', 'PUVTHDHU', 'ZUVTHDMR', 'ZUVTHLMR')
+                                For STANDARD type: the altitude variable is the pressure,
+                                        the wind variables are direction and force of wind,
+                                        the temperature variable is the temperature and
+                                        the moist variable is the due point temperature.
+                                For all other types:
+                                        1st letter: variable used for altitude (P for pressure and Z for height)
+                                        2nd and 3rd letters: wind variables (U for zonal wind, V for meridian wind)
+                                        4th, 5th and 6th letters:temperature variables (THV for virtual potential
+                                                temperature, THD for dry potential temperature and
+                                                 THL for liquid potential temperature)
+                                        7th and 8th letters: moist variables (HU for relative humidity and
+                                                MR for vapor mixing ratio)
+400.				; ground level height (in meter)
+96500.				; pressure at ground level (in Pa)
+303.5				; temperature at ground level (in K)
+12.5E-3				; moisture at ground level (in kg/kg)
+7				; number of levels for the wind data
+96500. -6.   2.			; altitude x-wind y-wind
+90000. -1.5  1.
+80000.  2.  -2.5
+70000.  4.  -6.
+62000.  6.5 -2.5
+54000. 10.5  5.
+41000. 15.  15.
+6				; number of levels for thermodynamic data (Note that this number includes the ground level.
+                                This is why there is only 5 lines in the following.)
+80000. 303.5 8.5E-3		; altitude temperature moisture
+70000. 307.  4.5E-3
+60000. 312.5 0.8E-3
+50000. 320.5 0.0
+30000. 342.5 0.0
+
+
+

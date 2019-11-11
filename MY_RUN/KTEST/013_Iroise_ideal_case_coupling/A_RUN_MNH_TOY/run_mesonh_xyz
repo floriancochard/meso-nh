@@ -1,0 +1,28 @@
+#!/bin/bash
+
+echo '--------------------------------------'
+echo '--  run Meso-NH coupling              '
+echo '--------------------------------------'
+
+export PATH_EXETOY=${SRC_MESONH}/src/LIB/toy_v1-0/
+
+#~~~~~ OCEAN OR WAVE
+export TYPE_TOY='WAVE'
+
+#~~~~~ MESONH
+ln -sf  ../1_INPUT_MNH/IROISE_5KM.* .
+ln -sf  ../1_INPUT_MNH/IROISE_5KM_201109_0?_??.* .
+cp ../1_INPUT_MNH/rstrt_MNH.nc rst_A.nc
+ln -sf ../1_INPUT_MNH/EXSEG1.nam_${TYPE_TOY} EXSEG1.nam
+
+rm -fr IROIS.1.00-01.*
+
+#~~~~~ TOY
+ln -sf ../2_INPUT_TOY/grid_toy_model.nc .
+cp ../2_INPUT_TOY/rstrt_TOY.nc rst_T.nc
+ln -sf ../2_INPUT_TOY/TOYNAMELIST.nam_${TYPE_TOY} TOYNAMELIST.nam
+
+#~~~~~ OASIS
+ln -fs ../3_INPUT_OASIS/namcouple_${TYPE_TOY} namcouple
+
+time Mpirun -np 1 MESONH${XYZ} : -np 1 $PATH_EXETOY/toy_model

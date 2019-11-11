@@ -1,0 +1,64 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+${JOBMULTI}
+
+set -x
+
+#
+# init env
+#
+[ "x\$XYZ" = "x" ] && . ${SRC_MESONH}/conf/profile_mesonh${XYZ}
+
+set -e
+mkdir -p ${EXECDIR}
+cd ${EXECDIR}
+
+${MNHENV}
+export MONORUN="${MONORUN}"
+
+#
+# Remove old files
+#
+rm -f ${CINIFILE_PR}*.??? OUTPUT_LISTING? pipe* *.tex
+
+ln -sf ${HTAMDIR}/${HATMFILE} .
+#ln -sf ${HPGDFILE}*.??? .
+
+cat << EOF > PRE_REAL1.nam
+&NAM_FILE_NAMES HATMFILE ="${HATMFILE}",
+                HATMFILETYPE='GRIBEX',
+                HPGDFILE ="${HPGDFILE}" ,
+                CINIFILE="${CINIFILE_PR}" /
+&NAM_VER_GRID NKMAX=${NKMAX}, YZGRID_TYPE='FUNCTN',
+       ZDZGRD=60., ZDZTOP=650., ZZMAX_STRGRD=650.,
+       ZSTRGRD=7., ZSTRTOP=8. /
+
+&NAM_CONFZ
+ NZ_PROC=0 ,
+ NZ_SPLITTING=14 , ! 1
+ LMNH_MPI_BSEND=${LMNH_MPI_BSEND}
+ NB_PROCIO_R=${NB_PROCIO_W_PGD} ,
+ NB_PROCIO_W=${NB_PROCIO_W_PREAL} ,
+ MPI_BUFFER_SIZE=1000
+/
+EOF
+
+time \${MONORUN} ${SRC_MESONH}/exe/PREP_REAL_CASE${XYZ}
+#time \${MPIRUN} ${SRC_MESONH}/src/dir_obj-${ARCH}-${VERSION_XYZ}-${VER_MPI}-${OPTLEVEL}/${VER_USER}/PREP_REAL_CASE
+
+${JOBSTAT}
+
+cat OUTPUT_LISTING0
+cp OUTPUT_LISTING0 ${SUBDIR}/OUTPUT_LISTING0.\$\$
+
+exit
+#
+# Postprocessing
+#
+rm -f ${CINIFILE_PR}.cv.??? 
+conv2dia < dir_conv2dia
+
+rm -f gmeta
+diaprog < dir_diaprog

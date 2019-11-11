@@ -1,0 +1,65 @@
+# This is a typical input file for OASIS3-MCT.
+# Keywords used in previous versions of OASIS3 
+# but now obsolete are marked "Not used"
+# Don't hesitate to ask precisions or make suggestions (oasishelp@cerfacs.fr). 
+#
+# Any line beginning with # is ignored. Blank lines are not allowed.
+#
+#########################################################################
+ $NFIELDS
+# The number of fields described in the second part of the namcouple.
+#
+            2
+ $END
+#########################################################################
+ $NBMODEL
+# The number of models in this experiment + their names (6 characters)
+#
+   2  mesonh   toyexe
+ $END
+###########################################################################
+ $RUNTIME
+# The total simulated time for this run in seconds
+#
+  360
+ $END
+###########################################################################
+ $NLOGPRT
+# Amount of information written to OASIS3-MCT log files (see User Guide)
+# Premier nombre: quantite d'information pour debugger
+# Second nombre: statistics des processeurs
+  30 3
+ $END
+###########################################################################
+ $STRINGS
+#
+# The above variables are the general parameters for the experiment.
+# Everything below has to do with the fields being exchanged.
+#
+#                     -----------------------------------------
+#                        MESONH (mesonh) ==> TOY (toyexe)
+#                     -----------------------------------------
+#
+#~~~~~~~~~~~
+# Field 1 : 
+#~~~~~~~~~~~
+MNH__U10 VARRCV01 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#                     ------------------------------------------
+#                        TOY (toyexe) ==> MESONH (mesonh)
+#                     ------------------------------------------
+#
+#~~~~~~~~~~~
+# Field 2 : 
+#~~~~~~~~~~~
+VARSIN01 MNH__CHA 1 60 1 rst_T.nc EXPOUT
+66 75 20 20 toyt ssea LAG=+60
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+ $END

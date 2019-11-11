@@ -1,0 +1,5 @@
+export STEP=ARP
+export EXEC=PREP_REAL_CASE
+. ../${CONFEXP}
+#
+

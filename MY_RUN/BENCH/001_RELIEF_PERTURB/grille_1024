@@ -1,0 +1,49 @@
+# GRILLE 1024x1024x64
+#
+# GRID FACTOR & NSTEP
+#
+export GRIDFAC=8
+export NSTEP=51
+#
+# job parameter
+#
+export TIME_PIDEAL=7200  # max CPU time for PREP_IDEAL_CASE 
+export QUEUE_PIDEAL=bigmem # batch queue test/bigmem
+#
+#export NBP=0001 TIME_MNH=3600 QUEUE_MNH=bigmem 
+#export NBP=0016 TIME_MNH=7200 QUEUE_MNH=prod64 
+export NBP=0032 TIME_MNH=7200 QUEUE_MNH=prod64 
+#export NBP=0032 TIME_MNH=1800 QUEUE_MNH=test
+#export NBP=0064 TIME_MNH=7200 QUEUE_MNH=prod64 
+#export NBP=0064 TIME_MNH=7200 QUEUE_MNH=test 
+#export NBP=0064 TIME_MNH=1800 QUEUE_MNH=test 
+#export NBP=0128 TIME_MNH=7200 QUEUE_MNH=prod511
+#export NBP=0128 TIME_MNH=1800 QUEUE_MNH=test
+#export NBP=0256 TIME_MNH=7200 QUEUE_MNH=prod511
+#export NBP=0256 TIME_MNH=1800 QUEUE_MNH=test
+#export NBP=0456 TIME_MNH=7200 QUEUE_MNH=prod511
+#export NBP=0512 TIME_MNH=1000 QUEUE_MNH=bigproc
+export NBP=1024 TIME_MNH=1000 QUEUE_MNH=bigproc
+#
+# Initial grid & time parameter
+#
+export   NIMAX0=128     NJMAX0=128 
+export XDELTAX0=500.0 XDELTAY0=500.0
+export XTSTEP0=0.5
+export NKMAX=64
+#
+# MNH parameter
+#
+export NIMAX=$( echo "${GRIDFAC} * ${NIMAX0} " | bc -l )
+export NJMAX=$( echo "${GRIDFAC} * ${NJMAX0} " | bc -l )
+#
+export XDELTAX=$( echo " scale=5 ; ${XDELTAX0} / ${GRIDFAC} " | bc -l )
+export XDELTAY=$( echo " scale=5 ; ${XDELTAY0} / ${GRIDFAC} " | bc -l )
+#
+export CINIFILE=$( printf "KW%4.4d\n" ${NIMAX} )
+#
+export CEXP=$( printf "K%4.4d\n" ${NIMAX} )
+export CSEG="SG474"
+#
+export XTSTEP=$( echo " scale=5 ; ${XTSTEP0} / ${GRIDFAC} " | bc -l )
+export XSEGLEN=$( echo "$NSTEP * $XTSTEP" | bc -l )

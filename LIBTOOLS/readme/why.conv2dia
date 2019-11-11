@@ -1,0 +1,52 @@
+Duplication des points de garde dans le cas d'un fichier 1D 
+ (indispensable dans le cas 'CART')                            20040202
+
+Possibilite de degrader les resolutions horizontales           20040519
+
+Merge de conv2dia.elim et conv2dia.select                      20040524
+
+Mise a jour pour le cycle MASDEV4_6 (XLATORI,XLONORI,L1D,L2D,PACK,CSURF, fichier
+type 'SU')                                                     20050117
+
+ex de directives pour tout convertir:
+1
+file1
+file1all
+n             # reponse a - DO YOU WANT COARSER RESOLUTION along X ? (y/n)
+n             # reponse a - DO YOU WANT COARSER RESOLUTION along Y ? (y/n)
+0             # reponse a - NO DELETION                         ? (enter 0) 
+
+ex de directives pour eliminer l instant M et qq autres champs:
+1
+file1
+file1t
+n
+n
+1             # reponse a - DELETION OF PARAMETERS AT TIME t-dt ? (enter 1)
+e             # reponse a - Do you want to ELIM or to SELECT parameters ? (E/S)
+y             # reponse a - Do you want to SUPPRESS others parameters ? (y/n)
+LSUM
+LSVM
+LSWM
+LSTHM
+END
+
+ex de directives pour selectionner dans 2 fichiers qq champs avec la moitie de resolution:
+2
+file1
+file2
+files
+y             # reponse a - DO YOU WANT COARSER RESOLUTION along X ? (y/n)
+2             # reponse a  Enter the ratio IX (1 point on IX points kept)
+y             # reponse a - DO YOU WANT COARSER RESOLUTION along Y ? (y/n)
+2             # reponse a  Enter the ratio IY (1 point on IY points kept)
+2             # reponse a - DELETION OF PARAMETERS AT TIME t    ? (enter 2) 
+s             # reponse a - Do you want to ELIM or to SELECT parameters ? (E/S)
+y             # reponse a  - Do you want to KEEP others parameters ? (y/n)
+UM
+VM
+RVM
+END
+
+ les directives sont stockees dans le fichier dirconv 
+(et non plus dirconv.elim ou dirconv.select)

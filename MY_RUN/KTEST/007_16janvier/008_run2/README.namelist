@@ -1,0 +1,177 @@
+Description of namelist variables used to run mesonh simulation
+###############################################################
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+######################################################################################################
+
+&NAM_LUNITn  
+CINIFILE 	= "16JAN_06_MNH"; name of the initial file produced by PREP_IDEAL_CASE
+
+&NAM_CONFn  
+LUSERV 		= T 		; switch to use vapor water (prognostic variable)
+LUSERC 		= T 		; switch to use cloud water 
+LUSERR 		= T 		; switch to use rain 
+
+&NAM_DYNn 
+XTSTEP 		= 30.0 		; time step (in second) 
+CPRESOPT 	= "RICHA" 	; type of pressure solver used for the elliptic equation
+                                        ('RICHA', 'CGRAD', 'CRESI')
+NITR 		= 8 		; number of iterations
+XRELAX 		= 1.
+LHORELAX_UVWTH 	= T 		; switch to apply the horizontal relaxation on the outermost verticals of the model 
+					for U,V,W TH variables. 
+LHORELAX_RV 	= T 		; switch to apply the horizontal relaxation on the outermost verticals of the model
+                                        for RV variable.
+LVE_RELAX 	= T		; switch to apply the vertical relaxation on the outermost verticals of the model
+NRIMX 		= 5 		; number of points in the lateral relaxation area in the x direction
+NRIMY 		= 5 		; number of points in the lateral relaxation area in the y direction
+XRIMKMAX 	= .0083	 	; maximum value (in s-1) of the relaxation coefficient for the lateral relaxation area
+XT4DIFU 	= 5000.		; e-folding time for the numerical diffusion of fourth order for momentum (in second)
+
+&NAM_ADVn 	(scalar advection)
+CMET_ADV_SCHEME	="FCT2ND" 	; Advection scheme used for temperature, water substances and TKE variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+				 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+				 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+				 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+				 'PPM_00' PPM advection scheme without constraint 
+				 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+CSV_ADV_SCHEME	="FCT2ND" 	;Advection scheme used for the tracer variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+                                 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+                                 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+                                 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+                                 'PPM_00' PPM advection scheme without constraint
+                                 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+
+&NAM_PARAMn  (parametrizations)
+CCLOUD 		= "KESS" 	; microphysical scheme
+				( 'NONE' no microphysical scheme
+				  'REVE' only the saturation adjustment is performed
+				  'KESS' a warm Kessler microphysical scheme
+				  'C2R2' a 2-moment warm microphysical scheme according to Cohard and Pinty (2000)
+				  'KHKO' a 2-moment warm microphysical scheme according to Khairoudinov and Kogan (2000)
+				  'ICE3' a mixed microphysical scheme (ice, snow, and graupel: 6 classes of hydrometeors)
+				  'ICE4' ICE3 with hail (7 classes of hydrometeors)
+CTURB           = "TKEL"        ; turbulence scheme
+                                ( 'NONE' no turbulence scheme
+                                  'TKEL' prognostic turbulent kinetic energy (TKE, one and a half order closure)
+CRAD            = "ECMW"        ; radiative transfer scheme )
+                                ( 'NONE' the downward surface fluxes are set to zero
+                                  'TOPA' the solar flux is equal to the one at top of Atmosphere.
+                                         the infra-red flux is equal to 300 Wm-2
+                                  'FIXE' the daily evolutions of the downward surface fluxes are prescribed
+                                  'ECMW' the ECMWF radiation scheme is used )
+CDCONV          = "KAFR"        ; deep convection scheme
+                                ( 'NONE' : no convection scheme
+                                  'KAFR' : Kain-Fritsch-Bechtold scheme)
+
+&NAM_PARAM_RADn  (options for radiation)
+XDTRAD 		= 3600. 	; interval (in second) between two full radiation computations
+XDTRAD_CLONLY 	= 3600. 	; interval (in second) between two radiation computations for the cloudy columns only
+NRAD_COLNBR 	= 400 		; maximal number of air columns called in a single call of the radiation subroutine
+
+&NAM_PARAM_CONVECTn 
+XDTCONV 	= 300. 		; timestep (in second) to call the convection scheme (maximum 300s)
+NICE 		= 1 		; flag to include ice proceses in convection scheme ( 1 = yes, 0 = no ice ) 	
+LREFRESH_ALL 	= T		; switch to refresh convective columns at every call of the convection scheme
+LDEEP 		= T 		; 
+LSHAL 		= T 		;
+LDOWN 		= T 		; switch to use downdrafts in deep convection
+
+&NAM_LBCn 
+CLBCX 		= 2*"OPEN" 	; type of lateral boundary condition at the left and right boundaries along x
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+CLBCY 		= 2*"CYCL" 	; type of lateral boundary condition at the left and right boundaries along y
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+
+&NAM_TURBn
+CTURBLEN        = "BL89"        ; type of turbulent mixing length
+                                        ('DELT' & CTURBDIM='3DIM' the cubic root of the grid volum is used in 3D simulations
+                                                 and the squared root of the volum in 2D simulations.
+                                         'DELT' & CTURBB='1DIM' Delta z is used in simulation of any dimensionality.
+                                         'BL89' Bougeault and Lacarrére scheme
+                                         'DEAR' the mixing length is given by the mesh size
+                                                depending on the model dimensionality
+
+CTURBDIM        = "3DIM"        ; turbulence dimensionnality
+                                        ('1DIM' only the vertical turbulent fluxes are taken into account
+                                         '3DIM' all the turbulent fluxes are computed)
+LSUBG_COND      = F             ; switch to activate the subgrid condensation scheme
+
+&NAM_CH_MNHCn 
+LUSECHEM 	= F 		; switch to activate chemistry
+
+&NAM_CONF 
+CCONF 		= "START" 	; configuration of all models
+					('START' or 'RESTA' for a restart)
+NMODEL 		= 2 		; number of nested models
+NVERB 		= 5		; verbosity level       (0 for minimum of prints
+                                                        5 for intermediate level of prints
+                                                        10 for maximum of prints)
+CEXP 		= "16JAN" 	; experiment name (5 characters, no blank)
+CSEG 		= "12B18" 	; segment name (5 characters, no blank)
+CSPLIT		= 'BSPLITTING'	; type of domain splitting for parallel distribution
+				 ( 'BSPLITTING' the domain is decomposed in Box along X and Y
+				   'XSPLITTING' the X direction is splitted in stripes along Y
+				   'YSPLITTING' the Y direction is splitted in stripes along X )
+
+&NAM_DYN 
+XSEGLEN 	=300. 		; segment length (in second)
+LCORIO 		= F 		; switch for the Coriolis parameters
+				  (.FALSE. the Earth rotation effects are neglected
+				   .TRUE. the Earth rotation is taken into account )
+LNUMDIFU 	=.T. 		; switch to activate the numerical diffusion for momentum
+XALKTOP 	= 0.001 	; maximum value of the Rayleigh damping (in s-1)at the top of the upper absorbing layer
+XALZBOT 	= 14500.	; height (in meter) of the upper absorbing layer base
+
+&NAM_NESTING 
+NDAD(2) 	= 1 		; model number of the father of each model (here the father of mother 2 is 1)
+NDTRATIO(2) 	= 4 		; ratio between time step of model 2 and its father (model 1)
+XWAY(2) 	= 2. 		; interactive nesting level for model 2 and its father 
+
+&NAM_BACKUP 
+XBAK_TIME(1,1) 	= 300.		; an array of increments (in second) from the beginning of the segment 
+				to the instant where the i-th fields output on FM-files is realized by model "m" 
+
+&NAM_DIAG_SURFn  
+
+&NAM_ISBAn 
+CSCOND		="NP89" 	; type of thermal conductivity
+				( 'NP89' Noilhan and Planton (1989) formula 
+				  'PL98' Peters-Lidard et al. (1998) formula )
+CALBEDO		="DRY" 		; type of bare soil albedo
+				( 'DRY' dry bare soil albedo
+				  'WET' wet bare soil albedo
+				  'MEAN' albedo for bare soil (half wet and half dry) )
+CROUGH		='Z01D'		; type of orographic roughness length
+				( 'Z01D' orographic roughness length does not depend on wind direction 
+				  'Z04D' orographic roughness length depends on wind direction )
+CC1DRY		='DEF' 		; type of C1 formulation for dry soils
+				( 'DEF' Giard-Bazile formulation
+				  'GB93' Giordani 1993, Braud 1993 )
+CSOILFRZ	='DEF' 		; type of soil freezing physic
+				( 'DEF' Boone et al. 2000; Giard and Bazile 2000
+				  'LWT' Phase changes as above, 
+					but relation between unfrozen water and temperature considered  )
+CDIFSFCOND	='DEF'		; type of Mulch effect
+				( 'DEF' no mulch effect
+				  'MLCH' include the insulating effect of leaf litter/mulch on the surf. thermal cond. )
+CSNOWRES	='DEF' 		; type of turbulent exchanges over snow
+				( 'DEF' Louis
+				  'RIL' Maximum Richardson number limit )
+
+&NAM_DIAG_ISBAn 
+
+&NAM_SEAFLUXn 
+CSEA_ALB	="UNIF" 	; type of albedo formula
+                                ( 'UNIF' a uniform value of 0.135 is used for water albedo
+                                  'TA96' Taylor et al (1996) formula for water direct albedo )
+
+
+&NAM_BLANK 
+

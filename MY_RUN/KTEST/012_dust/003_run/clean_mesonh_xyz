@@ -1,0 +1,3 @@
+set -x
+rm -f S7* DUST* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex PRESSURE core* pgd*
+rm -f file_for_xtransfer

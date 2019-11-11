@@ -1,0 +1,11 @@
+*	text=auto
+*.tar	filter=lfs diff=lfs merge=lfs -crlf
+*.tar.gz	filter=lfs diff=lfs merge=lfs -crlf
+*/ecmwf.OD*	filter=lfs diff=lfs merge=lfs -crlf
+*CLEAN4_ops	filter=lfs diff=lfs merge=lfs -crlf
+*arpifs.*	filter=lfs diff=lfs merge=lfs -crlf
+*dasucl4_ops	filter=lfs diff=lfs merge=lfs -crlf
+bin/gmake-3.80	filter=lfs diff=lfs merge=lfs -crlf
+bin_tools/X86/*	filter=lfs diff=lfs merge=lfs -crlf
+bin_tools/X86_64/*	filter=lfs diff=lfs merge=lfs -crlf
+exe/[a-zA-Z]*	filter=lfs diff=lfs merge=lfs -crlf

@@ -1,0 +1,4 @@
+. ../${CONFEXP}
+#
+export TIME=${TIME_PIDEAL}
+export MEM=${MEM_PIDEAL}

@@ -1,0 +1,23 @@
+LIBX = -lX11 -lm
+LIBV5D = 
+# avec cette lib, fabs floor exp log sont Unsatisfied symbols...:
+#LIBV5D = -L/users/mesonh/utilitaires/vis5d/vis5d-5.0/src -l v5d
+# avec cette lib, v5dcreate v5dwrite v5dclose sont Unsatisfied symbols...:
+#LIBV5D = -L $(MNH_LIBTOOLS)/lib/vis5d/$(ARCH) -lv5d
+LIBGRB = 
+
+#############################################################################
+
+CPPFLAGS += -DHPPA -DHP
+F77FLAGS += -O2 +Oinfo +Olimit
+ifeq ($(PROG),diaprog)
+F90FLAGS += -O2 +Oinfo +Olimit
+else
+F90FLAGS += -O2 +Oinfo +Olimit +check=all
+endif
+ifeq ($(B),64)
+F90FLAGS += +r8
+endif
+LDFLAGS  += 
+OBJS2 = shuman.o
+$(OBJS2) : F90FLAGS += -O2 +Oinfo +Olimit

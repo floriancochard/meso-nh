@@ -1,0 +1,31 @@
+# version de Didier recompilée pour LinuX avec un seul _
+#NETCDFHOME=/mesonh/MAKE/lib/netcdf-3.5.0.LX
+#NETCDFHOME=/usr/local/netcdf-3.5.0
+#
+
+NETCDFHOME = /usr
+DIR_CDF = $(NETCDFHOME)/lib64
+LIBCDF = $(DIR_CDF)/libnetcdff.so $(DIR_CDF)/libnetcdf.so
+
+NETCDFHOME = /usr/local/netcdf4-tools
+DIR_CDF = $(NETCDFHOME)/lib64
+LIBCDF = -L$(DIR_CDF) -lnetcdff
+
+NETCDFHOME = /workdir/MESONH/MNH-V5-1-3/src/LIB/netcdf-4.1.3-LXgfortranI4
+DIR_CDF = $(NETCDFHOME)/lib64
+LIBCDF = -L$(DIR_CDF) -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5
+
+NETCDFCHOME = /home/waup/installations/libraries/netcdf-c/4.3.3.1_ser
+NETCDFFHOME = /home/waup/installations/libraries/netcdf-fortran/4.4.2_ser
+DIR_CDFC = $(NETCDFCHOME)/lib64
+DIR_CDFF = $(NETCDFFHOME)/lib64
+DIR_HDF5 = /home/waup/installations/libraries/HDF5/1.8.15p1_ser/lib64
+LIBCDF = -L$(DIR_CDFC) -L$(DIR_CDFF) -L$(DIR_HDF5) -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5
+
+###################################
+
+#PW: to test!!!! CPPFLAGS += -DLOWMEM
+INC      += -I$(NETCDFFHOME)/include
+F90FLAGS += -fdefault-real-8  -O2 
+LDFLAGS  +=
+LFI_INT=4

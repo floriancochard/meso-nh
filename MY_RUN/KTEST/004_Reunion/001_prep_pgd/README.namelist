@@ -1,0 +1,42 @@
+Description of namelist variables used for prep_pgd
+####################################################
+
+This namelist is used to create a hysiographic data file
+For more details see the Externalized Surface Users's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+
+
+&NAM_PGDFILE 
+CPGDFILE	='REUNION_PGD_1km5_48' 	; name of the output physiographic data file
+
+&NAM_CONF_PROJ (projection definition)
+XLAT0		=-20. 			; reference latitude for conformal projection
+XLON0		=55. 			; reference longitude for conformal projection
+XRPK		=0.			; one factor for the projection
+					( XRPK=1: polar stereographic projection from south pole
+					  1>XRPK>0: Lambert projection from south pole
+					  XRPK=0: Mercator projection from earth center 
+					  XRPK=-1: polar stereographic projection from north pole)
+XBETA		=0. 			; rotation angle of the simulation domain around the reference longitude
+
+&NAM_CONF_PROJ_GRID (horizontal domain definition)
+XLATCEN		=-21.125 		; latitude of the center of the domain
+XLONCEN		=55.5	 		; longitude of the center of the domain
+NIMAX		=72 			; number of grid points along x
+NJMAX		=80			; number of grid points along y
+XDX		=1500. 			; gridsize in x-direction (in meter)
+XDY		=1500. 			; gridsize in y_direction (in meter)
+
+&NAM_COVER      (surface cover fractions)
+YCOVER		='ecoclimats_v2' 	; ecoclimap data file name (used only if XUNIF_COVER is not set)
+YFILETYPE	='DIRECT' 		; type of YCOVER file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV').
+
+&NAM_ZS        (orography)
+YZS		='gtopo30'    		; topography file name (used only if XUNIF_ZS is not set)
+YFILETYPE	='DIRECT' 		; type of YZS file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')
+
+&NAM_ISBA     
+XUNIF_CLAY	=0.33			; uniform prescribed value of clay fraction
+XUNIF_SAND	=0.33 			; uniform prescribed value of sand fraction
+
+&NAM_SEABATHY  (bathymetry)
+XUNIF_SEABATHY	= 300.0 		; uniform value of bathymetry (in meter)

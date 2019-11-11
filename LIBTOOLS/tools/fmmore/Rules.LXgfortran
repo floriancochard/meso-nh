@@ -1,0 +1,11 @@
+
+#############################################################################
+
+CPPFLAGS += -DLINUX
+F77FLAGS +=
+F90FLAGS += 
+ifeq ($(B),64)
+F90FLAGS += -fdefault-real-8 
+endif
+LDFLAGS  += 
+OBJS2=

@@ -1,0 +1,4 @@
+set -x
+
+rm -f S7* pgd* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex PRE_REAL1.nam
+rm -f file_for_xtransfer

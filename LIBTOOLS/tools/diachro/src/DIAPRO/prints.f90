@@ -1,0 +1,979 @@
+!     #############################
+      MODULE MODI_PRINTS
+!     #############################
+!
+INTERFACE
+!
+SUBROUTINE PRINTS(HCARIN)
+CHARACTER(LEN=*) :: HCARIN
+END SUBROUTINE  PRINTS
+!
+END INTERFACE
+END MODULE MODI_PRINTS
+!     ######spl
+      SUBROUTINE PRINTS(HCARIN)
+!     #########################
+!
+!!****  *PRINTS* -  Gestion des impressions temps reel
+!!
+!!    PURPOSE
+!!    -------
+!
+!!**  METHOD
+!!    ------
+!!     
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original     
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_TITLE
+USE MODD_DEFCV
+USE MODD_MEMCV
+USE MODD_RESOLVCAR
+USE MODD_ALLOC_FORDIACHRO
+USE MODD_FILES_DIACHRO
+USE MODN_NCAR
+USE MODD_DIM1
+USE MODD_TYPE_AND_LH
+USE MODD_PARAMETERS
+USE MODN_PARA
+USE MODI_REALLOC_AND_LOAD
+USE MODD_SEVERAL_RECORDS
+USE MODD_CTL_AXES_AND_STYL
+USE MODI_VERIF_GROUP
+USE MODI_FMREAD
+
+IMPLICIT NONE
+!
+!*       0.1  Dummy arguments 
+!          
+CHARACTER(LEN=*) :: HCARIN
+!
+!*       0.2  local variables
+!          
+
+INTEGER          :: INDGRPS, INDGRP, INDPRI, INDFIL, INDVPT
+INTEGER          :: INDIM,   INDPROC, INDTIME, INDNAM, INDVAL
+INTEGER          :: INDMNMX, INDNITV, INDIR
+INTEGER          :: IND, INDN
+INTEGER          :: INDPAR1, INDPAR2
+INTEGER          :: J, JM, JJ, JA, J2, JB, JC
+INTEGER          :: JLOOPI, JLOOPJ, JLOOPK, JLOOPT, JLOOPN, JLOOPP
+INTEGER          :: ILOOP, IDEB, IFIN, II
+INTEGER   ::   ILENG, ILENCH, IGRID, ILENDIM, IT, IM
+INTEGER   ::   IRESPDIA, IRESP, INUM
+INTEGER   ::   IGROUP=0, ICOMPT
+INTEGER   ::   IDI, IEI, IDJ, IEJ, IDK, IEK
+INTEGER   ::   IIB, IIE, IJB, IJE, IKB, IKE
+INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
+INTEGER,DIMENSION(5)             :: IMN, IMX
+INTEGER,DIMENSION(12)            :: ITEM
+
+REAL      ::   ZMN, ZMX, ZMOY
+
+LOGICAL  :: GPRIGRP
+LOGICAL, DIMENSION(:,:,:,:),ALLOCATABLE  :: GMASK
+
+CHARACTER(LEN=16) :: YGROUP2
+CHARACTER(LEN=17),DIMENSION(10) :: YTIME2
+CHARACTER(LEN=8),DIMENSION(20)  :: YTIMES
+CHARACTER(LEN=8),DIMENSION(50)  :: YMASK
+CHARACTER(LEN=1)  :: YC1
+CHARACTER(LEN=2)  :: YC2
+CHARACTER(LEN=3)  :: YC3
+CHARACTER(LEN=4)  :: YC4
+CHARACTER(LEN=5)  :: YC5
+CHARACTER(LEN=6)  :: YC6
+CHARACTER(LEN=16) :: YRECFM
+CHARACTER(LEN=40) :: YTEM
+! Aout 99 Longueur YCOMMENT passee de 20 A 100
+CHARACTER(LEN=100) :: YCOMMENT
+CHARACTER(LEN=16),DIMENSION(5000),SAVE    :: YGROUP 
+!
+!-------------------------------------------------------------------------------
+IIB=1+JPHEXT; IIE=NIMAX+JPHEXT
+IJB=1+JPHEXT; IJE=NJMAX+JPHEXT
+IKB=1+JPVEXT; IKE=NKMAX+JPVEXT
+
+ICOMPT=0
+ITEM(:)=1
+YTEM(1:LEN(YTEM))=' '
+
+GPRIGRP=.FALSE.
+INDIR  =INDEX(HCARIN,'DIRCUR')
+INDGRPS=INDEX(HCARIN,'GROUP')
+INDIM  =INDEX(HCARIN,'DIM')
+INDPROC=INDEX(HCARIN,'PROC')
+INDTIME=INDEX(HCARIN,'TIME')
+INDPRI =INDEX(HCARIN,'PRINT')
+INDFIL =INDEX(HCARIN,'FILE')
+INDNAM =INDEX(HCARIN,'NAM')
+INDVAL =INDEX(HCARIN,'VAL')
+INDMNMX =INDEX(HCARIN,'MNMX')
+IF(INDMNMX == 0)THEN
+  INDMNMX =INDEX(HCARIN,'MINMAX')
+ENDIF
+INDNITV =INDEX(HCARIN,'NITV')
+INDVPT =INDEX(HCARIN,'VPTCUR')
+INDPAR1=INDEX(HCARIN,'(')
+INDPAR2=INDEX(HCARIN,')')
+
+YGROUP(1:LEN(YGROUP))=' '
+!
+! Impression de la directive courante
+!
+IF(INDIR /= 0)THEN
+  PRINT*, CDIRPREC
+  RETURN
+ENDIF
+
+!
+! Impression limites de la fenetre du dessin qui vient d etre trace
+!
+IF(INDVPT /= 0)THEN
+  print *,' **Limites, en coord. normalisees, de la fenetre du dernier graphique**' 
+  IF(XCURVPTL== 0. .AND. XCURVPTR == 0. .AND. XCURVPTB == 0. .AND. XCURVPTT == 0.)THEN
+    print *,' Non initialisees. Besoin de generer le dessin dont vous voulez les limites '
+  ELSE
+    print *,'   XMIN,XMAX,YMIN,YMAX= ',XCURVPTL,XCURVPTR,XCURVPTB,XCURVPTT
+  ENDIF
+  RETURN
+ENDIF
+!
+! Impression du nb d'intervalles sur les axes X et Y definissant
+! les graduations majeures et mineures
+!
+IF(INDNITV /= 0)THEN
+   PRINT '(1X,''Controle des graduations Majeures et mineures par definition du nb '')'
+   PRINT '(1X,''d intervalles sur les axes X et Y.  VALEURS ACTUELLES :'')'
+  PRINT '(1X,78(1H*))'
+  PRINT '(1X,''CH Cartesien   _K_  _Z_  _PR_  _TK_'')'
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''NCHITVXMJ:'',I4,2X,''NCHITVXMN:'',I4,2X,''NCHITVYMJ:'',I4,2X, &
+& ''NCHITVYMN:'',I4)',NCHITVXMJ,NCHITVXMN,NCHITVYMJ,NCHITVYMN
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''CH Projection cartographique _K_  _Z_  _PR_  _TK_  _EV_'')'
+  IF(NCHPCITVXMJ == 0 .AND. NCHPCITVXMN == 0 .AND. NCHPCITVYMJ == 0 .AND. &
+     NCHPCITVYMN == 0)THEN
+    PRINT '(1X,''NCHPCITVXMJ: 1  NCHPCITVXMN:NISUP-NIINF  NCHPCITVYMJ: 1  &
+    &NCHPCITVYMN:NJSUP-NJINF '')'
+  ELSE
+  PRINT '(1X,''NCHPCITVXMJ:'',I4,2X,''NCHPCITVXMN:'',I4,2X,''NCHPCITVYMJ:'',I4,2X, &
+& ''NCHPCITVYMN:'',I4)',NCHPCITVXMJ,NCHPCITVXMN,NCHPCITVYMJ,NCHPCITVYMN
+  ENDIF
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''CV   _CV_  _PVT_'')'
+  PRINT '(1X,''NCVITVXMJ:'',I4,2X,''NCVITVXMN:'',I4,2X,''NCVITVYMJ:'',I4,2X, &
+& ''NCVITVYMN:'',I4)',NCVITVXMJ,NCVITVXMN,NCVITVYMJ,NCVITVYMN
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''PV   _PV_ '')'
+  PRINT '(1X,''NPVITVXMJ:'',I4,2X,''NPVITVXMN:'',I4,2X,''NPVITVYMJ:'',I4,2X, &
+& ''NPVITVYMN:'',I4)',NPVITVXMJ,NPVITVXMN,NPVITVYMJ,NPVITVYMN
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''FT   _FT_  _PVKT_'')'
+  PRINT '(1X,''NFTITVXMJ:'',I4,2X,''NFTITVXMN:'',I4,2X,''NFTITVYMJ:'',I4,2X, &
+& ''NFTITVYMN:'',I4)',NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''FT1   _FT1_  '')'
+  PRINT '(1X,''NFT1ITVXMJ:'',I4,2X,''NFT1ITVXMN:'',I4,2X,''NFT1ITVYMJ:'',I4,2X, &
+& ''NFT1ITVYMN:'',I4)',NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''MASK   _MASK_  '')'
+  PRINT '(1X,''NMASKITVXMJ:'',I4,2X,''NMASKITVXMN:'',I4,2X,''NMASKITVYMJ:'',I4,2X, &
+& ''NMASKITVYMN:'',I4)',NMASKITVXMJ,NMASKITVXMN,NMASKITVYMJ,NMASKITVYMN
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''XY   _XY_  '')'
+  PRINT '(1X,''NXYITVXMJ:'',I4,2X,''NXYITVXMN:'',I4,2X,''NXYITVYMJ:'',I4,2X, &
+& ''NXYITVYMN:'',I4)',NXYITVXMJ,NXYITVXMN,NXYITVYMJ,NXYITVYMN
+  PRINT '(1X,78(1H.))'
+  RETURN
+ENDIF
+
+!
+! Impression des parametres de namelist
+!
+IF(INDNAM /= 0)THEN
+  PRINT '(1X,''NIINF:'',I4,6X,''NISUP:'',I4,6X,''NJINF:'',I4,6X,''NJSUP:'',I4,6X,''LGEOG:'',L1)', &
+  NIINF,NISUP,NJINF,NJSUP,LGEOG
+  PRINT '(1X,''XSZTITXL:'',F5.3,4X,''XSZTITXM:'',F5.3,4X,''XSZTITXR:'',F5.3)',&
+  XSZTITXL,XSZTITXM,XSZTITXR
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''NIDEBCOU:'',I4,3X,''NJDEBCOU:'',I4,3X,''NLANGLE:'',I3,5X, &
+& ''NLMAX:'',I4)',NIDEBCOU,NJDEBCOU,NLANGLE,NLMAX
+  PRINT '(1X,''XIDEBCOU:'',F6.0,1X,''XJDEBCOU:'',F6.0,1X,''XHMIN:'',F6.0,4X, &
+& ''XHMAX:'',F6.0)',XIDEBCOU,XJDEBCOU,XHMIN,XHMAX
+  PRINT '(1X,''LDEFCV2:'',L1,7X,''LDEFCV2LL:'',L1,5X,''LDEFCV2IND:'',L1,2X,''LTRACECV:'',L1)',LDEFCV2,LDEFCV2LL,LDEFCV2IND,LTRACECV
+  PRINT '(1X,''XIDEBCV:'',F8.0,2X,''XJDEBCV:'',F8.0,2X,''XIFINCV:'',F8.0,2X, &
+& ''XJFINCV:'',F8.0)',XIDEBCV,XJDEBCV,XIFINCV,XJFINCV
+  PRINT '(1X,''XIDEBCVLL'',F10.5,1X,''XJDEBCVLL'',F10.5,1X,''XIFINCVLL'',F10.5,1X, &
+& ''XJFINCVLL'',F10.5)',XIDEBCVLL,XJDEBCVLL,XIFINCVLL,XJFINCVLL
+  PRINT '(1X,''NIDEBCV:'',I4,4X,''NJDEBCV:'',I4,4X,''NIFINCV:'',I4,4X, &
+& ''NJFINCV:'',I4)',NIDEBCV,NJDEBCV,NIFINCV,NJFINCV
+  PRINT '(1X,''PROFILE:'',I4,4X,''LMNMXUSER:'',L2,4X,''LCOLUSER:'', &
+& L2)',NPROFILE,LMNMXUSER,LCOLUSER
+  IF(NBFTMN /= 0)THEN
+!   PRINT '(1X,''NBFTMN:'',I4,''NBFTMX:'',I4)
+    IF(NBFTMN == NBFTMX)THEN
+      PRINT '(11X,''PROC'',11X,''*  XPV(ou FT ou PVKT)MIN_  *'', &
+&             ''*  XPV(ou FT ou PVKT)MAX_'')'
+      PRINT '(1X,78(1H*))'
+      DO J=1,NBFTMN
+	PRINT '(1X,A25,''*'',E15.8,10X,''*'',E15.8)',CFTMN(J),XFTMN(J),XFTMX(J)
+      ENDDO
+    ELSE
+      PRINT '(11X,''PROC'',11X,''*  XPV(ou FT ou PVKT)MIN_'')'
+      PRINT '(1X,51(1H*))'
+      DO J=1,NBFTMN
+	PRINT '(1X,A25,''*'',E15.8)',CFTMN(J),XFTMN(J)
+      ENDDO
+      IF(NBFTMX /= 0)THEN
+        PRINT '(11X,''PROC'',11X,''*  XPV(ou FT ou PVKT)MAX_ '')'
+        PRINT '(1X,51(1H*))'
+        DO J=1,NBFTMX
+	  PRINT '(1X,A25,''*'',E15.8)',CFTMX(J),XFTMX(J)
+        ENDDO
+      ENDIF
+    ENDIF
+  ENDIF
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''NDOT:'',I7,4X,''NHI:'',I4,8X,''NIOFFD:'',I4,5X, &
+& ''NIFDC:'',I4,6X,''NIGRNC:'',I4)',NDOT,NHI,NIOFFD,NIFDC,NIGRNC
+  PRINT '(1X,''NULBLL:'',I5,4X,''XSPVAL:'',F11.3,14X,''LSPVALT:'',L1,7X, &
+& ''XSPVALT:'',F11.3)',NULBLL,XSPVAL,LSPVALT,XSPVALT
+  PRINT '(1X,''NIMNMX:'',I3,6X,''XISOMIN:'',F10.3,3X,''XISOMAX:'',F10.3,3X, &
+& ''XDIAINT:'',F10.3)',NIMNMX,XISOMIN,XISOMAX,XDIAINT
+  DO J=SIZE(XISOLEV),1,-1
+    IF(XISOLEV(J) /= 9999.)THEN
+      JM=J
+      EXIT
+    ENDIF
+    JM=J
+  ENDDO
+  IF(XISOLEV(JM) == 9999.)THEN
+    JM=JM-1
+  ENDIF
+  !PRINT '(17X,''XISOLEV:'',4(F10.3,3X))',(XISOLEV(J),J=1,JM)
+  PRINT '(17X,''XISOREF:'',F10.3,3X,''XISOLEV:'',4(F10.3,3X))',&
+        XISOREF,(XISOLEV(J),J=1,JM)
+  IF(NLPCAR /= 0)THEN
+  PRINT '(1X,''NLPCAR:'',I3,6X,''XLATCAR:'',6F7.2)',NLPCAR,(XLATCAR(J),J=1,NLPCAR)
+  PRINT '(17X,''XLONCAR:'',6F7.2)',(XLONCAR(J),J=1,NLPCAR)
+  ENDIF
+  IF(NIJCAR /= 0)THEN
+  PRINT '(1X,''NIJCAR:'',I3,6X,''XICAR:'',6F7.2)',NIJCAR,(XICAR(J),J=1,NIJCAR)
+  PRINT '(17X,''XJCAR:'',6F7.2)',(XJCAR(J),J=1,NIJCAR)
+  ENDIF
+  PRINT '(1X,''LCOLAREA:'',L1,6X,''LCOLAREASEL:'',L1,3X,''LCOLINE:'',L1,7X, &
+& ''LCOLINESEL:'',L1)',LCOLAREA,LCOLAREASEL,LCOLINE,LCOLINESEL
+  PRINT '(1X,''LCOLBR:'',L1,8X,''LISO:'',L1,10X,''LISOWHI:'',L1,7X, &
+& ''LTABCOLDEF:'',L1)',LCOLBR,LISO,LISOWHI,LTABCOLDEF
+  PRINT '(1X,''LMINMAX:'',L1,7X,''LDATFILE:'',L1,6X,''LMNMXLOC:'',L1)',LMINMAX,LDATFILE,LMNMXLOC
+  PRINT '(1X,''LXY:'',L1,11X,''LXZ:'',L1,11X,''LPRINT:'',L1,8X,''LPRINTXY:'',L1)',LXY,LXZ,LPRINT,LPRINTXY
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''LVECTMNMX:'',L1,5X,''XVHC:'',F7.3,4X,''XVRL:'',F7.3,  &
+& 4X,''XVLC:'',F7.3,4X,''NISKIP:'',I3)', &
+  LVECTMNMX,XVHC,XVRL,XVLC,NISKIP
+  PRINT '(1X,''LULMVTMOLD:'',L1,4X,''LDIRWIND:'',L1,6X,''XANGULVT:'',F7.3)', &
+  LULMVTMOLD,LDIRWIND,XANGULVT
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''NIRS:'',I4,7X,''NJRS:'',I4,7X,''XIRS:'',F4.0,7X,''XJRS:'',F4.0)',&
+  NIRS,NJRS,XIRS,XJRS
+  PRINT '(1X,78(1H.))'
+  PRINT '(1X,''LFT1STYLUSER:'',L1,2X,''LFTSTYLUSER:'',L1,3X,''LTITFTUSER:'',L1)',LFT1STYLUSER,LFTSTYLUSER,LTITFTUSER
+
+  RETURN
+ENDIF
+DO J=1,NBFILES
+  IF(NUMFILES(J) == NUMFILECUR)THEN
+    JM=J
+  ENDIF
+ENDDO
+!
+! Impression des fichiers
+!
+IF(INDFIL /=0)THEN
+
+IF(NUMFILECUR <10)THEN
+  WRITE(YC1,'(I1)')NUMFILECUR
+  PRINT *,' CURRENT FILE(S): _FILE'//YC1,'_',CFILEDIAS(JM)
+ELSE
+  WRITE(YC2,'(I2)')NUMFILECUR
+  PRINT *,' CURRENT FILE(S): _FILE'//YC2,'_',CFILEDIAS(JM)
+ENDIF
+IF(LFIC1)THEN
+ELSE
+  DO J=2,NBSIMULT
+    IF(NUMFILES(NINDFILESIMULT(J)) <10)THEN
+      WRITE(YC1,'(I1)')NUMFILES(NINDFILESIMULT(J))
+      PRINT *,'                : _FILE'//YC1,'_',CFILEDIAS(NINDFILESIMULT(J))
+    ELSE
+      WRITE(YC2,'(I2)')NUMFILES(NINDFILESIMULT(J))
+      PRINT *,'                : _FILE'//YC2,'_',CFILEDIAS(NINDFILESIMULT(J))
+    ENDIF
+  ENDDO
+
+ENDIF
+RETURN
+ENDIF
+!
+! Impression des groupes
+!
+IF(INDGRPS /=0)THEN
+  ILENDIM=1
+  YRECFM='MENU_BUDGET.DIM'
+  CALL FMREAD(CFILEDIAS(JM),YRECFM,CLUOUTDIAS(JM),ILENDIM,ILENG, &
+  IGRID,ILENCH,YCOMMENT,IRESPDIA)
+  ALLOCATE(ITABCHAR(ILENG))
+  YRECFM='MENU_BUDGET'
+  CALL FMREAD(CFILEDIAS(JM),YRECFM,CLUOUTDIAS(JM),ILENG,ITABCHAR, &
+  IGRID,ILENCH,YCOMMENT,IRESPDIA)
+  IGROUP=ILENG/16
+  DO JJ=1,IGROUP
+    DO J=1,16
+      YGROUP(JJ)(J:J)=CHAR(ITABCHAR(16*(JJ-1)+J))
+    ENDDO
+  ENDDO
+  print *,'************************************ GROUPS ************************************'
+!fuji print 100,(ADJUSTL(ADJUSTR(YGROUP(J))),J=1,IGROUP)
+print 100,(YGROUP(J),J=1,IGROUP)
+100 FORMAT(1X,5A15)
+DEALLOCATE(ITABCHAR)
+ENDIF
+IF(INDIM + INDPROC + INDTIME + INDVAL + INDMNMX + INDPAR1 +INDPAR2 == 0)THEN
+  RETURN
+ENDIF
+DO JJ=INDPRI+5,LEN(HCARIN)
+  IF(HCARIN(JJ:JJ) /= ' ')THEN
+    INDGRP=JJ
+    EXIT
+  ENDIF
+ENDDO
+DO JJ=INDGRP,LEN(HCARIN)
+  IF(HCARIN(JJ:JJ) == ' ')EXIT
+ENDDO
+YGROUP2=HCARIN(INDGRP:JJ-1)
+CALL VERIF_GROUP(CFILEDIAS(JM),CLUOUTDIAS(JM),YGROUP2)
+IF(LGROUP)THEN
+  CALL READ_DIACHRO(CFILEDIAS(JM),CLUOUTDIAS(JM),YGROUP2)
+ELSE
+  IF(LPBREAD)THEN
+    IF(ALLOCATED(XVAR))THEN
+      CALL ALLOC_FORDIACHRO(1,1,1,1,1,1,3)
+    ENDIF
+    LPBREAD=.FALSE.
+    RETURN
+  ENDIF
+ENDIF
+IF(.NOT.LFIC1)THEN
+  CALL REALLOC_AND_LOAD(YGROUP2)
+ENDIF
+
+!
+! Impression d'une matrice partielle
+!
+IF(INDPAR1 /= 0 .AND. INDPAR2 /= 0)THEN
+! Suppression des ()
+  YTEM(1: INDPAR2-INDPAR1-1)=HCARIN(INDPAR1+1:INDPAR2-1)
+  YTEM=ADJUSTL(YTEM)
+! Extraction des limites du domaine demande
+! JA -> position a un instant donne de : ou , 
+! J2 -> compteur de valeurs 
+  JA=0 ; J2=0
+
+  DO J=1,LEN_TRIM(YTEM)
+    IF(YTEM(J:J) == ':')THEN
+      J2=J2+1
+      READ(YTEM(JA+1:J-1),*)ITEM(J2)
+      JA=J
+    ELSE IF(YTEM(J:J) == ',')THEN
+      J2=J2+1
+      READ(YTEM(JA+1:J-1),*)ITEM(J2)
+      IF(MOD(J2,2) /= 0)THEN
+        J2=J2+1
+	ITEM(J2)=ITEM(J2-1)
+      ENDIF
+      JA=J
+    ELSE
+      IF(J == LEN_TRIM(YTEM))THEN
+	J2=J2+1
+	READ(YTEM(JA+1:J),*)ITEM(J2)
+        IF(MOD(J2,2) /= 0)THEN
+          J2=J2+1
+	  ITEM(J2)=ITEM(J2-1)
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDDO
+  print *,' ** print Limites du domaine demande en impression ',ITEM
+  DO J=ITEM(11),ITEM(12)
+    DO JA=ITEM(9),ITEM(10)
+      IF(ITEM(12)-ITEM(11) /= 0 .OR. ITEM(10)-ITEM(9) /=0)THEN
+        print *,' INDICES P et N ',J,' ',JA
+      ENDIF
+
+      DO JB=ITEM(7),ITEM(8)
+	IF(ITEM(8)-ITEM(7) /= 0)THEN
+          print *,' INDICE T ',JB
+	ENDIF
+	DO JC=ITEM(5),ITEM(6)
+	  print *,' INDICE K= ',JC
+          ILOOP=MAX(1,(ITEM(2)-ITEM(1)+1)/5)
+	  IF(ILOOP * 5 < (ITEM(2)-ITEM(1)+1))ILOOP=ILOOP+1
+          PRINT '(1X,78(1H*))'
+!         print "(1X,78(''*''))"
+	  DO JLOOPI=1,ILOOP
+	    IF(JLOOPI == 1)THEN
+	      IDEB=1; IFIN=5
+	      IDEB=IDEB+ITEM(1)-1; IFIN=IFIN+MIN(ITEM(1),SIZE(XVAR,1))-1
+	                           IFIN=MIN(IFIN,ITEM(2))
+	    ELSE
+	      IDEB=IFIN+1; IFIN=MIN(IFIN+5,ITEM(2))
+	    ENDIF
+	  print '('' J   I-> '',3X,I4,6X,3(6X,I4,6X),(6X,I4,2X))',(/(II,II=IDEB,IFIN)/)
+	  print '(1X,78(1H*))'
+	  DO JLOOPJ=ITEM(4),ITEM(3),-1
+	    print '(I4,2X,5(1X,E14.7))',JLOOPJ,(XVAR(II,JLOOPJ,JC,JB,JA,J),II=IDEB,IFIN)
+	  ENDDO
+	  ENDDO
+	  print '(1X,78(1H*))'
+	ENDDO
+      ENDDO
+
+    ENDDO
+  ENDDO
+ENDIF
+!
+! Impression des dimensions
+!
+IF(INDIM /=0)THEN
+  SELECT CASE(CTYPE)
+    CASE('CART','MASK','SPXY')
+      PRINT *,' ******** GROUP: ',YGROUP2,' ******* TYPE: ',CTYPE,' ******* '
+      PRINT '(1X,78(1H*))'
+      GPRIGRP=.TRUE.
+      PRINT '(1X,''NIMAX='',I4,4X,''NJMAX='',I4,4X,''NKMAX='',I4,4X,''JPHEXT='', &
+&     I2,5X,''JPVEXT='',I2)',NIMAX,NJMAX,NKMAX,JPHEXT,JPVEXT
+      PRINT '(1X,''NIL='',I4,4X,''NIH='',I4,4X,''NJL='',I4,4X,''NJH='',I4,4X   &
+&     ,''NKL='',I4,4X,''NKH='',I4)',NIL,NIH,NJL,NJH,NKL,NKH
+      PRINT '(1X,''LICP='',L1,18X,''LJCP='',L1,18X,''LKCP='',L1)', &
+      LICP,LJCP,LKCP
+      PRINT '(1X,''('',I4,'','',I4,'','',I4,'','',I4,'','',I1,'','',I2,'') ('',I4,'','',I1,'') ('', &
+ &    I2,'') ('',I2,'') ('',I2,'') ('',I1,'') ('',I2,'','',I4,'')'')', &
+      SIZE(XVAR,1),SIZE(XVAR,2),SIZE(XVAR,3),SIZE(XVAR,4),SIZE(XVAR,5),SIZE(XVAR,6), &
+      SIZE(XTRAJT,1),SIZE(XTRAJT,2),  SIZE(CTITRE),SIZE(CUNITE),SIZE(CCOMMENT), &
+      SIZE(NGRIDIA),SIZE(XDATIME,1),SIZE(XDATIME,2)
+      IF(CTYPE == 'MASK')THEN
+	 PRINT '(1X,''('',I4,'','',I4,'','',I1,'','',I4,'','',I2,'','',I1,'')'')', &
+	 SIZE(XMASK,1),SIZE(XMASK,2),SIZE(XMASK,3),SIZE(XMASK,4),    &
+	 SIZE(XMASK,5),SIZE(XMASK,6)
+      ENDIF
+      PRINT '(1X,78(1H*))'
+      IF(CTYPE == 'MASK')THEN
+! Juillet 2001
+	YMASK(:)(1:LEN(YMASK))=' '
+	DO J=1,9
+	  WRITE(YC1,'(I1)')J
+	  YMASK(J)(2:6)='MASK'//YC1
+        ENDDO
+	IM=SIZE(XVAR,5)
+	IF(IM > 9)THEN
+	  DO J=10,IM
+	    WRITE(YC2,'(I2)')J
+	    YMASK(J)(2:7)='MASK'//YC2
+          ENDDO
+	ENDIF
+        PRINT '(10(1X,8(A8,''*''),/))',(YMASK(J),J=1,IM)
+        PRINT '(1X,78(1H*))'
+      ENDIF
+    CASE DEFAULT
+      PRINT *,' ******** GROUP: ',YGROUP2,' ******* TYPE: ',CTYPE,' ******* '
+      PRINT '(1X,78(1H*))'
+      GPRIGRP=.TRUE.
+      PRINT '(1X,''('',I4,'','',I4,'','',I4,'','',I6,'','',I2,'','',I2,'') ('',I6,'','',I2,'') ('', &
+ &    I2,'','',I6,'','',I4,'')'')', &
+      SIZE(XVAR,1),SIZE(XVAR,2),SIZE(XVAR,3),SIZE(XVAR,4),SIZE(XVAR,5),SIZE(XVAR,6), &
+      SIZE(XTRAJT,1),SIZE(XTRAJT,2),  SIZE(XTRAJX,1),SIZE(XTRAJX,2), &
+      SIZE(XTRAJX,3)
+      PRINT '(1X,''('',I4,'','',I6,'','',I4,'') ('',I4,'','',I6,'','',I4, &
+& '') ('',I4,'') ('',I4,'') ('',I4,'') ('',I4,'') ('',I2,'','',I6,'')'')',&
+      SIZE(XTRAJY,1),SIZE(XTRAJY,2),SIZE(XTRAJY,3), &
+      SIZE(XTRAJZ,1),SIZE(XTRAJZ,2),SIZE(XTRAJZ,3), &
+      SIZE(CTITRE),SIZE(CUNITE),SIZE(CCOMMENT), &
+      SIZE(NGRIDIA),SIZE(XDATIME,1),SIZE(XDATIME,2)
+      IF(SIZE(XVAR,5) > 1)THEN
+        PRINT '(1X,78(1H*))'
+        DO JLOOPN=1,SIZE(XVAR,5)    !  Boucle sur les stations
+	  IF(CTYPE == 'SSOL')THEN
+	    INDN=1
+	  ELSE
+	    INDN=JLOOPN
+	  ENDIF
+          YC5(1:LEN(YC5))=' '
+          WRITE(YC5,'(I5)')JLOOPN
+	  IEK=SIZE(XVAR,3)
+	  DO JA=1,1000000
+	    IF(XTRAJZ(IEK,1,JLOOPN) == -1.E-15)THEN
+	      IF(IEK == 1)THEN
+		EXIT
+	      ELSE
+	        IEK=IEK-1
+	      ENDIF
+	    ELSE
+	      EXIT
+	    ENDIF
+	  ENDDO
+	  IT=SIZE(XVAR,4)
+	  DO JA=1,1000000
+	    IF(XTRAJT(IT,INDN) == -1.E-15)THEN
+	      IF(IT == 1)THEN
+		EXIT
+	      ELSE
+	        IT=IT-1
+	      ENDIF
+	    ELSE
+	      EXIT
+	    ENDIF
+	  ENDDO
+	  print '(1X,A4,'' N:'',A5,''  *  XVAR('',I4,I4,I4,I6,'' ,,'',I4,'' )'')',CTYPE,YC5, &
+&         SIZE(XVAR,1),SIZE(XVAR,2),IEK,IT,SIZE(XVAR,6)
+        ENDDO
+        PRINT '(1X,78(1H*))'
+      ENDIF
+  END SELECT
+ENDIF
+
+DO JLOOPN=1,SIZE(XVAR,5)    !  Boucle sur les stations
+
+IF(INDPROC + INDTIME /= 0)THEN
+  IF(SIZE(XVAR,5) /= 1)THEN
+    YC5(1:LEN(YC5))=' '
+    WRITE(YC5,'(I5)')JLOOPN
+    print *,' ++++++++ ',CTYPE,' N:',YC5
+    PRINT '(1X,78(1H*))'
+  ENDIF
+ENDIF
+! 
+! Impression des processus
+!
+IF(INDPROC /=0)THEN
+  IF(CTYPE == 'MASK' .AND. JLOOPN >1)THEN
+  ELSE
+
+  IF(.NOT.GPRIGRP)THEN
+    PRINT *,' ******** GROUP: ',YGROUP2,' ******* TYPE: ',CTYPE,' ******* '
+    PRINT '(1X,78(1H*))'
+    GPRIGRP=.TRUE.
+  ENDIF
+  PRINT '(1X,''g'',6X,''*'',7X,''TITRE'',7X,''*'',7X,''UNITE'',8X,''*'',10X,''COMMENT.'')'
+! PRINT '(8X,''*'',7X,''TITRE'',7X,''*'',7X,''UNITE'',8X,''*'',10X,''COMMENT.'')'
+  PRINT '(1X,78(1H*))'
+  DO JJ=1,SIZE(CTITRE)
+    YC2='  '
+    IF(JJ < 10)THEN
+      WRITE(YC2(1:1),'(I1)')JJ
+    ELSE 
+      WRITE(YC2(1:2),'(I2)')JJ
+    ENDIF
+    CTITRE(JJ)=ADJUSTL(ADJUSTR(CTITRE(JJ)))
+    CUNITE(JJ)=ADJUSTL(ADJUSTR(CUNITE(JJ)))
+    CCOMMENT(JJ)=ADJUSTL(ADJUSTR(CCOMMENT(JJ)))
+    PRINT '(1X,I1,A6,''* '',A17,1X,''*'',1X,A18, &
+!   PRINT '(1X,A6,'' * '',A17,1X,''*'',1X,A18, &
+&   '' * '',A26)',NGRIDIA(JJ),'PROC'//YC2,CTITRE(JJ)(1:17),  &
+!&   '' * '',A26)','PROC'//YC2,CTITRE(JJ)(1:17),  &
+    CUNITE(JJ)(1:18),CCOMMENT(JJ)(1:26)
+    IF(LEN_TRIM(CCOMMENT(JJ)) > 26 .OR. LEN_TRIM(CTITRE(JJ)) > 17 .OR. &
+    LEN_TRIM(CUNITE(JJ)) >18)THEN
+      PRINT '(8X,''* '',A17,'' * '',A18,'' * '',A26)',  &
+      CTITRE(JJ)(18:34),CUNITE(JJ)(19:36), &
+      CCOMMENT(JJ)(27:52)
+    ENDIF
+  ENDDO
+  PRINT '(1X,78(1H*))'
+
+  ENDIF
+ENDIF
+
+!
+! Impression des temps
+!
+SELECT CASE(CTYPE)
+  CASE('DRST','RSPL','RAPL')
+    INDN=JLOOPN
+  CASE DEFAULT
+    INDN=1
+END SELECT
+IF(INDTIME /= 0)THEN
+  IF(.NOT.GPRIGRP)THEN
+    PRINT *,' ******** GROUP: ',YGROUP2,' ******* TYPE: ',CTYPE,' ******* '
+    PRINT '(1X,78(1H*))'
+    GPRIGRP=.TRUE.
+  ENDIF
+  YTIMES(:)(1:LEN(YTIMES))=' '
+  YTIME2(:)(1:LEN(YTIME2))=' '
+  DO J=1,9
+    WRITE(YC1,'(I1)')J
+    YTIMES(J:J)(2:6)='TIME'//YC1
+  ENDDO
+  IT=SIZE(XTRAJT,1)
+! print *,'IT INDN AV DO JA ',IT,INDN
+  DO JA=1,100000
+!print *,'on cerne le pb, JA',JA
+    IF(XTRAJT(IT,INDN) == -1.E-15)THEN
+    IF(IT == 1)THEN
+      EXIT
+    ELSE
+      IT=IT-1
+! print *,'on continue'
+    ENDIF
+    ELSE
+      EXIT
+    ENDIF
+  ENDDO
+
+  IF(IT < 9)THEN
+    PRINT '(1X,8(A8,''*''))',(YTIMES(J),J=1,IT)
+    PRINT '(1X,78(1H*))'
+    PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,INDN),J=1,IT)
+!   PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,1),J=1,IT)
+    PRINT '(1X,78(1H*))'
+  ELSE
+    PRINT '(1X,8(A8,''*''))',(YTIMES(J),J=1,8)
+    PRINT '(1X,78(1H*))'
+    PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,INDN),J=1,8)
+!   PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,1),J=1,8)
+    PRINT '(1X,78(1H*))'
+    SELECT CASE(IT)
+      CASE(9:16)
+	DO J=10,IT
+	  WRITE(YC2,'(I2)')J
+	  YTIMES(J:J)(2:7)='TIME'//YC2
+        ENDDO
+	PRINT '(1X,8(A8,''*''))',(YTIMES(J),J=9,IT)
+	PRINT '(1X,78(1H*))'
+        PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,INDN),J=9,IT)
+!       PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,1),J=9,IT)
+	PRINT '(1X,78(1H*))'
+      CASE(17:99)
+        IND=8
+	DO J=IT-8+1,IT
+	  WRITE(YC2,'(I2)')J
+          IND=IND+1
+	  YTIMES(IND)(2:7)='TIME'//YC2
+        ENDDO
+	PRINT '(1X,8(A8,''*''))',(YTIMES(J),J=9,16)
+	PRINT '(1X,78(1H*))'
+        PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,INDN),J=IT-8+1,IT)
+!       PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,1),J=IT-8+1,IT)
+	PRINT '(1X,78(1H*))'
+      CASE(100:999)
+        IND=8
+	DO J=IT-8+1,IT
+	  WRITE(YC3,'(I3)')J
+          IND=IND+1
+	  YTIMES(IND)(1:7)='TIME'//YC3
+        ENDDO
+	PRINT '(1X,8(A8,''*''))',(YTIMES(J),J=9,16)
+	PRINT '(1X,78(1H*))'
+        PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,INDN),J=IT-8+1,IT)
+!       PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,1),J=IT-8+1,IT)
+	PRINT '(1X,78(1H*))'
+      CASE(1000:9999)
+        IND=8
+	DO J=IT-8+1,IT
+	  WRITE(YC4,'(I4)')J
+          IND=IND+1
+	  YTIMES(IND)(1:8)='TIME'//YC4
+        ENDDO
+	PRINT '(1X,8(A8,''*''))',(YTIMES(J),J=9,16)
+	PRINT '(1X,78(1H*))'
+        PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,INDN),J=IT-8+1,IT)
+!       PRINT '(1X,8(F8.0,''*''))',(XTRAJT(J,1),J=IT-8+1,IT)
+	PRINT '(1X,78(1H*))'
+      CASE(10000:)
+        IND=0
+	IF(IT >= 10000 .AND. IT <= 99999)THEN
+	DO J=IT-4+1,IT
+	  WRITE(YC5,'(I5)')J
+          IND=IND+1
+	  YTIME2(IND)(2:10)='TIME'//YC5
+        ENDDO
+	PRINT '(1X,4(A17,''*''))',(YTIME2(J),J=1,4)
+	PRINT '(1X,78(1H*))'
+        PRINT '(1X,4(F8.0,9X,''*''))',(XTRAJT(J,INDN),J=IT-4+1,IT)
+!       PRINT '(1X,4(F8.0,9X,''*''))',(XTRAJT(J,1),J=IT-4+1,IT)
+	PRINT '(1X,78(1H*))'
+	ELSE
+	DO J=IT-4+1,IT
+	  WRITE(YC6,'(I6)')J
+          IND=IND+1
+	  YTIME2(IND)(2:11)='TIME'//YC6
+        ENDDO
+	PRINT '(1X,4(A17,''*''))',(YTIME2(J),J=1,4)
+	PRINT '(1X,78(1H*))'
+        PRINT '(1X,4(F8.0,9X,''*''))',(XTRAJT(J,INDN),J=IT-4+1,IT)
+!       PRINT '(1X,4(F8.0,9X,''*''))',(XTRAJT(J,1),J=IT-4+1,IT)
+	PRINT '(1X,78(1H*))'
+	ENDIF
+    END SELECT
+  ENDIF
+ENDIF
+
+ENDDO       ! Fin de boucle stations
+!
+! Impression de  valeurs
+!
+IF(INDVAL /= 0)THEN
+  CALL FMLOOK('FICVAL','FICVAL',INUM,IRESP)
+  IF(IRESP /= 0)THEN
+    CALL FMATTR('FICVAL','FICVAL',INUM,IRESP)
+    OPEN(UNIT=INUM,FILE='FICVAL',FORM='FORMATTED')
+    PRINT '('' Les valeurs seront mises dans le fichier FICVAL '')'
+  ENDIF
+  JLOOPP=1
+! JLOOPK=1; JLOOPT=1; JLOOPN=1; JLOOPP=1;
+  ILOOP=SIZE(XVAR,1)/6
+  IF(ILOOP * 6 < SIZE(XVAR,1))ILOOP=ILOOP+1
+!   WRITE(INUM,'(1X,78(1H*))')
+  DO JLOOPN=1,SIZE(XVAR,5)
+  DO JLOOPT=1,SIZE(XVAR,4)
+  WRITE(INUM,'('' 6eme indice='',I4,'' 5eme indice='',I4,'' Time JLOOPT and val '',I4,1X,F10.0)')JLOOPP,JLOOPN,&
+  JLOOPT,XTRAJT(JLOOPT,JLOOPN)
+  DO JLOOPK=1,SIZE(XVAR,3)
+  WRITE(INUM,'('' K= '',I8)')JLOOPK 
+  DO JLOOPI=1,ILOOP
+
+    IF(JLOOPI == 1)THEN
+      IDEB=1; IFIN=6
+    ELSE
+      IDEB=IFIN+1; IFIN=IFIN+6
+    ENDIF
+    IF(JLOOPI == ILOOP)THEN
+      IFIN=SIZE(XVAR,1)
+    ENDIF
+
+!   PRINT '(1X,78(1H*))'
+!   PRINT '(1X,6(5X,I3,5X))',(/(II,II=IDEB,IFIN)/)
+!   PRINT '(1X,78(1H*))'
+    WRITE(INUM,'(1X,78(1H*))')
+    WRITE(INUM,'(1X,''I->'',2X,I4,5X,5(5X,I4,5X))')(/(II,II=IDEB,IFIN)/)
+    WRITE(INUM,'(1X,78(1H*))')
+
+    DO JLOOPJ=SIZE(XVAR,2),1,-1
+!     PRINT '(1X,6E13.6)',(XVAR(II,JLOOPJ,JLOOPK,JLOOPT,JLOOPN,JLOOPP), &
+!     II=IDEB,IFIN)
+      WRITE(INUM,'(I4,1X,6E12.5)')JLOOPJ,(XVAR(II,JLOOPJ,JLOOPK,JLOOPT,JLOOPN,JLOOPP), &
+      II=IDEB,IFIN)
+!     WRITE(INUM,'(1X,6E13.6)')(XVAR(II,JLOOPJ,JLOOPK,JLOOPT,JLOOPN,JLOOPP), &
+    ENDDO
+!   WRITE(INUM,'(1X,78(1H*))')
+!   PRINT '(1X,78(1H*))'
+
+  ENDDO
+
+  ENDDO
+  ENDDO
+  ENDDO
+ENDIF
+
+DO JLOOPN=1,SIZE(XVAR,5)    !  Boucle sur les stations
+
+SELECT CASE(CTYPE)
+  CASE('CART','MASK','SSOL','SPXY')
+    INDN=1
+  CASE DEFAULT
+    INDN=JLOOPN
+END SELECT
+
+IF(INDMNMX /= 0)THEN
+
+SELECT CASE(CTYPE)
+  CASE('CART','MASK','SPXY')
+    IF(NIH-NIL /= 0)THEN
+      IF(NIL >= IIB)THEN
+	IDI=1
+      ELSE
+	IDI=IIB
+      ENDIF
+      IF(NIH <= IIE)THEN
+	IEI=SIZE(XVAR,1)
+      ELSE
+	IEI=IIE
+      ENDIF
+! Correction en Juillet 99 pour compatibilite avec les nouveaux masques(Nicole)
+      IF(CTYPE == 'MASK')THEN
+	IDI=1;IEI=1
+      ENDIF
+    ELSE
+      IDI=1; IEI=1
+    ENDIF
+
+    IF(NJH-NJL /= 0)THEN
+      IF(NJL >= IJB)THEN
+	IDJ=1
+      ELSE
+	IDJ=IJB
+      ENDIF
+      IF(NJH <= IJE)THEN
+	IEJ=SIZE(XVAR,2)
+      ELSE
+	IEJ=IJE
+      ENDIF
+! Correction en Juillet 99 pour compatibilite avec les nouveaux masques(Nicole)
+      IF(CTYPE == 'MASK')THEN
+	IDJ=1;IEJ=1
+      ENDIF
+    ELSE
+      IDJ=1; IEJ=1
+    ENDIF
+
+    IF(NKH-NKL /= 0)THEN
+      IF(NKL >= IKB)THEN
+	IDK=1
+      ELSE
+	IDK=IKB
+      ENDIF
+      IF(NKH <= IKE)THEN
+	IEK=SIZE(XVAR,3)
+      ELSE
+	IEK=IKE
+      ENDIF
+    ELSE
+      IDK=1; IEK=1
+    ENDIF
+    IT=SIZE(XVAR,4)
+
+  CASE DEFAULT
+
+    IDI=1; IEI=SIZE(XVAR,1)
+    IDJ=1; IEJ=SIZE(XVAR,2)
+    IDK=1; IEK=SIZE(XVAR,3)
+    DO JA=1,1000000
+      IF(XTRAJZ(IEK,1,JLOOPN) == -1.E-15)THEN
+	IF(IEK == 1)THEN
+	  EXIT
+	ELSE
+	  IEK=IEK-1
+	ENDIF
+      ELSE
+	EXIT
+      ENDIF
+    ENDDO
+    IT=SIZE(XVAR,4)
+    DO JA=1,1000000
+      IF(XTRAJT(IT,INDN) == -1.E-15)THEN
+	IF(IT == 1)THEN
+	  EXIT
+        ELSE
+	  IT=IT-1
+	ENDIF
+      ELSE
+	EXIT
+      ENDIF
+    ENDDO
+END SELECT
+
+IF(SIZE(XVAR,5) /= 1)THEN
+  YC5(1:LEN(YC5))=' '
+  WRITE(YC5,'(I5)')JLOOPN
+  print *,' ******** ',CTYPE,' N:',YC5
+ENDIF
+
+  IF(.NOT.GPRIGRP)THEN
+    PRINT *,' ******** GROUP: ',YGROUP2,' ******* TYPE: ',CTYPE,' ******* '
+    PRINT '(1X,78(1H*))'
+    GPRIGRP=.TRUE.
+  ENDIF
+  PRINT '(7X,''PROC'',7X,''*'',11X,''MINVAL'',11X,''*'',11X,''MAXVAL'')'
+  PRINT '(46X,''MOY'')'
+  IF(LMNMXLOC)THEN
+  PRINT '(18X,''*'',4X,''MINLOC (i,j,k,t,n,p)'',4X,''*'',5X,  &
+  & ''MAXLOC (i,j,k,t,n,p)'')'
+  PRINT '(6X,'' Expression des indices par / a (1,1,1,1,1,1) de la matrice'',&
+&'' consideree'')'
+  ENDIF
+  PRINT '(1X,78(1H*))'
+
+  ALLOCATE(GMASK(IEI-IDI+1,IEJ-IDJ+1,IEK-IDK+1,IT))
+  DO JLOOPP=1,SIZE(XVAR,6)
+    GMASK(:,:,:,:)=XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP) /= XSPVAL
+    ZMN=MINVAL(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP), &
+               !MASK=XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP) /= XSPVAL)
+               MASK=GMASK)
+    ZMX=MAXVAL(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP), &
+               !MASK=XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP) /= XSPVAL)
+               MASK=GMASK)
+    ZMOY=SUM(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP), &
+             MASK=GMASK                                        )  /COUNT(GMASK)
+    IF(LMNMXLOC)THEN
+    IMN(1:4)=MINLOC(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP), &
+               !MASK=XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP) /= XSPVAL)
+               MASK=GMASK)
+    IMX(1:4)=MAXLOC(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP), & 
+               !MASK=XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,1:IT,JLOOPN,JLOOPP) /= XSPVAL)
+               MASK=GMASK)
+!   ZMN=MINVAL(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,:,JLOOPN,JLOOPP))
+!   ZMX=MAXVAL(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,:,JLOOPN,JLOOPP))
+!   IMN(:)=MINLOC(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,:,:,JLOOPP))
+!   IMX(:)=MAXLOC(XVAR(IDI:IEI,IDJ:IEJ,IDK:IEK,:,:,JLOOPP))
+    IMN(1)=IMN(1)+IDI-1
+    IMN(2)=IMN(2)+IDJ-1
+    IMN(3)=IMN(3)+IDK-1
+    IMX(1)=IMX(1)+IDI-1
+    IMX(2)=IMX(2)+IDJ-1
+    IMX(3)=IMX(3)+IDK-1
+    IMN(5)=JLOOPN
+    IMX(5)=JLOOPN
+    ENDIF
+    CTITRE(JLOOPP)=ADJUSTL(ADJUSTR(CTITRE(JLOOPP)))
+    PRINT '(1X,A17,''*'',7X,E14.7,7X,''*'',7X,E14.7)', &
+    & CTITRE(JLOOPP)(1:17),ZMN,ZMX
+    PRINT '(40X,E14.7)',ZMOY
+
+    IF(LMNMXLOC)THEN
+!   PRINT '(1X,17X,''*'',7X,E14.7,7X,''*'',7X,E14.7)',ZMN,ZMX
+    PRINT '(1X,A17,''*'',''  ('',4(I4,1H,),I2,'','',I2, &
+    & '')   *   ('',4(I4,1H,),I2,'','',I2,'')'')',  &
+    & CTITRE(JLOOPP)(1:17),IMN,JLOOPP,IMX,JLOOPP
+    ENDIF
+  ENDDO
+  DEALLOCATE(GMASK)
+  PRINT '(1X,78(1H*))'
+ENDIF
+
+ENDDO      !  Fin boucle stations
+!
+CALL ALLOC_FORDIACHRO(1,1,1,1,1,1,3)
+
+RETURN
+!
+!
+!------------------------------------------------------------------------------
+!
+!*     5.       EXIT
+!               ----
+!
+!
+END SUBROUTINE  PRINTS

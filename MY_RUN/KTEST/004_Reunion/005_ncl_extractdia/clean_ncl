@@ -1,0 +1,17 @@
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!  WARNING :: CLEAN_RANGS_FILES       !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo
+echo do you real want to delete high resolution 
+echo
+echo coastline files for ncl  ?????
+echo
+echo "(yes/no)"
+read ANSWER
+set -x
+if [ "X$ANSWER" = "Xyes" ]
+then
+rm -fr  ran* gs*
+fi
+rm -f *.lfi *.des *.nc 
+rm -f dirextract  *cdl OUT*

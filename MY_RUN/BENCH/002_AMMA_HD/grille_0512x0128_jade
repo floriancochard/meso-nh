@@ -1,0 +1,90 @@
+# GRILLE 512x128x(70)
+#
+# GRID FACTOR & NSTEP
+#
+export GRIDFAC=1
+#export NSTEP=1001
+export NSTEP=51
+#
+# job parameter
+#
+export TIME_PIDEAL=1800  # max CPU time for PREP_IDEAL_CASE 
+export QUEUE_PIDEAL=test # batch queue test/bigmem
+export NBP=0001 CORE=1 TIME_PGD=3600 
+#export NBP=1
+#export NBP=8
+#export NBP=16
+#export NBP=32
+#export NBP=64 CORE=8
+#export NBP=128
+#
+#export NBP=0001 CORE=8 TIME_MNH=1800 
+#export NBP=0002 CORE=8 TIME_MNH=1800 
+#export NBP=0004 CORE=8 TIME_MNH=1800 
+#export NBP=0008 CORE=8 TIME_MNH=1800 
+#export NBP=0016 CORE=8 TIME_MNH=1800 
+#export NBP=0032 CORE=8 TIME_MNH=1800 
+#export NBP=0064 CORE=8 TIME_MNH=1800
+#export NBP=0128 CORE=8 TIME_MNH=1800 
+#export NBP=0256 CORE=8 TIME_MNH=1800 
+#export NBP=0256 CORE=4 TIME_MNH=1800 
+#export NBP=0512 CORE=8 TIME_MNH=1800 
+#export NBP=0512 CORE=4 TIME_MNH=1800 
+#export NBP=1024 CORE=8 TIME_MNH=1800 
+#export NBP=1024 CORE=4 TIME_MNH=1800 
+#export NBP=1536 CORE=8 TIME_MNH=1800 
+#export NBP=2000 CORE=8 TIME_MNH=1800 
+#export NBP=2040 CORE=8 TIME_MNH=1800 
+#export NBP=2040 CORE=4 TIME_MNH=1800 
+#export NBP=2048 CORE=8 TIME_MNH=1800 
+#
+# NODE / CORE parameters
+#
+#export CORE=4 
+#export CORE=8 
+export NCPUS=${CORE} MPIPROCS=${CORE}
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export MONORUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export MPIRUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+#export MPIRUN=" mpirun -np ${NBP} "
+#export MODE="${NBP}PROC_${NBNODES}NODES_${NCPUS}CORE.$$"
+export MODE="${OPTLEVEL}_${NBP}PROC_${NBNODES}NODES_${NCPUS}CORE.$$"
+export JOBOUT="JOBOUT_${MODE}"
+#export MNHENV="
+#export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:/work/SGI/intel/fce/10.1.017/lib
+#"
+
+#
+# Initial grid & time parameter
+#
+export NIMAX0=512       NJMAX0=128 
+export XLAT0=14.0       XLON0=20.0  # XLON=5.0
+export XDELTAX0=20000.0 XDELTAY0=20000.0
+export XTSTEP0=0.5
+#
+# MNH parameter
+#
+export NIMAX=$( echo "${GRIDFAC} * ${NIMAX0} " | bc -l )
+export NJMAX=$( echo "${GRIDFAC} * ${NJMAX0} " | bc -l )
+#
+export XDELTAX=$( echo " scale=5 ; ${XDELTAX0} / ${GRIDFAC} " | bc -l )
+export XDELTAY=$( echo " scale=5 ; ${XDELTAY0} / ${GRIDFAC} " | bc -l )
+export XDX=${XDELTAX}
+export XDY=${XDELTAY}
+#
+export CINIFILE=$( printf "AM%4.4dX%4.4d" ${NIMAX} ${NJMAX} )
+export CPGDFILE=$( printf "PG%4.4dX%4.4d" ${NIMAX} ${NJMAX} )
+export PREP_PGD_FILES="/scratch/escobar/PREP_PGD_FILES_WWW"
+#
+# Prep Real
+#
+export HATMFILE=arpifs.AN.19980116.06
+export HPGDFILE=${CPGDFILE}
+export NKMAX=70
+
+export CEXP=$( printf "K%4.4d\n" ${NIMAX} )
+export CSEG="SG474"
+export CSPLIT="BSPLITTING"
+#
+export XTSTEP=$( echo " scale=5 ; ${XTSTEP0} / ${GRIDFAC} " | bc -l )
+export XSEGLEN=$( echo "$NSTEP * $XTSTEP" | bc -l )

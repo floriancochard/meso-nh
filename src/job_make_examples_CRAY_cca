@@ -1,0 +1,81 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#PBS -N Sortie_cray_example
+#PBS -q np
+# CPUs number (on all nodes) 
+#PBS -l EC_total_tasks=4  
+# CPUs number by node 
+#PBS -l EC_tasks_per_node=4
+#PBS -l EC_threads_per_task=1  
+#PBS -j oe
+# time limit
+#PBS -l walltime=7200
+
+# Echo des commandes
+ulimit -a
+#ulimit -c 0
+#ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+set -x
+# Nom de la machine
+hostname 
+
+cd ${PBS_O_WORKDIR}
+
+ARCH=LXifort
+#ARCH=LXcray
+. ../conf/profile_mesonh-${ARCH}-R8I4-MNH-V5-4-2-MPICRAY-O2
+
+
+export MONORUN="aprun -n 1 "
+export MPIRUN="aprun -n 4 "
+export POSTRUN="echo "
+#
+# nedeed to allow compute node to retrieve PGD/ECMWF file with wget on internet
+#
+export http_proxy=http://proxy.ecmwf.int:3333/
+
+cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/001_2Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/002_3Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+
+cd $SRC_MESONH/MY_RUN/KTEST/004_Reunion
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/014_LIMA 
+make -k
+

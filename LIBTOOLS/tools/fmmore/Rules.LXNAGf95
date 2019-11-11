@@ -1,0 +1,13 @@
+LIBEXT = -L/usr/X11R6/lib -lX11 -lg2c
+
+#############################################################################
+
+CPPFLAGS += -DLINUX -DNAGf95
+F77FLAGS +=
+F90FLAGS +=
+# F90FLAGS += -target=pentium
+ifeq ($(B),64)
+F90FLAGS += -r8 
+endif
+LDFLAGS  += -Wl,-Xlinker,-noinhibit-exec -Wl,-Xlinker,-warn-once
+OBJS2=

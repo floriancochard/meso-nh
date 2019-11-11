@@ -1,0 +1,8 @@
+CPP = cc -C -E
+AR  = ar 
+F77 = xlf90 -q32 -qextname
+F90 = xlf90 -q32 -qextname
+F77FLAGS = -qfixed -O3 -qstrict
+F90FLAGS = -qfree=f90 -qsuffix=f=f90 -O3 -qstrict
+CPPFLAGS = 
+LDFLAGS = -bloadmap:map_ld

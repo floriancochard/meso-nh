@@ -1,0 +1,36 @@
+The Meso-NH model is a non-hydrostatic atmospheric model. It has been jointly
+developed by the Laboratoire d'Aérologie (UMR 5560 UPS/CNRS) and by CNRM-GAME
+(UMR 3589 CNRS/Météo-France). The holders of Meso-NH software are
+Centre National de la Recherche Scientifique CNRS, Météo-France and
+Université Paul Sabatier.
+
+This software is governed by the CeCILL-C license under French law and biding
+by the rules of distribution of free software. See the CeCILL-C_V1-en.txt
+(English) and CeCILL-C_V1-fr.txt (French) for details. The CeCILL is a free
+software license, explicitly compatible with the GNU GPL
+(see http://www.gnu.org/licenses/license-list.en.html#CeCILL)
+
+The CeCILL-C licence agreement grants users the right to modify and re-use the
+software governed by this free software license. The exercising of this right
+is conditional upon the obligation to make available to the community the
+modifications made to the source code of the software so as to contribute to
+its evolution.
+
+In consideration of access to the source code and the rights to copy, modify
+and redistribute granted by the license, users are provided only with a limited
+warranty and the software's author, the holder of the economic rights, and the
+successive licensors only have limited liability. In this respect, the risks
+associated with loading, using, modifying and/or developing or reproducing the
+software by the user are brought to the user's attention, given its Free
+Software status, which may make it complicated to use, with the result that its
+use is reserved for developers and experienced professionals having in-depth
+computer knowledge. Users are therefore encouraged to load and test the
+suitability of the software as regards their requirements in conditions enabling
+the security of their systems and/or data to be ensured and, more generally, to
+use and operate it in the same conditions of security. 
+
+The Meso-NH sofware and its documentation can be uploaded at
+http://mesonh.aero.obs-mip.fr The fact that you upload the software deemed that
+you had knowledge of the CeCILL-C license and that you accept its terms.
+Attempts to use this software in a way not complying with CeCILL-C license
+may lead to prosecution. 

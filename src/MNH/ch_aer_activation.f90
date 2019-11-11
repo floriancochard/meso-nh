@@ -1,0 +1,294 @@
+!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
+!ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!ORILAM_LIC for details.
+!-----------------------------------------------------------------
+!!   ##############################
+     MODULE MODI_CH_AER_ACTIVATION
+!!   ##############################
+!!
+INTERFACE
+!
+SUBROUTINE CH_AER_ACTIVATION(PSVT,PTEMP,  PWT, PTRAD, &
+                             PRHODREF,PPABST, PNCN, PMCN,&
+                             PSOLORG, PMI, PSMAX)
+
+IMPLICIT NONE
+
+REAL,  DIMENSION(:,:),  INTENT(INOUT) :: PSVT  ! Aerosol concentration
+REAL,  DIMENSION(:),    INTENT(IN)    :: PTEMP ! Air temperature (K)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PRHODREF ! Air density (kg/m3)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PWT   ! Activation vertical velocity (m/s)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PTRAD ! Activation cooling radiative tendency (K/s)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PPABST! Air pressure (Pa)
+REAL,  DIMENSION(:,:),  INTENT(IN)    :: PSOLORG ! ratio of SOA in acqueous phase
+REAL,  DIMENSION(:,:),  INTENT(IN)    :: PMI   ! Molecular weight (g/mol)
+REAL,  DIMENSION(:),    INTENT(OUT)   :: PNCN  ! Number of activated aerosol (#/m3) 
+REAL,  DIMENSION(:),    INTENT(OUT)   :: PMCN  ! Mass of activated aerosol (ug/m3)
+REAL,  DIMENSION(:),    INTENT(INOUT) :: PSMAX ! Maximum supersaturation
+
+
+END SUBROUTINE CH_AER_ACTIVATION
+!!
+END INTERFACE
+!!
+END MODULE MODI_CH_AER_ACTIVATION
+!!
+!!   #######################################
+SUBROUTINE CH_AER_ACTIVATION(PSVT,PTEMP,  PWT, PTRAD, &
+                             PRHODREF,PPABST, PNCN, PMCN,&
+                             PSOLORG, PMI, PSMAX)
+!!   #######################################
+!!
+!!   PURPOSE
+!!   -------
+!!   Input of Abdul-Razzak activation scheme
+!!   Here we compute the size distribution of aerosols together with the 
+!!   dissociative ions and the soluble fraction need in the parameterization.
+!!   Dynamical variables are also passed by argument.
+!!   REFERENCE
+!!   ---------
+!!   none
+!!
+!!   AUTHOR
+!!    ------
+!!    Pierre TULET (GMEI)  
+!!
+!!   MODIFICATIONS
+!!    -------------
+!!   Original
+!!
+!!
+!!   IMPLICIT ARGUMENTS
+!
+USE MODD_CH_AEROSOL
+USE MODD_DUST
+USE MODD_SALT
+USE MODD_NSV
+USE MODD_CSTS_SALT
+USE MODE_AERO_PSD
+USE MODE_DUST_PSD
+USE MODE_SALT_PSD
+USE MODI_ABDULRAZZAK
+
+!!
+IMPLICIT NONE
+
+!! Arguments variables
+
+REAL,  DIMENSION(:,:),  INTENT(INOUT) :: PSVT  ! Aerosol concentration
+REAL,  DIMENSION(:),    INTENT(IN)    :: PTEMP ! Air temperature (K)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PRHODREF ! Air density (kg/m3)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PWT   ! Activation vertical velocity (m/s)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PTRAD ! Activation cooling radiative tendency (K/s)
+REAL,  DIMENSION(:),    INTENT(IN)    :: PPABST! Air pressure (Pa)
+REAL,  DIMENSION(:,:),  INTENT(IN)    :: PSOLORG ! ratio of SOA in acqueous phase
+REAL,  DIMENSION(:,:),  INTENT(IN)    :: PMI   ! Molecular weight (g/mol)
+REAL,  DIMENSION(:),    INTENT(OUT)   :: PNCN  ! Number of activated aerosol (#/m3) 
+REAL,  DIMENSION(:),    INTENT(OUT)   :: PMCN  ! Mass of activated aerosol (ug/m3)
+REAL,  DIMENSION(:),    INTENT(INOUT) :: PSMAX ! Maximum supersaturation
+
+!! Local variables
+
+REAL,  DIMENSION(SIZE(PSVT,1))          :: ZSUM, ZWT, ZTRAD
+REAL,  DIMENSION(SIZE(PSVT,1),JPMODE)   :: ZRG_AER, ZSIG_AER, ZN0_AER
+REAL,  DIMENSION(SIZE(PSVT,1),NMODE_DST):: ZRG_DST, ZSIG_DST, ZN0_DST
+REAL,  DIMENSION(SIZE(PSVT,1),NMODE_SLT):: ZRG_SLT, ZSIG_SLT, ZN0_SLT
+REAL,  DIMENSION(SIZE(PSVT,1),NSP+NCARB+NSOA,JPMODE) :: ZCTOTA
+REAL,  DIMENSION(SIZE(PSVT,1),NMODE_DST) :: ZCTOTAD
+REAL,  DIMENSION(SIZE(PSVT,1),NMODE_SLT) :: ZCTOTAS
+!REAL,  DIMENSION(SIZE(PSVT,1),NSP+NCARB+NSOA) :: ZEPS
+!REAL,  DIMENSION(SIZE(PSVT,1),NSP+NCARB+NSOA,JPMODE) :: ZNUE
+REAL,  DIMENSION(:,:), ALLOCATABLE   :: ZNCN, ZMCN
+REAL,  DIMENSION(:,:), ALLOCATABLE   :: ZNUE
+REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZEPS, ZMI
+REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZCTOTAL
+REAL,  DIMENSION(:,:),  ALLOCATABLE  :: ZRG, ZSIG, ZN0
+REAL  :: ZRHOP
+INTEGER  :: NMODE, JN, JJ, i
+
+
+
+IF (LORILAM) THEN
+ZCTOTA(:,:,:) = 0.
+CALL  PPP2AERO1D(PSVT(:,NSV_AERBEG:NSV_AEREND),&
+                PRHODREF, PMI, PSIG1D=ZSIG_AER, PRG1D=ZRG_AER,&
+                PN1D=ZN0_AER, PCTOTA=ZCTOTA) 
+END IF
+IF (LDUST) THEN
+ZCTOTAD(:,:) = 0.
+CALL  PPP2DUST1D(PSVT(:,NSV_DSTBEG:NSV_DSTEND),& 
+                PRHODREF,  PSIG1D=ZSIG_DST, PRG1D=ZRG_DST,&
+                PN1D=ZN0_DST, PMASS1D=ZCTOTAD) 
+ ZCTOTAD(:,:) = ZCTOTAD(:,:) * 1E9 !kg/m3-->ug/m3
+!ZCTOTAD(:,:) = ZN0_DST(:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+!       * (ZRG_DST(:,:)**3)*1.d-18 &  !um-->m
+!       * exp(4.5*log(ZSIG_DST(:,:))*log(ZSIG_DST(:,:)))
+END IF
+IF (LSALT) THEN
+ZCTOTAS(:,:) = 0.
+CALL  PPP2SALT1D(PSVT(:,NSV_SLTBEG:NSV_SLTEND),& 
+                PRHODREF,  PSIG1D=ZSIG_SLT, PRG1D=ZRG_SLT,&
+                PN1D=ZN0_SLT, PMASS1D=ZCTOTAS) 
+ ZCTOTAS(:,:) = ZCTOTAS(:,:) * 1E9 !kg/m3-->ug/m3
+END IF
+!Aerosol density (kg/m3)
+ZRHOP   = 1.8e3
+
+! Number of actived modes 
+NMODE = 0
+
+IF (LDUST)  THEN
+    NMODE=NMODE+NMODE_DST
+ELSE
+    NMODE_DST=0
+ENDIF
+IF (LSALT)  THEN
+    NMODE=NMODE+NMODE_SLT
+ELSE
+   NMODE_SLT=0
+ENDIF
+IF (LORILAM) THEN
+   NMODE=NMODE+JPMODE
+ENDIF
+
+ALLOCATE (ZNCN(SIZE(PSVT,1),NMODE))
+ALLOCATE (ZMCN(SIZE(PSVT,1),NMODE))
+ALLOCATE (ZNUE(NSP+NCARB+NSOA,NMODE))
+ALLOCATE (ZEPS(SIZE(PSVT,1),NSP+NCARB+NSOA,NMODE))
+ALLOCATE (ZMI(SIZE(PSVT,1),NSP+NCARB+NSOA,NMODE))
+ALLOCATE (ZCTOTAL(SIZE(PSVT,1),NSP+NCARB+NSOA,NMODE))
+ALLOCATE (ZRG(SIZE(PSVT,1),NMODE))
+ALLOCATE (ZSIG(SIZE(PSVT,1),NMODE))
+ALLOCATE (ZN0(SIZE(PSVT,1),NMODE))
+
+ZNCN(:,:)  = 0.
+ZMCN(:,:)  = 0.
+ZNUE(:,:)  = 0.
+ZEPS(:,:,:)  = 0.
+ZMI(:,:,:)   = 0.
+ZCTOTAL(:,:,:) = 0.
+ZRG(:,:) = 0.
+ZSIG(:,:) = 0.
+ZN0(:,:) = 0.
+
+IF (LORILAM) THEN
+   ZRG(:,1:JPMODE)  = ZRG_AER(:,1:JPMODE)
+   ZSIG(:,1:JPMODE) = ZSIG_AER(:,1:JPMODE)
+   ZN0(:,1:JPMODE)  = ZN0_AER(:,1:JPMODE)
+
+   ZCTOTAL(:,1:NSP+NCARB+NSOA,1:JPMODE) = ZCTOTA(:,1:NSP+NCARB+NSOA,1:JPMODE)
+   DO JN=1,JPMODE
+   ZMI(:,1:NSP+NCARB+NSOA,JN) = PMI(:,1:NSP+NCARB+NSOA)
+   ENDDO
+END IF
+IF (LDUST) THEN
+   ZRG(:,NMODE-NMODE_DST+1:NMODE) = ZRG_DST(:,1:NMODE_DST)
+   ZSIG(:,NMODE-NMODE_DST+1:NMODE) = ZSIG_DST(:,1:NMODE_DST)
+   ZN0(:,NMODE-NMODE_DST+1:NMODE) = ZN0_DST(:,1:NMODE_DST)
+
+   ZCTOTAL(:,1,NMODE-NMODE_DST+1:NMODE) = ZCTOTAD(:,1:NMODE_DST) 
+   ZMI(:,:,NMODE-NMODE_DST+1:NMODE) =  XMOLARWEIGHT_DUST * 1E3
+END IF
+IF (LSALT) THEN
+   ZRG(:,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) = ZRG_SLT(:,1:NMODE_SLT)
+   ZSIG(:,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) = ZSIG_SLT(:,1:NMODE_SLT)
+   ZN0(:,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) = ZN0_SLT(:,1:NMODE_SLT)
+
+   ZCTOTAL(:,1,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) = ZCTOTAS(:,1:NMODE_SLT)
+   ZMI(:,:,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) =  XMOLARWEIGHT_SALT * 1E3
+END IF
+
+! ZNUE:  Nomber of dissociative ions
+IF (LDUST) THEN
+ZNUE(1,NMODE-NMODE_DST+1:NMODE) = 1.
+ENDIF
+IF (LSALT) THEN
+ZNUE(1,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) = 1.
+ENDIF
+
+IF (LORILAM) THEN
+ZNUE(JP_AER_SO4,1:JPMODE) = 2.
+ZNUE(JP_AER_NO3,1:JPMODE) = 1.
+ZNUE(JP_AER_NH3,1:JPMODE) = 1.
+ZNUE(JP_AER_OC,1:JPMODE) = 1.
+IF (NSOA==10) THEN
+ZNUE(JP_AER_SOA1,1:JPMODE) = 1.
+ZNUE(JP_AER_SOA2,1:JPMODE) = 1.
+ZNUE(JP_AER_SOA3,1:JPMODE) = 0.
+ZNUE(JP_AER_SOA4,1:JPMODE) = 0.
+ZNUE(JP_AER_SOA5,1:JPMODE) = 0.
+ZNUE(JP_AER_SOA6,1:JPMODE) = 2.
+ZNUE(JP_AER_SOA7,1:JPMODE) = 2.
+ZNUE(JP_AER_SOA8,1:JPMODE) = 0.
+ZNUE(JP_AER_SOA9,1:JPMODE) = 1.
+ZNUE(JP_AER_SOA10,1:JPMODE) = 0.
+END IF
+END IF
+
+! ZEPS : Soluble fraction of each aerosol compounds
+ZEPS(:,:,:) = 0.
+
+IF (LSALT) THEN
+ZEPS(:,:,NMODE-NMODE_DST-NMODE_SLT+1:NMODE-NMODE_DST) = 1.
+END IF
+
+IF (LDUST) THEN
+! Default dust
+ZEPS(:,:,NMODE-NMODE_DST+1:NMODE) = 0.1
+ENDIF
+
+IF (LORILAM) THEN
+ZEPS(:,JP_AER_H2O,1:JPMODE) = 0.
+ZEPS(:,JP_AER_SO4,1:JPMODE) = 1.
+ZEPS(:,JP_AER_NO3,1:JPMODE) = 1.
+ZEPS(:,JP_AER_NH3,1:JPMODE) = 1.
+ZEPS(:,JP_AER_OC,1:JPMODE)  = 0.1
+
+IF (NSOA==10) THEN
+DO JN=1,JPMODE
+ZEPS(:,JP_AER_SOA1,JN) = PSOLORG(:,1)
+ZEPS(:,JP_AER_SOA2,JN) = PSOLORG(:,2)
+ZEPS(:,JP_AER_SOA3,JN) = PSOLORG(:,3)
+ZEPS(:,JP_AER_SOA4,JN) = PSOLORG(:,4)
+ZEPS(:,JP_AER_SOA5,JN) = PSOLORG(:,5)
+ZEPS(:,JP_AER_SOA6,JN) = PSOLORG(:,6)
+ZEPS(:,JP_AER_SOA7,JN) = PSOLORG(:,7)
+ZEPS(:,JP_AER_SOA8,JN) = PSOLORG(:,8)
+ZEPS(:,JP_AER_SOA9,JN) = PSOLORG(:,9)
+ZEPS(:,JP_AER_SOA10,JN) = PSOLORG(:,10)
+ENDDO
+END IF
+END IF
+
+
+IF (NMODE >= 1) CALL ABDULRAZZAK(NMODE, ZRHOP, ZNUE, ZEPS, ZMI,  PRHODREF,  &
+                                  PTEMP, PWT, PTRAD, PPABST, ZRG, ZSIG, ZN0, &
+                                  ZCTOTAL, ZNCN, ZMCN, PSMAX) 
+PNCN(:) = 0.
+PMCN(:) = 0.
+!
+! Sum of mass and number of activated aerosol for each mode 
+DO JJ=1,NMODE
+  PNCN(:) =  PNCN(:) + ZNCN(:,JJ)
+  PMCN(:) =  PMCN(:) + ZMCN(:,JJ)
+ENDDO
+
+!DO JJ=1,NMODE
+!print*,' Nb activee mode ZNCN',JJ,' =',MINVAL(ZNCN(:,JJ)), MAXVAL(ZNCN(:,JJ))
+!print*,' % nb active mode ',JJ,' =', MINVAL(1.- (ZN0(:,JJ) -ZNCN(:,JJ))/ZN0(:,JJ)),&
+!                                MAXVAL(1.- (ZN0(:,JJ) -ZNCN(:,JJ))/ZN0(:,JJ))
+!ENDDO
+
+DEALLOCATE (ZNCN)
+DEALLOCATE (ZMCN)
+DEALLOCATE (ZNUE)
+DEALLOCATE (ZEPS)
+DEALLOCATE (ZMI)
+DEALLOCATE (ZCTOTAL)
+DEALLOCATE (ZRG)
+DEALLOCATE (ZSIG)
+DEALLOCATE (ZN0)
+
+
+END SUBROUTINE CH_AER_ACTIVATION

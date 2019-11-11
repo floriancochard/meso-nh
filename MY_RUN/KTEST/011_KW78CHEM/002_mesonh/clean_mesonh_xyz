@@ -1,0 +1,4 @@
+set -x
+rm -f DATAE1 DATAJ1 DATAS1      
+rm -f KWRAI* OUT* pipe_name PRESSURE REMAP*
+rm -f fort.11 file_for_xtransfer

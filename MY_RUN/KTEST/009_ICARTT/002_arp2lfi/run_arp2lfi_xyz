@@ -1,0 +1,16 @@
+#!/bin/sh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"} ; export CHIMIE_FILES
+ln -sf ${CHIMIE_FILES}/*.20040810.18* .
+#export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/grib_api-1.13.1/definitions
+
+rm -f ICART* CPLCH20040810.18.* OUTPUT_LISTING* pipe* 
+ln -sf ../001_pgd1/ICARTT1008_PGD_15km.{des,lfi,nc} .
+
+time ${MONORUN} PREP_REAL_CASE${XYZ}

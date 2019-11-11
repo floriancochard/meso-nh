@@ -1,0 +1,54 @@
+# GRILLE 512x512x64
+#
+# GRID FACTOR & NSTEP
+#
+export GRIDFAC=4
+export NSTEP=51
+#
+# job parameter
+#
+export TIME_PIDEAL=1800  # max CPU time for PREP_IDEAL_CASE 
+export QUEUE_PIDEAL=test # batch queue test/bigmem
+#
+export TIME_MNH=1800                # max ELAPSE CPU time for MESONH                 
+#
+# SMP  MODE = 1 procs/CN
+#
+#export NCN=0064 NBP=0064 MODE=SMP  # number of processor for MESONH
+#export NCN=0128 NBP=0128 MODE=SMP  # number of processor for MESONH
+#export NCN=0256 NBP=0256 MODE=SMP  # number of processor for MESONH
+#export NCN=0512 NBP=0512 MODE=SMP  # number of processor for MESONH
+#
+# DUAL MODE = 2 procs/CN
+#
+#export NCN=0064 NBP=0128 MODE=DUAL # number of processor for MESONH
+#export NCN=0128 NBP=0256 MODE=DUAL # number of processor for MESONH
+#export NCN=0256 NBP=0512 MODE=DUAL # number of processor for MESONH
+#
+# VNAL MODE = 4 procs/CN
+#
+#export NCN=0064 NBP=0256 MODE=VN # number of processor for MESONH
+export NCN=0128 NBP=0512 MODE=VN # number of processor for MESONH
+#
+# Initial grid & time parameter
+#
+export   NIMAX0=128     NJMAX0=128  CSPLIT="BSPLITTING"
+export XDELTAX0=500.0 XDELTAY0=500.0
+export XTSTEP0=0.5
+export NKMAX=64
+#
+# MNH parameter
+#
+export NIMAX=$( echo "${GRIDFAC} * ${NIMAX0} " | bc -l )
+export NJMAX=$( echo "${GRIDFAC} * ${NJMAX0} " | bc -l )
+#
+export XDELTAX=$( echo " scale=5 ; ${XDELTAX0} / ${GRIDFAC} " | bc -l )
+export XDELTAY=$( echo " scale=5 ; ${XDELTAY0} / ${GRIDFAC} " | bc -l )
+#
+export CINIFILE=$( printf "KW%4.4d\n" ${NIMAX} )
+#
+export CEXP=$( printf "K%4.4d\n" ${NIMAX} )
+export CSEG="SG474"
+#
+export XTSTEP=$( echo " scale=5 ; ${XTSTEP0} / ${GRIDFAC} " | bc -l )
+export XSEGLEN=$( echo "$NSTEP * $XTSTEP" | bc -l )

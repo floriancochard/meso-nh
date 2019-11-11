@@ -1,0 +1,37 @@
+#!/bin/sh
+set -x
+set -e
+
+#
+# Get the ecmwf files form the Mesonh WEB if needed
+#
+ECMWF_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_LINUX/dir_ECMWF"
+WGET="wget"
+for file in ecmwf.OD.20000924.00 ecmwf.OD.20000924.12 ecmwf.OD.20000925.00
+do
+[ -f $file ] || ( ${WGET} -c -nd ${ECMWF_URL}/$file.gz ; gunzip $file.gz ; ) 
+done
+
+#
+#
+#
+#export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/grib_api-1.13.1/definitions
+
+ln -sf ../001_pgd1/pgd_dust_30km.{des,lfi,nc} .
+rm -f S702000092* OUTPUT_LISTING* pipe* *.tex
+
+cp PRE_REAL1.nam.20000924.00 PRE_REAL1.nam
+time ${MONORUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0 OUTPUT_LISTING0_2400
+
+#exit 
+
+cp PRE_REAL1.nam.20000924.12 PRE_REAL1.nam
+time ${MONORUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0 OUTPUT_LISTING0_2412
+
+cp PRE_REAL1.nam.20000925.00 PRE_REAL1.nam
+time ${MONORUN} PREP_REAL_CASE${XYZ}
+mv OUTPUT_LISTING0 OUTPUT_LISTING0_2500
+
+

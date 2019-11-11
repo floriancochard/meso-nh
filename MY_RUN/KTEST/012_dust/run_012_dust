@@ -1,0 +1,4 @@
+target=${1:-"all"}
+set -e
+make clean
+make $target

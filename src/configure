@@ -1,0 +1,533 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#set -x
+#set -e
+if [ "x$XYZ" = "x" ]
+then
+# 
+export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-4}
+export VERSION_BUG=${VERSION_BUG:-2}
+export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
+export VERSION_DATE=${VERSION_DATE:-"03/04/2019"}
+export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.2"}
+export VERSION_HDF=${VERSION_HDF:-"1.8.20"}
+export VERSION_CDFC=${VERSION_CDFC:-"4.5.0"}
+export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.2"}
+export VERSION_CDFF=${VERSION_CDFF:-"4.4.4"}
+export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
+export MNH_INT=${MNH_INT:-"4"}
+export LFI_INT=${LFI_INT:-8}
+export MNH_REAL=${MNH_REAL:-"8"}
+export MNH_IOCDF4=${MNH_IOCDF4:-1}
+
+export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
+export VERSION_TOY=${VERSION_TOY:-"v1-0"}
+export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
+
+
+export VERSION_ECRAD=${VERSION_ECRAD:-"1.0.1"}
+
+
+export LEN_HREC=${LEN_HREC:-16}
+
+#
+export NEED_TOOLS=YES
+#
+export LOCAL=${PWD%/src}
+RACINE=$(basename $LOCAL )
+#
+cd ${LOCAL}/conf
+#
+TARG=$(uname -s -n)
+#
+case "$TARG" in
+'Linux'*'occigen'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+ulimit -s unlimited
+module purge
+module load intel/17.0 intelmpi/2017.2.174
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+# force CC=gcc , for HDF5 divide by zero problem with icc !!!
+export CC=gcc
+export I_MPI_CC=gcc
+"}
+              ;;
+'Linux service'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIICE}
+		export NEED_NCARG=${NEED_NCARG:-YES}
+                export MVWORK=${MVWORK:-NO}
+	        domain=$(grep .fr /etc/hosts | head -1 )
+                case "${domain}" in
+*cines*) # jade
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFICE}
+		export NEED_NCARG=${NEED_NCARG:-YES}
+                export MNHENV=${MNHENV:-"
+module rm netcdf ; module load netcdf/4.0
+module rm MPT    ; module load MPT/2.02
+module rm intel  ; module load intel/12.0.13
+export MPI_DSM_CPULIST=0-7:allhosts
+"}
+;;
+*cict*)  # hyperion
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+. /usr/share/modules/init/bash
+module purge
+module load intel-fc-10/10.1.017
+module load sgi-mpt/1.26
+export MPI_DSM_CPULIST=0-7:allhosts
+"}
+              ;;
+                esac
+              ;;
+'Linux platine'*|'Linux titane'*|'Linux curie'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module load ncl_ncarg/6.3.0
+"}
+              ;;
+'Linux irene'*)
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module purge
+module load intel/18.0.3.222
+module load mpi/intelmpi/2018.0.3.222
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;;
+
+'Linux beaufix'*|'Linux prolix'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O3}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFBFIX}
+                export NEED_NCARG=${NEED_NCARG:-NO}
+		export NEED_TOOLS=NO
+                export MNHENV=${MNHENV:-"
+module rm intel    ; module load intel/16.1.150 ;
+module rm intelmpi ; module load intelmpi/5.1.2.150 ;
+module rm netcdf ; module load netcdf/4.4.0 ;
+module rm grib_api ; module load grib_api/1.14.5 ;
+export GRIBAPI_PATH=/opt/softs/libraries/ICC16.1.150/grib_api-1.14.5
+"}
+              ;;
+'Linux login0'*|'Linux compute'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O3}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFBULL}
+                export MNHENV=${MNHENV:-"
+module rm intel    ; module load intel/13.0.1.117 ;
+module rm intelmpi ; module load intelmpi/4.1.0 ;
+module rm intel-itac ; module load intel-itac/8.0.3
+"}
+              ;;
+'Linux brodie'*|'Linux mercure'*)
+                export     ARCH=${ARCH:-SX8}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O4}
+                export MVWORK=${MVWORK:-YES}
+		export VER_CDF=${VER_CDF:-CDFSX}
+                export MNHENV=${MNHENV:-"
+module rm sxf90  ; module load sxf90/400 ;
+module rm sxmpi  ; module load sxmpi/8.0.10 ;
+module rm netcdf ; module load netcdf/3.6.3
+"}
+              ;;
+'Linux babel'*)
+                export     ARCH=${ARCH:-BGQ}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-YES}
+                export MNHENV=${MNHENV:-"
+module load netcdf/3.6.3
+"}
+               ;;
+'Linux turing'*)
+                export     ARCH=${ARCH:-BGQ}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2NAN}
+                export MVWORK=${MVWORK:-YES}
+		export VER_CDF=${VER_CDF:-CDFBGQ}
+                export MNHENV=${MNHENV:-"
+source /bglocal/fe/pub/Modules/default/init/bash
+export MODULEPATH=/bghome/rech/mnh/rmnh007/my_modules:\$MODULEPATH
+module purge
+#module load ibmcmp/V1R2M2/14.01.0000.0011/gcc.legacy
+module load mpi/gcc.legacy
+export VER_GA=ga-mpi-5-0-3-v1r2m2-gcc-legacy
+module load ga/\${VER_GA}
+"}
+              ;;
+'Linux ada'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-YES}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+#export MP_MPILIB=pempi
+module purge
+module load intel/2018.2
+"}
+              ;;
+AIX*)
+                export MNH_ARCH=`echo $ARCH | grep AIX`
+                export     ARCH=${MNH_ARCH:-AIX64}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAIX}
+                case "$(hostname)" in
+                      vargas*)
+                      export MNHENV=${MNHENV:-"
+module rm fortran ; module load fortran/13.1.0.7
+module rm netcdf  ; module load netcdf/3.6.3
+"}
+                      ;;
+                      c1a*)
+		      export VERSION_GRIBAPI="1.9.9"
+                      export MNHENV=${MNHENV:-"
+. /usr/local/apps/module/init/sh.in
+module rm fortran ; module load fortran/xlf/13.1.0.7
+module rm netcdf  ; module load netcdf/3.6.3
+export CDF_PATH=/usr/local/apps/netcdf/3.6.3/LP64
+export GRIBAPI_PATH=/usr/local/lib/metaps/lib/grib_api/${VERSION_GRIBAPI}
+export LIB_GRIBAPI='${GRIB_API_LIB}'
+"}
+                      ;;
+                      c2a*)
+		      export VERSION_GRIBAPI="2.0.0"
+                      export MNHENV=${MNHENV:-"
+. /usr/local/apps/module/init/sh.in
+module rm fortran ; module load fortran/xlf/13.1.0.9
+module rm netcdf  ; module load netcdf/3.6.3
+export CDF_PATH=/usr/local/apps/netcdf/3.6.3/LP64
+export GRIBAPI_PATH=/usr/local/lib/metaps/lib/grib_api/${VERSION_GRIBAPI}
+export LIB_GRIBAPI='${GRIB_API_LIB}'
+"}
+                      ;;
+                 esac
+              ;;
+'Linux cc'*) # ECMWF Cray plateforme
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPICRAY}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                if [ "${ARCH}" == "LXcray" ] 
+                then
+                export MNHENV=${MNHENV:-"
+. /opt/modules/default/init/bash
+module rm grib_api eccodes
+module rm craype-broadwell
+export CRAY_CPU_TARGET=ivybridge
+module swap cdt/1.15_8.2.7
+module use /opt/cray/craype/default/modulefiles
+"}
+                else
+                if [ "${ARCH}" == "LXifort" ]
+                then
+                export MNHENV=${MNHENV:-"
+. /opt/modules/default/init/bash
+module rm grib_api eccodes
+prgenvswitchto intel
+module rm intel
+module load intel/17.0.3.053
+export CC=gcc
+"}
+                fi
+                fi
+;;
+'Linux sxmnh1') #CNRM ifort sur sxmnh1 (diff mandriva)
+                export    OMPI_FC=ifort
+                export       ARCH=${ARCH:-LXifort}
+                export    VER_MPI=${VER_MPI:-MPIAUTO}
+                export   OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export     MVWORK=${MVWORK:-NO}
+                export    VER_CDF=${VER_CDF:-CDFCTI}
+                export NEED_NCARG=${NEED_NCARG:-NO}
+                export NEED_TOOLS=NO
+              ;;
+'Linux lx'*|'Linux sx'*|'Linux px'*) #CNRM
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFCTI}
+		export NEED_NCARG=${NEED_NCARG:-NO}
+		export NEED_TOOLS=NO
+              ;;
+'Linux nuwa'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_NCARG=${NEED_NCARG:-YES}
+                      export MNHENV=${MNHENV:-"
+. /home/tools/intel/psxe2017/bin/ifortvars.sh intel64
+export MPI_ROOT=/usr/local/openmpi/1.6.5/ifort17.0.1.132
+export PATH=\$MPI_ROOT/bin:\$PATH
+export LD_LIBRARY_PATH=\$MPI_ROOT/lib64:\$LD_LIBRARY_PATH
+export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
+"}
+              ;;
+'Linux eos'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+module purge
+module load intel/17.0.4 intelmpi/2017.3.196 ncl/6.2.0
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;;
+'Linux olympe'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+module purge
+module load intel/18.2  intelmpi/18.2
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;; 
+
+Linux*)
+                export     ARCH=${ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+		#export VER_CDF=${VER_CDF:-CDFGFOR}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_NCARG=${NEED_NCARG:-YES}
+              ;;
+Darwin*)
+                echo "WARNING:: Darwin for Mac not tested "
+                export     ARCH=${ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_NCARG=${NEED_NCARG:-NO}
+              ;;
+*)
+                echo "WARNING ; system not yet tested "
+                echo "WARNING ; edit profile_mesonh & set correct variables ARCH , VER_MPI & OPTLEVEL "
+
+                export     ARCH=${ARCH}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+              ;;
+esac
+##
+## Environnement for scandollar
+##
+
+if [ "x${CONF_DOLLAR}" = "x" ] ; then
+# set default value for CONF_DOLLAR file
+case "$(hostname)" in
+  tori*|yuki*)
+        export POSTCONF=confdollar_dsinec_default
+        ;;
+
+  lx*|px*|sx*)
+        export POSTCONF=confdollar_cnrmpc_default
+        ;;
+
+  aeropc*)
+        export POSTCONF=confdollar_aeropc_default
+
+        ;;
+
+  brodie*)
+        export POSTCONF=confdollar_brodie_default
+
+        ;;
+
+  vargas*)
+        export POSTCONF=confdollar_vargas_default
+        ;;
+
+  c1a*)
+        export POSTCONF=confdollar_c1a_default
+        ;;
+
+  service*)
+        export POSTCONF=confdollar_jade_default
+        ;;
+
+  babel*)
+        export POSTCONF=confdollar_babel_default
+        ;;
+  turing*)
+        export POSTCONF=confdollar_turing_default
+        ;;
+ titane*|curie*)
+        export POSTCONF=confdollar_titane_default
+        ;;
+
+  eos*)
+        export POSTCONF=confdollar_eos_default
+        ;;
+
+  occigen*)
+        export POSTCONF=confdollar_occigen_default
+        ;;
+
+  *)
+        export POSTCONF=confdollar_aeropc_default
+        ;;
+esac
+
+export CONF_DOLLAR=${LOCAL}/conf/post/${POSTCONF}
+
+fi
+
+#
+#  Install 32/64 mesonh tools
+#
+if [ "x${NEED_TOOLS}" == "xYES" ] ; then
+  case "$(uname -m)" in
+  'x86_64')
+	  export BIN_TOOLS=${BIN_TOOLS:-X86_64}
+	   ;;
+  'x86'|'i'*'86')
+          export BIN_TOOLS=${BIN_TOOLS:-X86}
+	   ;;
+  esac
+fi
+
+#
+# Generate profile_mesonh
+#
+${LOCAL}/bin/eval_dollar  profile_mesonh.ihm > profile_mesonh
+chmod +x profile_mesonh
+XYZ=${ARCH}-R${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${MNH_ECRAD:+-ECRAD}${MNH_FOREFIRE:+-FF}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
+cp profile_mesonh profile_mesonh-${XYZ}
+#
+#  Do some post-install stuff
+#
+if [ "x${MVWORK}" == "xYES" ] ; then
+   if [ "x${WORKDIR}" == "x" ] ; then
+     echo "ATTENTION :: configure !!!!!"
+     echo
+     echo '  ---> vous n avez pas initialiser la variable $WORKDIR '
+     echo '  ---> ou seront stoké les binaires et cas tests '
+     echo '  ---> initialisez la et relance "./configure"'
+     exit 1
+   fi
+   if [ -d $WORKDIR ] && [ ${LOCAL} == ${LOCAL##/work} ] ; then
+#  if we are not allready in the workdir --> move stuff
+      WORK=$WORKDIR/${RACINE}_WORKDIR
+      mkdir -p ${WORK}
+      for dir in MY_RUN exe pub
+      do
+         [ -d $LOCAL/${dir} ] && [ ! -L $LOCAL/${dir} ] \
+          && mv $LOCAL/${dir} ${WORK}/. \
+          && ln -s ${WORK}/${dir} $LOCAL/.
+      done
+   fi
+fi
+if [ "x${NEED_NCARG}" != "xNO" ] ; then
+( cd $LOCAL/pub ; [ ! -d ${VERSION_NCL} ] && ( tar xvfz ${VERSION_NCL}.tar.gz ) )
+fi
+
+#
+#  Install CDF if VER_CDF=CDFAUTO
+#
+if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
+( cd $LOCAL/src/LIB ; [ ! -d libaec-${VERSION_LIBAEC} ] && tar xvfz libaec-${VERSION_LIBAEC}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDFC} ] && tar xvfz netcdf-${VERSION_CDFC}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-cxx-${VERSION_CDFCXX} ] && tar xvfz netcdf-cxx-${VERSION_CDFCXX}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-fortran-${VERSION_CDFF} ] && tar xvfz netcdf-fortran-${VERSION_CDFF}.tar.gz )
+fi
+#
+#  Install OASIS if VER_OASIS=OASISAUTO
+#
+if [ "x${VER_OASIS}" == "xOASISAUTO" ] ; then
+( cd $LOCAL/src/LIB ; [ ! -d oasis3-${VERSION_OASIS} ] && tar xvfz oasis3-${VERSION_OASIS}.tar.gz ; [ ! -d toy_${VERSION_TOY} ] && tar xvfz toy_${VERSION_TOY}.tar.gz )
+fi
+#
+#  Install MEGAN if MNH_MEGAN=1
+#
+if [ "x${MNH_MEGAN}" == "x1" ] ; then
+( cd $LOCAL/src/LIB ; [ ! -d MEGAN ] && tar xvfz megan.tar.gz )
+fi
+#
+#  Install GRIBAPI
+#
+cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf -
+##########################################################
+#                                                        #
+#      RESUME                                            #
+#                                                        #
+##########################################################
+
+echo  ARCH=${ARCH}
+echo  VER_MPI=${VER_MPI}
+echo  VER_USER=${VER_USER-" pas de version user ..."}
+echo  OPTLEVEL=${OPTLEVEL}
+echo  CONF_DOLLAR=${CONF_DOLLAR}
+echo  VER_CDF=${VER_CDF}
+echo  VER_OASIS=${VER_OASIS}
+echo  BIN_TOOLS=${BIN_TOOLS}
+echo
+echo  "---> XYZ=${XYZ}"
+echo
+echo "création du fichier -->  ../conf/profile_mesonh-${XYZ}"
+echo
+##########################################################
+#                                                        #
+# ENVIRONEMENT MESONH ALLREADY SET                       #
+#                                                        #
+##########################################################
+else
+clear
+echo
+echo "ATTENTION :: configure !!!!!"
+echo
+echo '  ---> vous avez déjà initialisé votre environnement MESONH sur cette version'
+echo '  ---> $XYZ="'$XYZ'"'
+echo
+echo "Vérifiez votre fichier '.profile'" ou "'.bashrc'"  !!!
+echo
+echo "  ---> mettez en commentaire la ligne '. ../profile_mesonh...' "
+echo "  ---> relogger vous sur une autre session et relancer ./configure "
+echo
+echo "Fichier 'profile_mesonh' non modifié !!! "
+echo
+exit 1
+fi

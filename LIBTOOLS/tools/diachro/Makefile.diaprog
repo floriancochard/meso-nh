@@ -1,0 +1,793 @@
+B ?= 32
+DIR_OBJ=./$(ARCH)_$(B)
+
+ifeq ($(strip $(VERSION)),)
+VPATH=src/BUG:src/DIAPRO:src/POS:src/TOOL:src/mesonh:src/FM2DIA:src/FM:src/MOD:src/mesonh_MOD:$(DIR_OBJ):$(DIR_OBJ)
+else                            # string VERSION not empty
+VPATH=.:src/$(VERSION):src/BUG:src/DIAPRO:src/POS:src/TOOL:src/mesonh:src/FM2DIA:src/FM:src/MOD:src/mesonh_MOD:$(DIR_OBJ):$(DIR_OBJ)
+endif
+
+ifeq ($(origin MNH_LIBTOOLS), undefined)
+include ../where.Libs
+else
+include $(MNH_LIBTOOLS)/tools/where.Libs
+endif
+
+INC = -I src/POS -I $(DIR_OBJ)
+
+LIBS = $(LIBNCAR) $(LIBX)
+
+include $(DIR_CONF)/config.$(ARCH)
+include $(MNH_LIBTOOLS)/tools/diachro/Rules.$(ARCH)
+
+
+PROG = diaprog
+
+OBJS = fmattr.o modd_cst.o modd_coord.o \
+	modd_grid1.o modd_grid.o modd_out.o modd_radar.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o alloc_fordiachro.o alloc2_fordiachro.o \
+	caresolv.o carmemory.o convallij2ll.o convij2xy.o \
+	convlo2up.o convxy2ij.o diff_oper.o extract_and_open_files.o \
+	inidef.o kztnp.o load_expr.o load_fmtaxes.o \
+	load_segments.o load_tit.o oper_process.o prints.o \
+	read_diachro.o read_dimgridref.o vert_coord.o read_th_pr.o read_type.o \
+	read_uvw.o realloc_and_load.o resolv_tit.o \
+	tsound_fordiachro.o varfct.o verif_group.o frame41.o gridal.o ficstr.o \
+	modd_alloc2_fordiachro.o modd_expr.o modd_files_diachro.o modd_mask3d.o \
+	modd_memcv.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o modd_pvt.o \
+	modd_resolvcar.o modd_several_records.o modd_tit.o modd_traj3d.o \
+	modn_ncar.o modn_para.o fmfree.o fminit.o \
+	fmlook.o fmopen.o fmread.o modd_conf.o \
+	modd_dim1.o modd_fmdeclar.o \
+	modd_fmmulti.o modd_parameters.o modd_rea_lfi.o \
+	modd_time1.o modd_time.o modd_diachro.o \
+	ini_cst.o set_dim.o set_light_grid.o \
+	inidef.o bcgrd_fordiachro.o caluv_fordiachro.o careal.o carint.o \
+	closf.o colvect.o compcoord_fordiachro.o \
+	image_fordiachro.o imagev_fordiachro.o imcou_fordiachro.o interp_fordiachro.o \
+	interp_grids.o latlongrid.o loadmnmx_ft_pvkt.o loadmnmxint_iso.o \
+	loadunitit.o loadxisolevp.o load_xprdat.o memcv.o \
+	myheurx.o precou_fordiachro.o pvfct.o readcol_ft_pvkt.o \
+	read_filehead.o readmnmx_ft_pvkt.o read_sufwind.o realloc_and_load_records.o \
+	resolv_nijinf_nijsup.o resolv_times.o resolv_tity.o resolvtot.o \
+	rota.o subspxy.o tabcol_fordiachro.o traceh_fordiachro.o \
+	tracev_fordiachro.o tracircle.o traflux3d.o trahtraxy.o tramask.o \
+	trapro_fordiachro.o tratraj3d.o tramask3d.o tit_tra3d.o \
+	traxy.o veriflen_fordiachro.o \
+	modd_allvar.o modd_convij2xy.o modd_ctl_axes_and_styl.o modd_cvert.o \
+	modd_defcv.o modd_experim.o modd_hach.o modd_memgriuv.o \
+	modd_rsisocol.o modd_super.o modd_title.o mode_gridproj.o \
+	dewp.o echelle.o fleche.o os.o \
+	tsa.o valmnmx.o wtstr.o fm_read.o \
+	modd_lunit1.o modd_nesting.o modd_type_date.o mode_gridcart.o \
+	axelogpres.o color_fordiachro.o complat.o conv2xy.o \
+	computedir.o coupe_fordiachro.o coupeuw_fordiachro.o echelleph.o \
+	datfile_fordiachro.o defenetre.o factimp.o formatxy.o \
+	genformat_fordiachro.o imcoupv_fordiachro.o imcouv_fordiachro.o interpxyz.o \
+	latlongrid.o loadunitit.o load_xprdat.o memcv.o myheurx.o \
+	precou_fordiachro.o pro1d_fordiachro.o pvfct.o \
+	readmnmxint_iso.o readxisolevp.o rotauw.o readcol_ft_pvkt.o \
+	resolv_times.o resolv_tity.o resolvtot.o \
+	tracexz.o modd_type_allvar.o ccolr.o tracexy.o \
+	wsous.o interpolw.o modd_field1_cv2d.o esat.o \
+	readrefint_iso.o creatlink.o writedir.o
+OBJBIG = frame41.o ficstr.o computedir.o image_fordiachro.o imagev_fordiachro.o\
+	 imcou_fordiachro.o imcoupv_fordiachro.o imcouv_fordiachro.o \
+	 interpolw.o oper_process.o precou_fordiachro.o \
+	 pvfct.o subspxy.o traceh_fordiachro.o 
+
+OBJDIA = fmattr.o modd_cst.o modd_coord.o \
+	modd_grid1.o modd_grid.o modd_out.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o alloc_fordiachro.o \
+	read_diachro.o read_dimgridref.o  vert_coord.o \
+	verif_group.o  \
+	modd_alloc2_fordiachro.o modd_expr.o modd_files_diachro.o \
+	modd_memcv.o \
+	modd_resolvcar.o modd_several_records.o \
+	modn_ncar.o modn_para.o fmfree.o fminit.o \
+	fmlook.o fmopen.o fmread.o modd_conf.o \
+	modd_dim1.o modd_fmdeclar.o \
+	modd_fmmulti.o modd_parameters.o modd_rea_lfi.o \
+	modd_time1.o modd_time.o modd_diachro.o \
+	ini_cst.o set_dim.o set_light_grid.o \
+	compcoord_fordiachro.o \
+	read_filehead.o read_sufwind.o realloc_and_load_records.o \
+	modd_allvar.o modd_convij2xy.o modd_ctl_axes_and_styl.o modd_cvert.o \
+	modd_defcv.o modd_experim.o modd_hach.o modd_memgriuv.o \
+	modd_rsisocol.o modd_super.o modd_title.o mode_gridproj.o \
+	dewp.o echelle.o fleche.o os.o \
+	tsa.o valmnmx.o fm_read.o \
+	modd_lunit1.o modd_nesting.o modd_type_date.o mode_gridcart.o \
+	computedir.o interpxyz.o \
+	modd_type_allvar.o \
+	creatlink.o writedir.o
+
+%.o:%.f90 $(DIR_OBJ)/.dummy
+	$(CPP) $(INC) $(CPPFLAGS) $< >  $(DIR_OBJ)/cpp_$(*F).f90 
+	$(F90) $(INC) -c $(F90FLAGS) $(DIR_OBJ)/cpp_$(*F).f90 -o $(DIR_OBJ)/$(*F).o
+	-@mv  *.mod $(DIR_OBJ)/. 2> /dev/null || echo pas de module dans $*.f90
+
+%.o:%.f $(DIR_OBJ)/.dummy
+	$(CPP) $(INC) $(CPPFLAGS) -Df77 $< > $(DIR_OBJ)/cpp_$(*F).f
+	$(F77) $(INC) -c $(F77FLAGS) $(DIR_OBJ)/cpp_$(*F).f -o $(DIR_OBJ)/$(*F).o
+
+
+all: $(LIBDIA) $(PROG)
+
+$(PROG): $(PROG).o $(OBJS) $(LIBCOMP) $(LIBLFI)
+	cd $(DIR_OBJ);$(F90) $(LDFLAGS) -o $@ $(patsubst $(DIR_OBJ)/%,%,$^) $(LIBS)
+
+$(DIR_OBJ)/.dummy:
+	mkdir $(DIR_OBJ)
+	@touch $(DIR_OBJ)/.dummy
+
+$(LIBLFI):
+	$(MAKE) -C $(DIR_LFI)
+
+$(LIBCOMP):
+	$(MAKE) -C $(DIR_COMP)
+
+
+ifeq ($(strip $(VERSION)),)
+$(LIBDIA): $(OBJDIA)
+	cd $(DIR_OBJ) ; $(AR) rv $@ $(OBJDIA)
+	ls -l $(DIR_OBJ)/$@
+else                            # string VERSION not empty
+$(LIBDIA): $(OBJDIA)
+	@echo '***' if libxxx_$(VERSION).a does not exist, cp libxxx.a libxxx_$(VERSION).a
+	ls -l $(DIR_OBJ)/$@
+	cd $(DIR_OBJ) ; $(AR) rv $@ $(OBJDIA)
+	ls -l $(DIR_OBJ)/$@
+endif
+
+
+clean:
+	(if [ -d $(DIR_OBJ) ] ; then cd $(DIR_OBJ); rm -f cpp_*.f90 cpp_*.f *.o *.mod ; fi)
+
+distclean: clean
+	(if [ -d $(DIR_OBJ) ] ; then rm -rf $(DIR_OBJ); fi)
+
+BIG:
+	cd $(OBJDIR) ; rm -f $(OBJBIG) 
+	$(MAKE) $(PROGS) CPPFLAGS=-D$(MAKECMDGOALS)
+
+cp: $(SRC)
+	cp $< src/$(SRC)
+	chmod u+w src/$(SRC)
+
+user: $(DIR_OBJ)/.dummy
+	ln -s $(DIR_DIA)/$(DIR_OBJ)/*.o $(DIR_OBJ)/. 
+	cp $(DIR_DIA)/$(DIR_OBJ)/*.mod $(DIR_OBJ)/. 
+	@ls -dl $(DIR_OBJ)
+
+
+# nombre de passe = 1
+diaprog.o: diaprog.f90 modd_cst.o modd_conf.o modd_coord.o \
+	modd_grid1.o modd_grid.o modd_out.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o \
+	alloc2_fordiachro.o caresolv.o carmemory.o \
+	convij2xy.o convlo2up.o diff_oper.o \
+	extract_and_open_files.o load_fmtaxes.o load_segments.o \
+	load_tit.o oper_process.o prints.o \
+	read_diachro.o read_dimgridref.o read_type.o \
+	read_uvw.o realloc_and_load.o resolv_tit.o \
+	verif_group.o modd_alloc2_fordiachro.o modd_expr.o \
+	modd_files_diachro.o modd_mask3d.o modd_memcv.o \
+	modd_nmgrid.o modd_pt_for_ch_fordiachro.o modd_pvt.o \
+	modd_resolvcar.o modd_several_records.o modd_tit.o \
+	modd_traj3d.o modn_ncar.o modn_para.o \
+	writedir.o
+
+# nombre de passe = 2
+fmattr.o: fmattr.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+modd_conf.o: modd_conf.f90 
+
+modd_coord.o: modd_coord.f90 
+
+modd_cst.o: modd_cst.f90 
+
+modd_grid1.o: modd_grid1.f90 
+
+modd_grid.o: modd_grid.f90 
+
+modd_out.o: modd_out.f90 
+
+modd_alloc_fordiachro.o: modd_alloc_fordiachro.f90 
+
+modd_type_and_lh.o: modd_type_and_lh.f90 
+
+alloc_fordiachro.o: alloc_fordiachro.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o 
+
+alloc2_fordiachro.o: alloc2_fordiachro.f90 modd_alloc_fordiachro.o \
+	modd_alloc2_fordiachro.o modd_files_diachro.o modd_pt_for_ch_fordiachro.o \
+	modd_resolvcar.o 
+
+caresolv.o: caresolv.f90 modd_dim1.o modd_coord.o \
+	modd_grid1.o modd_parameters.o modd_alloc_fordiachro.o \
+	careal.o carint.o carmemory.o \
+	loadmnmx_ft_pvkt.o loadmnmxint_iso.o loadxisolevp.o \
+	resolvtot.o modd_ctl_axes_and_styl.o modd_defcv.o \
+	modd_expr.o modd_files_diachro.o modd_hach.o \
+	modd_mask3d.o modd_memcv.o modd_pvt.o modd_radar.o \
+	modd_resolvcar.o modd_rsisocol.o modd_super.o \
+	modd_tit.o modd_traj3d.o modn_ncar.o \
+	modn_para.o mode_gridproj.o \
+	writedir.o
+
+carmemory.o: carmemory.f90 modd_resolvcar.o 
+
+convallij2ll.o: convallij2ll.f90 modd_conf.o \
+	modd_coord.o modd_dim1.o modd_grid1.o modd_grid.o \
+	modd_parameters.o modd_alloc_fordiachro.o resolvtot.o \
+	modd_convij2xy.o modd_files_diachro.o modd_resolvcar.o \
+	mode_gridproj.o 
+
+convij2xy.o: convij2xy.f90 modd_conf.o \
+	modd_coord.o modd_dim1.o modd_grid1.o modd_grid.o \
+	modd_parameters.o modd_alloc_fordiachro.o resolvtot.o \
+	modd_convij2xy.o modd_files_diachro.o modd_resolvcar.o \
+	mode_gridproj.o 
+
+convlo2up.o: convlo2up.f90 modd_alloc_fordiachro.o \
+	modd_files_diachro.o 
+
+convxy2ij.o: convxy2ij.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_grid.o \
+	modd_parameters.o modd_alloc_fordiachro.o resolvtot.o \
+	modd_convij2xy.o modd_files_diachro.o modd_resolvcar.o \
+	mode_gridproj.o 
+
+diff_oper.o: diff_oper.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o modd_alloc2_fordiachro.o modd_files_diachro.o \
+	modd_memcv.o modd_pt_for_ch_fordiachro.o modd_resolvcar.o \
+	modd_tit.o modn_ncar.o 
+
+extract_and_open_files.o: extract_and_open_files.f90 modd_alloc_fordiachro.o \
+	modd_files_diachro.o modd_resolvcar.o \
+	creatlink.o
+
+inidef.o: inidef.f90 modd_cst.o \
+	modd_allvar.o modn_ncar.o modn_para.o 
+
+kztnp.o: kztnp.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o modd_mask3d.o modd_resolvcar.o \
+	modn_ncar.o modn_para.o 
+
+load_expr.o: load_expr.f90 modd_alloc_fordiachro.o \
+	modd_expr.o modd_files_diachro.o modd_several_records.o \
+	modn_ncar.o 
+
+load_fmtaxes.o: load_fmtaxes.f90 modd_resolvcar.o 
+
+load_segments.o: load_segments.f90 modd_grid1.o \
+	resolvtot.o modd_resolvcar.o mode_gridproj.o 
+
+load_tit.o: load_tit.f90 resolv_tit.o \
+	modd_tit.o 
+
+oper_process.o: oper_process.f90 modd_conf.o \
+	modd_coord.o modd_cst.o modd_dim1.o modd_grid1.o \
+	modd_parameters.o modd_alloc_fordiachro.o \
+	modd_type_and_lh.o closf.o conv2xy.o \
+	loadunitit.o precou_fordiachro.o pvfct.o \
+	traceh_fordiachro.o tracev_fordiachro.o tramask.o \
+	trapro_fordiachro.o varfct.o modd_cvert.o \
+	modd_defcv.o modd_experim.o modd_files_diachro.o \
+	modd_mask3d.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o \
+	modd_pvt.o modd_resolvcar.o modd_super.o \
+	modd_title.o modn_ncar.o modn_para.o \
+	mode_gridproj.o 
+
+prints.o: prints.f90 fmread.o \
+	modd_dim1.o modd_parameters.o modd_alloc_fordiachro.o \
+	modd_type_and_lh.o realloc_and_load.o verif_group.o \
+	modd_ctl_axes_and_styl.o modd_defcv.o modd_files_diachro.o \
+	modd_memcv.o modd_resolvcar.o modd_several_records.o \
+	modd_title.o modn_ncar.o modn_para.o 
+
+read_diachro.o: read_diachro.f90 fmread.o \
+	modd_dim1.o modd_alloc_fordiachro.o modd_type_and_lh.o \
+	alloc_fordiachro.o modd_resolvcar.o 
+
+read_dimgridref.o: read_dimgridref.f90 fmread.o \
+	modd_conf.o modd_dim1.o modd_grid1.o modd_grid.o \
+	modd_parameters.o modd_rea_lfi.o \
+	modd_time1.o modd_time.o \
+	set_dim.o set_light_grid.o \
+	modd_resolvcar.o 
+
+read_th_pr.o: read_th_pr.f90 \
+	modd_alloc_fordiachro.o modd_files_diachro.o \
+	modd_mask3d.o modd_pt_for_ch_fordiachro.o modd_resolvcar.o \
+	modd_several_records.o 
+
+read_type.o: read_type.f90 fmread.o \
+	modd_alloc_fordiachro.o modd_diachro.o modd_type_and_lh.o \
+	modd_resolvcar.o modd_several_records.o 
+
+read_uvw.o: read_uvw.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o modd_files_diachro.o modd_memgriuv.o \
+	modd_pt_for_ch_fordiachro.o modd_resolvcar.o modd_several_records.o 
+
+realloc_and_load.o: realloc_and_load.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o verif_group.o modd_files_diachro.o \
+	modd_resolvcar.o modd_several_records.o 
+
+resolv_tit.o: resolv_tit.f90 modd_alloc_fordiachro.o \
+	modd_resolvcar.o modd_tit.o 
+
+tramask3d.o: tramask3d.f90 modd_conf.o \
+	modd_coord.o modd_dim1.o modd_grid1.o modd_parameters.o \
+	modd_alloc_fordiachro.o realloc_and_load.o modd_ctl_axes_and_styl.o \
+	modd_files_diachro.o modd_mask3d.o modd_nmgrid.o \
+	modd_resolvcar.o modd_several_records.o modd_traj3d.o \
+	modn_ncar.o modn_para.o modd_title.o tit_tra3d.o
+
+tsound_fordiachro.o: tsound_fordiachro.f90 fmread.o \
+	modd_dim1.o modd_parameters.o modd_type_and_lh.o \
+	modd_pt_for_ch_fordiachro.o modd_resolvcar.o modd_rsisocol.o \
+	modd_tit.o modd_title.o modn_ncar.o 
+
+varfct.o: varfct.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o loadmnmx_ft_pvkt.o readcol_ft_pvkt.o \
+	readmnmx_ft_pvkt.o modd_ctl_axes_and_styl.o modd_defcv.o \
+	modd_resolvcar.o modd_tit.o modd_title.o \
+	modn_ncar.o modn_para.o writedir.o
+
+verif_group.o: verif_group.f90 fmread.o \
+	modd_alloc_fordiachro.o modd_diachro.o modd_type_and_lh.o \
+	realloc_and_load_records.o modd_resolvcar.o modd_several_records.o \
+	modn_ncar.o 
+
+frame41.o: frame41.f modd_type_and_lh.o \
+	modd_pvt.o modd_resolvcar.o modn_ncar.o \
+	modn_para.o 
+
+gridal.o: gridal.f
+
+modd_alloc2_fordiachro.o: modd_alloc2_fordiachro.f90 
+
+modd_expr.o: modd_expr.f90 
+
+modd_files_diachro.o: modd_files_diachro.f90 
+
+modd_mask3d.o: modd_mask3d.f90 
+
+modd_memcv.o: modd_memcv.f90 
+
+modd_nmgrid.o: modd_nmgrid.f90 
+
+modd_pt_for_ch_fordiachro.o: modd_pt_for_ch_fordiachro.f90 
+
+modd_pvt.o: modd_pvt.f90 
+
+modd_resolvcar.o: modd_resolvcar.f90 
+
+modd_several_records.o: modd_several_records.f90 
+
+modd_tit.o: modd_tit.f90 
+
+modd_traj3d.o: modd_traj3d.f90 
+
+modn_ncar.o: modn_ncar.f90 
+
+modn_para.o: modn_para.f90 modd_dim1.o 
+
+# nombre de passe = 3
+fmfree.o: fmfree.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+fminit.o: fminit.f90 modd_fmdeclar.o 
+
+fmlook.o: fmlook.f90 modd_fmdeclar.o 
+
+fmopen.o: fmopen.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+fmread.o: fmread.f90 modd_conf.o \
+	modd_fmdeclar.o modd_type_date.o 
+
+modd_conf.o: modd_conf.f90 
+
+modd_dim1.o: modd_dim1.f90 
+
+modd_fmdeclar.o: modd_fmdeclar.f90 
+
+modd_fmmulti.o: modd_fmmulti.f90 
+
+modd_parameters.o: modd_parameters.f90 
+
+modd_radar.o: modd_radar.f90 
+
+modd_rea_lfi.o: modd_rea_lfi.f90 
+
+modd_time1.o: modd_time1.f90 modd_type_date.o 
+
+modd_time.o: modd_time.f90 modd_parameters.o \
+	modd_type_date.o 
+
+modd_diachro.o: modd_diachro.f90 
+
+ini_cst.o: ini_cst.f90 modd_cst.o
+
+set_dim.o: set_dim.f90 fmread.o \
+	modd_conf.o modd_parameters.o 
+
+set_light_grid.o: set_light_grid.f90 fmread.o \
+	modd_conf.o modd_grid.o modd_time.o \
+	mode_gridcart.o mode_gridproj.o 
+
+bcgrd_fordiachro.o: bcgrd_fordiachro.f90 modd_grid1.o \
+	modd_grid.o modd_ctl_axes_and_styl.o modd_mask3d.o \
+	modd_nmgrid.o modd_resolvcar.o modd_traj3d.o modd_radar.o \
+	modn_ncar.o modn_para.o mode_gridproj.o \
+	writedir.o creatlink.o
+
+caluv_fordiachro.o: caluv_fordiachro.f90 modd_dim1.o \
+	modd_parameters.o modd_alloc_fordiachro.o modd_type_and_lh.o \
+	realloc_and_load.o verif_group.o modd_files_diachro.o \
+	modd_pt_for_ch_fordiachro.o modd_resolvcar.o modd_several_records.o 
+
+careal.o: careal.f90 modd_resolvcar.o 
+
+carint.o: carint.f90 modd_resolvcar.o 
+
+closf.o: closf.f90 modd_conf.o \
+	modd_time1.o modd_time.o modd_alloc_fordiachro.o \
+	modd_ctl_axes_and_styl.o modd_defcv.o modd_memcv.o \
+	modd_nmgrid.o modd_resolvcar.o modn_ncar.o \
+	modn_para.o modd_grid1.o modd_parameters.o mode_gridproj.o
+
+colvect.o: colvect.f90 modd_pvt.o \
+	modd_resolvcar.o modn_ncar.o 
+
+conv2xy.o: conv2xy.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_alloc_fordiachro.o \
+	modd_files_diachro.o modd_resolvcar.o mode_gridproj.o 
+
+datfile_fordiachro.o: datfile_fordiachro.f90 modd_out.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o modd_files_diachro.o \
+	modd_resolvcar.o 
+
+defenetre.o: defenetre.f90 modd_dim1.o \
+	modd_ctl_axes_and_styl.o modd_nmgrid.o modd_resolvcar.o \
+	modn_ncar.o 
+
+factimp.o: factimp.f90 modd_type_and_lh.o \
+	modd_memcv.o modd_resolvcar.o 
+
+formatxy.o: formatxy.f90 modd_resolvcar.o 
+
+image_fordiachro.o: image_fordiachro.f90 modd_conf.o \
+	modd_lunit1.o modd_out.o modd_time1.o \
+	modd_time.o modd_alloc_fordiachro.o readmnmxint_iso.o \
+	readxisolevp.o modd_ctl_axes_and_styl.o modd_hach.o \
+	modd_mask3d.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o \
+	modd_resolvcar.o modd_rsisocol.o modd_super.o \
+	modd_tit.o modd_title.o modn_ncar.o \
+	modn_para.o  \
+	readrefint_iso.o writedir.o creatlink.o
+
+imagev_fordiachro.o: imagev_fordiachro.f90 modd_conf.o \
+	modd_grid1.o modd_grid.o modd_out.o \
+	modd_time1.o modd_time.o modd_alloc_fordiachro.o \
+	resolv_tit.o resolv_tity.o modd_ctl_axes_and_styl.o \
+	modd_memcv.o modd_pt_for_ch_fordiachro.o modd_pvt.o \
+	modd_resolvcar.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o \
+	mode_gridproj.o computedir.o
+
+imcou_fordiachro.o: imcou_fordiachro.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_grid.o \
+	modd_lunit1.o modd_out.o modd_parameters.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o readmnmxint_iso.o \
+	readxisolevp.o resolv_tit.o resolv_tity.o \
+	modd_allvar.o modd_ctl_axes_and_styl.o modd_cvert.o \
+	modd_defcv.o modd_hach.o modd_nmgrid.o \
+	modd_pt_for_ch_fordiachro.o modd_pvt.o modd_resolvcar.o \
+	modd_rsisocol.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o modd_mask3d.o \
+	mode_gridproj.o \
+	readrefint_iso.o writedir.o creatlink.o
+
+interp_fordiachro.o: interp_fordiachro.f90 modd_grid1.o \
+	modd_parameters.o modd_type_and_lh.o modd_mask3d.o \
+	modd_nmgrid.o modd_pt_for_ch_fordiachro.o modd_resolvcar.o \
+	modn_ncar.o modn_para.o 
+
+interp_grids.o: interp_grids.f90 modd_alloc_fordiachro.o \
+	modd_nmgrid.o modd_pt_for_ch_fordiachro.o modd_pvt.o \
+	modd_resolvcar.o 
+
+latlongrid.o: latlongrid.f90 modd_alloc_fordiachro.o \
+	modd_nmgrid.o modd_resolvcar.o 
+
+loadmnmx_ft_pvkt.o: loadmnmx_ft_pvkt.f90 modd_resolvcar.o 
+
+loadmnmxint_iso.o: loadmnmxint_iso.f90 modd_resolvcar.o 
+
+loadunitit.o: loadunitit.f90 modd_alloc_fordiachro.o \
+	modd_nmgrid.o modd_resolvcar.o 
+
+loadxisolevp.o: loadxisolevp.f90 modd_resolvcar.o 
+
+load_xprdat.o: load_xprdat.f90 modd_alloc_fordiachro.o \
+	modd_resolvcar.o 
+
+memcv.o: memcv.f90 modd_memcv.o \
+	modd_nmgrid.o modn_para.o modd_resolvcar.o
+
+myheurx.o: myheurx.f90 modd_dim1.o \
+	modd_ctl_axes_and_styl.o modd_resolvcar.o modn_ncar.o 
+
+precou_fordiachro.o: precou_fordiachro.f90 \
+	modd_conf.o modd_dim1.o modd_grid1.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o \
+	modd_cvert.o modd_memgriuv.o modd_nmgrid.o \
+	modd_pt_for_ch_fordiachro.o modd_pvt.o modd_resolvcar.o \
+	modn_ncar.o modn_para.o computedir.o 
+
+pvfct.o: pvfct.f90 modd_dim1.o \
+	modd_grid1.o modd_grid.o modd_parameters.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o varfct.o \
+	modd_cvert.o modd_experim.o modd_nmgrid.o \
+	modd_pvt.o modd_resolvcar.o modd_super.o \
+	modd_tit.o modd_title.o modn_ncar.o \
+	modn_para.o mode_gridproj.o 
+
+readcol_ft_pvkt.o: readcol_ft_pvkt.f90 modd_resolvcar.o 
+
+read_filehead.o: read_filehead.f90 fmread.o \
+	modd_dim1.o modd_parameters.o modd_diachro.o \
+	modd_type_and_lh.o modd_resolvcar.o modn_ncar.o \
+	modn_para.o 
+
+readmnmx_ft_pvkt.o: readmnmx_ft_pvkt.f90 modd_resolvcar.o 
+
+read_sufwind.o: read_sufwind.f90 modd_resolvcar.o 
+
+realloc_and_load_records.o: realloc_and_load_records.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o modd_files_diachro.o modd_resolvcar.o \
+	modd_several_records.o 
+
+resolv_nijinf_nijsup.o: resolv_nijinf_nijsup.f90 modd_dim1.o \
+	modd_parameters.o modd_type_and_lh.o modd_resolvcar.o \
+	modn_para.o 
+
+resolv_times.o: resolv_times.f90 modd_conf.o \
+	modd_grid.o modd_time1.o modd_time.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o modd_title.o 
+
+resolv_tity.o: resolv_tity.f90 modd_resolvcar.o \
+	modd_tit.o 
+
+resolvtot.o: resolvtot.f90 modd_resolvcar.o \
+	modn_ncar.o modn_para.o 
+
+rota.o: rota.f90 modd_defcv.o \
+	modd_memgriuv.o modd_resolvcar.o modn_para.o 
+
+subspxy.o: subspxy.f90 modd_conf.o \
+	modd_cst.o modd_dim1.o modd_grid1.o \
+	modd_parameters.o modd_alloc_fordiachro.o \
+	modd_type_and_lh.o loadunitit.o precou_fordiachro.o \
+	traceh_fordiachro.o tracev_fordiachro.o modd_cvert.o \
+	modd_defcv.o modd_experim.o modd_files_diachro.o \
+	modd_mask3d.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o \
+	modd_pvt.o modd_resolvcar.o modd_super.o \
+	modd_tit.o modd_title.o modn_ncar.o \
+	modn_para.o mode_gridproj.o 
+
+tabcol_fordiachro.o: tabcol_fordiachro.f90 modd_resolvcar.o 
+
+traceh_fordiachro.o: traceh_fordiachro.f90 modd_dim1.o \
+	modd_out.o modd_parameters.o modd_alloc_fordiachro.o \
+	modd_type_and_lh.o interp_fordiachro.o resolv_tit.o \
+	resolv_tity.o modd_allvar.o modd_defcv.o \
+	modd_mask3d.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o \
+	modd_resolvcar.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o computedir.o \
+	writedir.o
+
+tracev_fordiachro.o: tracev_fordiachro.f90 modd_dim1.o \
+	modd_out.o modd_alloc_fordiachro.o modd_nmgrid.o \
+	modd_pt_for_ch_fordiachro.o modd_resolvcar.o modd_super.o \
+	modd_title.o modn_ncar.o modn_para.o 
+
+traflux3d.o: traflux3d.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_parameters.o \
+	modd_alloc_fordiachro.o interpxyz.o realloc_and_load.o \
+	modd_ctl_axes_and_styl.o modd_files_diachro.o modd_mask3d.o \
+	modd_nmgrid.o modd_resolvcar.o modd_several_records.o \
+	modd_traj3d.o modn_ncar.o modn_para.o tit_tra3d.o
+
+trahtraxy.o: trahtraxy.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o resolv_tit.o resolv_tity.o \
+	modd_defcv.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o \
+	modd_resolvcar.o modd_tit.o modn_ncar.o \
+	modn_para.o 
+
+tramask.o: tramask.f90 modd_grid1.o \
+	modd_ctl_axes_and_styl.o modd_nmgrid.o modd_resolvcar.o \
+	modd_super.o modd_tit.o modd_title.o \
+	modn_ncar.o modn_para.o 
+
+trapro_fordiachro.o: trapro_fordiachro.f90 modd_conf.o \
+	modd_grid1.o modd_grid.o modd_out.o \
+	modd_parameters.o modd_type_and_lh.o readmnmx_ft_pvkt.o \
+	modd_ctl_axes_and_styl.o modd_defcv.o modd_nmgrid.o \
+	modd_resolvcar.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o \
+	mode_gridproj.o writedir.o
+
+tratraj3d.o: tratraj3d.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_parameters.o \
+	modd_alloc_fordiachro.o interpxyz.o realloc_and_load.o \
+	modd_ctl_axes_and_styl.o modd_files_diachro.o modd_mask3d.o \
+	modd_nmgrid.o modd_resolvcar.o modd_several_records.o \
+	modd_traj3d.o modn_ncar.o modn_para.o modd_title.o tit_tra3d.o
+
+traxy.o: traxy.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_parameters.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o set_dim.o \
+	modd_ctl_axes_and_styl.o modd_files_diachro.o modd_nmgrid.o \
+	modd_resolvcar.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o 
+
+veriflen_fordiachro.o: veriflen_fordiachro.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_parameters.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o modd_defcv.o \
+	modd_nmgrid.o modd_resolvcar.o modn_para.o \
+	mode_gridproj.o 
+
+modd_allvar.o: modd_allvar.f90 modd_type_allvar.o 
+
+modd_convij2xy.o: modd_convij2xy.f90 
+
+modd_ctl_axes_and_styl.o: modd_ctl_axes_and_styl.f90 
+
+modd_cvert.o: modd_cvert.f90 
+
+modd_defcv.o: modd_defcv.f90 
+
+modd_experim.o: modd_experim.f90 
+
+modd_hach.o: modd_hach.f90 
+
+modd_memgriuv.o: modd_memgriuv.f90 
+
+modd_rsisocol.o: modd_rsisocol.f90 
+
+modd_super.o: modd_super.f90 
+
+modd_title.o: modd_title.f90 
+
+mode_gridproj.o: mode_gridproj.f90 modd_conf.o \
+	modd_cst.o modd_grid.o modd_lunit1.o \
+	modd_parameters.o vert_coord.o
+
+mode_gridcart.o: mode_gridcart.f90 modd_conf.o \
+	modd_parameters.o vert_coord.o 
+
+compcoord_fordiachro.o: compcoord_fordiachro.f90 modd_conf.o \
+	modd_dim1.o modd_grid1.o modd_parameters.o \
+	modd_memcv.o modd_resolvcar.o vert_coord.o
+
+vert_coord.o: vert_coord.f90 
+
+dewp.o: dewp.f90 
+
+echelle.o: echelle.f90 modd_resolvcar.o 
+
+fleche.o: fleche.f90 
+
+os.o: os.f90 
+
+tsa.o: tsa.f90 
+
+valmnmx.o: valmnmx.f90 
+
+wtstr.o: wtstr.f 
+
+# nombre de passe = 4
+fm_read.o: fm_read.f90 modd_fmdeclar.o 
+
+modd_conf1.o: modd_conf1.f90 
+
+modd_lunit1.o: modd_lunit1.f90 modd_parameters.o 
+
+modd_nesting.o: modd_nesting.f90 modd_parameters.o 
+
+modd_type_date.o: modd_type_date.f90 
+
+axelogpres.o: axelogpres.f90 modd_pvt.o 
+
+color_fordiachro.o: color_fordiachro.f90 modd_resolvcar.o 
+
+complat.o: complat.f90 modd_grid1.o \
+	modd_nmgrid.o mode_gridproj.o 
+
+computedir.o: computedir.f90 modd_grid1.o \
+	modd_grid.o modd_alloc_fordiachro.o modd_resolvcar.o \
+	modd_super.o modn_ncar.o modn_para.o \
+	mode_gridproj.o 
+
+coupe_fordiachro.o: coupe_fordiachro.f90 modd_grid1.o \
+	modd_parameters.o modd_type_and_lh.o modd_cvert.o \
+	modd_memcv.o modd_nmgrid.o modd_resolvcar.o \
+	modn_ncar.o modn_para.o 
+
+coupeuw_fordiachro.o: coupeuw_fordiachro.f90 modd_grid1.o \
+	modd_parameters.o modd_type_and_lh.o modd_cvert.o \
+	modd_memcv.o modd_memgriuv.o modd_nmgrid.o \
+	modd_resolvcar.o modn_ncar.o modn_para.o 
+
+echelleph.o: echelleph.f90 modd_memcv.o \
+	modd_resolvcar.o 
+
+genformat_fordiachro.o: genformat_fordiachro.f90 
+
+imcoupv_fordiachro.o: imcoupv_fordiachro.f90 modd_grid1.o \
+	modd_grid.o modd_lunit1.o modd_out.o \
+	modd_parameters.o modd_alloc_fordiachro.o modd_type_and_lh.o \
+	resolv_tit.o resolv_tity.o modd_ctl_axes_and_styl.o \
+	modd_cvert.o modd_defcv.o modd_field1_cv2d.o \
+	modd_nmgrid.o modd_pt_for_ch_fordiachro.o modd_pvt.o \
+	modd_resolvcar.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o \
+	mode_gridproj.o 
+
+imcouv_fordiachro.o: imcouv_fordiachro.f90 modd_conf.o \
+	modd_grid1.o modd_grid.o modd_lunit1.o \
+	modd_out.o modd_parameters.o modd_alloc_fordiachro.o \
+	resolv_tit.o resolv_tity.o modd_ctl_axes_and_styl.o \
+	modd_cvert.o modd_defcv.o modd_field1_cv2d.o \
+	modd_memcv.o modd_nmgrid.o modd_pt_for_ch_fordiachro.o \
+	modd_pvt.o modd_resolvcar.o modd_super.o \
+	modd_tit.o modd_title.o modn_ncar.o \
+	modn_para.o mode_gridproj.o 
+
+interpxyz.o: interpxyz.f90 
+
+pro1d_fordiachro.o: pro1d_fordiachro.f90 modd_conf.o \
+	modd_grid1.o modd_out.o modd_parameters.o \
+	modd_alloc_fordiachro.o modd_type_and_lh.o modd_allvar.o \
+	modd_ctl_axes_and_styl.o modd_defcv.o modd_experim.o \
+	modd_resolvcar.o modd_super.o modd_tit.o \
+	modd_title.o modn_ncar.o modn_para.o 
+
+readmnmxint_iso.o: readmnmxint_iso.f90 modd_resolvcar.o 
+
+readrefint_iso.o: readrefint_iso.f90 modd_resolvcar.o 
+
+readxisolevp.o: readxisolevp.f90 modd_resolvcar.o 
+
+rotauw.o: rotauw.f90 modd_defcv.o \
+	modn_para.o 
+
+tracexz.o: tracexz.f90 modd_grid1.o \
+	modd_parameters.o modd_nmgrid.o modn_para.o 
+
+modd_type_allvar.o: modd_type_allvar.f90 
+
+ccolr.o: ccolr.f 
+
+tracexy.o: tracexy.f90 modd_dim1.o \
+	modd_out.o modd_nmgrid.o 
+
+wsous.o: wsous.f90 
+
+# nombre de passe = 5
+interpolw.o: interpolw.f90 modd_dim1.o \
+	modd_grid1.o modd_resolvcar.o modn_ncar.o 
+
+modd_field1_cv2d.o: modd_field1_cv2d.f90 
+
+esat.o: esat.f90 
+
+tracircle.o: tracircle.f90 modd_radar.o
+
+tit_tra3d.o: tit_tra3d.f90 modd_tit.o modd_title.o modd_resolvcar.o

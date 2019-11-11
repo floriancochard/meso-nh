@@ -1,0 +1,188 @@
+!     ######spl
+      MODULE MODI_LOADMNMX_FT_PVKT
+!     ############################
+!
+INTERFACE
+!
+SUBROUTINE LOADMNMX_FT_PVKT(HCARIN,KIND,PMNMX,K)
+CHARACTER(LEN=*)  :: HCARIN
+INTEGER           :: KIND,K
+REAL              :: PMNMX
+END SUBROUTINE LOADMNMX_FT_PVKT
+!
+END INTERFACE
+END MODULE MODI_LOADMNMX_FT_PVKT
+!     ######spl
+      SUBROUTINE LOADMNMX_FT_PVKT(HCARIN,KIND,PMNMX,K)
+!     ################################################
+!
+!!****  *LOADMNMX_FT_PVKT* - 
+!!
+!!    PURPOSE
+!!    -------
+!      
+!
+!!**  METHOD
+!!    ------
+!!     
+!!     N.A.
+!!
+!!    EXTERNAL
+!!    --------
+!!      None
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module
+!!
+!!      Module
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       2/09/96
+!!      Updated   PM   
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_RESOLVCAR
+
+IMPLICIT NONE
+!
+!*       0.1   Dummy arguments
+!              ---------------
+
+CHARACTER(LEN=*) :: HCARIN
+INTEGER          :: KIND, K
+REAL             :: PMNMX
+!
+!*       0.1   Local variables
+!              ---------------
+
+INTEGER           :: ILEN
+INTEGER           :: J,JM
+INTEGER,DIMENSION(:),ALLOCATABLE  :: ICOLI
+REAL,DIMENSION(:),ALLOCATABLE  :: ZFTMN, ZFTMX
+CHARACTER(LEN=100),DIMENSION(:),ALLOCATABLE  :: YFTMN, YFTMX, YCOLI
+
+!
+!------------------------------------------------------------------------------
+!print *,' loadmnmx... HCARIN ',HCARIN
+IF(K == 1 .OR. K == 2)THEN
+  ILEN=6
+ELSE IF(K == 3 .OR. K == 4)THEN
+  ILEN=8
+ELSE IF(K == 5 .OR. K == 6)THEN
+  ILEN=7
+ELSE IF(K == 7)THEN
+  ILEN=8
+ELSE IF(K == 8)THEN
+  ILEN=6
+ELSE IF(K == 9)THEN
+  ILEN=7
+ENDIF
+IF(HCARIN(KIND+ILEN:KIND+ILEN) /= '_')THEN
+  RETURN
+ELSE
+  DO J=ILEN+1,ILEN+100
+    IF(HCARIN(KIND+J:KIND+J) == ' ' .OR.  &
+       HCARIN(KIND+J:KIND+J) == '=')THEN
+      JM=J-1
+      EXIT
+    ENDIF
+  ENDDO
+ENDIF
+IF(K == 1 .OR. K == 3 .OR. K == 5)THEN
+  IF(NBFTMN == 0)THEN
+    NBFTMN=NBFTMN+1
+    ALLOCATE(XFTMN(NBFTMN),CFTMN(NBFTMN))
+    XFTMN(NBFTMN)=PMNMX
+    CFTMN(NBFTMN)=HCARIN(KIND+ILEN+1:KIND+JM)
+    CFTMN(NBFTMN)=ADJUSTL(CFTMN(NBFTMN))
+  ELSE
+    DO J=1,NBFTMN
+    IF(HCARIN(KIND+ILEN+1:KIND+JM) == CFTMN(J))THEN
+      XFTMN(J)=PMNMX
+      RETURN
+    ENDIF
+    ENDDO
+    ALLOCATE(ZFTMN(NBFTMN),YFTMN(NBFTMN))
+    ZFTMN(:)=XFTMN(:)
+    YFTMN(:)=CFTMN(:)
+    DEALLOCATE(XFTMN,CFTMN)
+    NBFTMN=NBFTMN+1
+    ALLOCATE(XFTMN(NBFTMN),CFTMN(NBFTMN))
+    XFTMN(1:NBFTMN-1)=ZFTMN(:)
+    CFTMN(1:NBFTMN-1)=YFTMN(:)
+    XFTMN(NBFTMN)=PMNMX
+    CFTMN(NBFTMN)=HCARIN(KIND+ILEN+1:KIND+JM)
+    CFTMN(NBFTMN)=ADJUSTL(CFTMN(NBFTMN))
+    DEALLOCATE(ZFTMN,YFTMN)
+  ENDIF
+ELSE IF(K == 2 .OR. K == 4 .OR. K == 6)THEN
+  IF(NBFTMX == 0)THEN
+    NBFTMX=NBFTMX+1
+    ALLOCATE(XFTMX(NBFTMX),CFTMX(NBFTMX))
+    XFTMX(NBFTMX)=PMNMX
+    CFTMX(NBFTMX)=HCARIN(KIND+ILEN+1:KIND+JM)
+    CFTMX(NBFTMX)=ADJUSTL(CFTMX(NBFTMX))
+  ELSE
+    DO J=1,NBFTMX
+    IF(HCARIN(KIND+ILEN+1:KIND+JM) == CFTMX(J))THEN
+      XFTMX(J)=PMNMX
+      RETURN
+    ENDIF
+    ENDDO
+    ALLOCATE(ZFTMX(NBFTMX),YFTMX(NBFTMX))
+    ZFTMX(:)=XFTMX(:)
+    YFTMX(:)=CFTMX(:)
+    DEALLOCATE(XFTMX,CFTMX)
+    NBFTMX=NBFTMX+1
+    ALLOCATE(XFTMX(NBFTMX),CFTMX(NBFTMX))
+    XFTMX(1:NBFTMX-1)=ZFTMX(:)
+    CFTMX(1:NBFTMX-1)=YFTMX(:)
+    XFTMX(NBFTMX)=PMNMX
+    CFTMX(NBFTMX)=HCARIN(KIND+ILEN+1:KIND+JM)
+    CFTMX(NBFTMX)=ADJUSTL(CFTMX(NBFTMX))
+    DEALLOCATE(ZFTMX,YFTMX)
+  ENDIF
+ELSE IF(K == 7 .OR. K == 8 .OR. K == 9)THEN
+  IF(NBCOLI == 0)THEN
+    NBCOLI=NBCOLI+1
+    ALLOCATE(NCOLI(NBCOLI),CCOLI(NBCOLI))
+    NCOLI(NBCOLI)=NINT(PMNMX)
+    CCOLI(NBCOLI)=HCARIN(KIND+ILEN+1:KIND+JM)
+    CCOLI(NBCOLI)=ADJUSTL(CCOLI(NBCOLI))
+  ELSE
+    DO J=1,NBCOLI
+      IF(HCARIN(KIND+ILEN+1:KIND+JM) == CCOLI(J))THEN
+        NCOLI(J)=NINT(PMNMX)
+        RETURN
+      ENDIF
+    ENDDO
+    ALLOCATE(ICOLI(NBCOLI),YCOLI(NBCOLI))
+    ICOLI(:)=NCOLI(:)
+    YCOLI(:)=CCOLI(:)
+    DEALLOCATE(NCOLI,CCOLI)
+    NBCOLI=NBCOLI+1
+    ALLOCATE(NCOLI(NBCOLI),CCOLI(NBCOLI))
+    NCOLI(1:NBCOLI-1)=ICOLI(:)
+    CCOLI(1:NBCOLI-1)=YCOLI(:)
+    NCOLI(NBCOLI)=NINT(PMNMX)
+    CCOLI(NBCOLI)=HCARIN(KIND+ILEN+1:KIND+JM)
+    CCOLI(NBCOLI)=ADJUSTL(CCOLI(NBCOLI))
+    DEALLOCATE(ICOLI,YCOLI)
+  ENDIF
+ENDIF
+RETURN
+END SUBROUTINE LOADMNMX_FT_PVKT

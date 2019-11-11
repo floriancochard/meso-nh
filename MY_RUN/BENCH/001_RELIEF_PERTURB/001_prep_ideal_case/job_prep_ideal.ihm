@@ -1,0 +1,11 @@
+${JOBMULTI}
+
+set -x
+
+[ "x\$XYZ" = "x" ] && . $SRC_MESONH/conf/profile_mesonh${XYZ}
+
+cd ${SUBDIR} 
+
+export MONORUN="${MONORUN}"
+run_prep_ideal_case_xyz
+cat OUTPUT_LISTING1

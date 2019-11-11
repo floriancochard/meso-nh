@@ -1,0 +1,69 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_CONFZ
+ ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=1
+/
+&NAM_LUNITn  CINIFILE = "CPLCH20040810.18",CINIFILEPGD = "ICARTT1008_PGD_15km" /
+&NAM_CONFn   LUSERV = T, LUSERC = T, LUSERR = T ,
+             LUSERI = T, LUSERS = T, LUSERG = T, LUSERH = F, LUSECI= T /
+&NAM_DYNn  XTSTEP = 120.,  
+            CPRESOPT = "ZRESI", 
+            NITR = 10, LITRADJ = T ,
+            LHORELAX_UVWTH = T, LHORELAX_RV = T, LVE_RELAX = T ,
+            NRIMX = 4, NRIMY = 4, XRIMKMAX = 0.00016, XT4DIFU = 2000. /
+&NAM_ADVn  CMET_ADV_SCHEME = "PPM_01", CSV_ADV_SCHEME = "PPM_01" /
+&NAM_PARAMn  CTURB = "TKEL", CRAD = "ECMW",
+             CCLOUD = "ICE3", CDCONV = "KAFR", CSCONV = 'EDKF' /
+&NAM_PARAM_RADn  XDTRAD = 600., XDTRAD_CLONLY = 600., LCLEAR_SKY = F,
+                   NRAD_COLNBR = 400, CLW = "RRTM", CAER = "TANR" /
+&NAM_PARAM_KAFRn XDTCONV = 300., NICE = 1, LREFRESH_ALL = T, LDOWN = T /
+&NAM_PARAM_MFSHALLn CMF_UPDRAFT="EDKF" /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN", XCPHASE = 20. /
+&NAM_TURBn  XIMPL = 1., CTURBLEN = "BL89", CTURBDIM = "1DIM" /
+&NAM_CH_MNHCn       LUSECHEM = T,
+                    LCH_CONV_LINOX = T,
+                    LCH_INIT_FIELD = F,
+                    LCH_CONV_SCAV = T,
+                    CCHEM_INPUT_FILE  = "ReLACS_poet.nam",
+                    CCH_TDISCRETIZATION = "SPLIT"
+                    NCH_SUBSTEPS = 2,
+                    LCH_TUV_ONLINE = F,
+                    CCH_TUV_LOOKUP = " ",
+                    CCH_TUV_CLOUDS = "CHAN",
+                    XCH_TUV_ALBNEW  = -1.,
+                    XCH_TUV_DOBNEW  = -1.,
+                    XCH_TUV_TUPDATE = 60.,
+                    CCH_VEC_METHOD = "MAX",
+                    NCH_VEC_LENGTH = 50,
+                    XCH_TS1D_TSTEP = 600.,
+                    CCH_TS1D_COMMENT = "no comment",
+                    CCH_TS1D_FILENAME = "IO1D" /
+&NAM_CH_SOLVERn CSOLVER  = "EXQSSA",
+                XSLOW    = 100.,
+                XFAST    = 0.1,
+                XDTMIN   = 0.1
+                XDTMAX   = 20.,
+                XDTFIRST = 10.,
+                XRTOL    = 0.001,
+                XATOL    = 1.E2 /
+&NAM_CONF  CCONF = "START", LFLAT = F, CEQNSYS = "DUR",
+            NMODEL = 1, NVERB = 1, CEXP = "ICART", CSEG = "SEG01" ,
+            CSPLIT="BSPLITTING"
+            !NHALO=3 JPHEXT=3  
+            /
+&NAM_DYN  XSEGLEN = 7200, XASSELIN = 0.2, LCORIO = T, LNUMDIFU = F,
+          XALKTOP = 0.005, XALZBOT = 14000. /
+&NAM_NESTING   /
+&NAM_BACKUP XBAK_TIME(1,1)=3600., XBAK_TIME(1,2)=7200. /
+&NAM_BUDGET  CBUTYPE='NONE' /
+&NAM_ISBAn /
+&NAM_SEAFLUXn /
+&NAM_CH_SURFn  LCH_SURF_EMIS=T /
+&NAM_CH_CONTROLn  CCHEM_SURF_FILE= "ReLACS_poet.nam" /
+&NAM_CH_ISBAn    CCH_DRY_DEP="WES89" /
+&NAM_CH_SEAFLUXn CCH_DRY_DEP="WES89" /
+&NAM_CH_WATFLUXn CCH_DRY_DEP="WES89" /
+&NAM_CH_TEBn     CCH_DRY_DEP="WES89" /
+&NAM_DIAG_SURFn /
+&NAM_DIAG_ISBAn /
+&NAM_DIAG_SURF_ATMn /
+&NAM_BLANK /

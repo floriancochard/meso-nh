@@ -1,0 +1,3 @@
+CPPFLAGS = -DLITTLE_endian
+
+OBJS=ieee_is_nan.o comppar.o compress.o decompress.o nearestpow2.o searchgrp.o bitbuff.o

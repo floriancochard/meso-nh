@@ -1,0 +1,18 @@
+LIBX = -lX11
+LIBV5D = -L$(DIR_LIB)/vis5d/$(ARCH) -lv5d
+#LIBV5D = /scratch/us/usl/vis5d-5.2/src/v5d.o \
+#         /scratch/us/usl/vis5d-5.2/src/binio.o
+LIBGRB = -lemos
+
+#############################################################################
+CPPFLAGS += -DO2000
+ifeq ($(shell hostname),rhodes)
+CPPFLAGS += -DRHODES
+endif
+F77FLAGS += -O1 
+F90FLAGS += -O1 
+ifeq ($(B),64)
+F90FLAGS += -r8 
+endif
+LDFLAGS  +=
+OBJS2    =

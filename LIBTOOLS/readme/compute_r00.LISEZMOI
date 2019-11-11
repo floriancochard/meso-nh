@@ -1,0 +1,75 @@
+#
+#compute_r00_pc
+#==============
+# Version PC de la routine compute_r00 utilisee dans le programme DIAG
+#(voir la doc. "Lagrangian trajectory and air-mass tracking analyses with
+#MesoNH by means of Eulerian passive tracers", Gheusi and Stein, 2003)
+# On garde la structure F90 et la routine d'interpolation (interpxyz) mais on 
+#utilise les routines de lecture/ecriture de fichiers diachroniques 
+#(READVAR et WRITEVAR)
+#
+# il faut disposer 
+#   1)des fichiers diachroniques contenant les champs Lagrangiens LGXM,LGYM,LGZM
+#(conversion par conv2dia de fichiers synchrones issus d une simulation avec LLG=T)
+#   2)d'un fichier de namelist nommé compute_r00.nam, contenant le nom des
+#  fichiers diachroniques et eventuellement une liste de champs supplementaires 
+#  devant etre concatenes, ex: 
+cat<<'eof' >compute_r00.nam 
+&NAM_STO_FILE CFILES(1)='AR40_mc2_19990921.00d.Z',
+              CFILES(2)='AR40_mc2_19990920.12d.Z',
+              CFILES(3)='AR40_mc2_19990920.00d.Z',
+              CFILES(4)='AR40_mc2_19990919.12d.Z', 
+              CFILES(5)='AR40_mc2_19990919.00d.Z',
+	      NSTART_SUP(1)=3                    /
+&NAM_FIELD  CFIELD_LAG(1)='THM',
+            CFIELD_LAG(2)='RVM' /
+eof
+#
+# initialiser 
+export DIRLFI=directory_fichier_diachro  # facultatif si les fichiers sont dans le repertoire courant
+# initialiser la variable ARCH (LXNAGf95 sur PC, HPf90 sur HP)
+export ARCH=LXNAGf95
+# executer 
+$MESONH/MAKE/tools/diachro/$ARCH/compute_r00_pc
+#
+# Les champs (X000,Y000,Z000,THM00,RVM00) sont concatenes depuis l instant
+#initial (celui du dernier fichier de NAM_STO_FILE, CFILES(5) dans l exemple)
+#jusqu'a l'instant du fichier traite (tous sauf le dernier de NAM_STO_FILE).
+#Dans l exemple ci-dessus, une deuxieme serie de champs
+#(X001,Y001,Z001,THM01,RVM01) sont concatenes depuis l'instant du fichier
+#repere par NSTART_SUP(1) (CFILES(3) dans l exemple).
+#Ces champs supplementaires sont ajoutes a ceux du fichier traite.
+#Les possibilites de trace sont elargies puisque champs Lagrangiens concatenes
+#et champs synchrones sont dans le meme fichier.
+# 
+# 
+#personnalisation :
+#=================
+#  cf $MESONH/MAKE/tools/diachro/exrwdia.LISEZMOI
+#
+#  Pour modifier le programme: 
+#
+# *initialiser et exporter la variable MNH_LIBTOOLS
+#
+export MNH_LIBTOOLS=$MESONH/MAKE
+#
+# *dans votre repertoire de travail:
+# copier le fichier Makefile.exrwdia de $MNH_LIBTOOLS/tools/diachro
+#
+cp $MNH_LIBTOOLS/tools/diachro/Makefile.exrwdia Makefile
+#
+# *creer un repertoire qui contiendra les fichiers sources nommé src
+# puis y copier exrwdia.f90, le modifier eventuellement
+#
+mkdir src
+cp $MNH_LIBTOOLS/tools/diachro/src/EXTRACTDIA/compute_r00_pc.f90 src/.
+#
+# compiler par 
+#
+gmake PROG=compute_r00_pc
+#
+# *completer le Makefile (liste des objets dans OBJS et dependances) 
+# si vous ajoutez des routines (exemple dans
+#                            $MESONH/MAKE/tools/diachro/Makefile.extractdia)
+# 
+#  Mise à jour le 30/04/2004

@@ -1,0 +1,5 @@
+set -x
+
+rm -f *.dir *.hdr *.asc file_for_xtransfer
+rm -f ICARTT1008_PGD_15km.* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+

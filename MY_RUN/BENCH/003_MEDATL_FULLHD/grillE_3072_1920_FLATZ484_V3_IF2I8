@@ -1,0 +1,127 @@
+# GRILLE 6144x6144x128
+#
+# GRID FACTOR & NSTEP
+#export SUFFIX=FLATZ484_V3_IF2I8
+export SUFFIX=_MNH490S7
+#
+#export GRIDFAC=64
+#export GRIDFAC=1 # 192x120
+#export GRIDFAC=2 # 384x240
+#export GRIDFAC=4 # 768x480
+#export GRIDFAC=8 # 1536x960
+#export GRIDFAC=16 MPI_BUFFER_SIZE=200 # 3072x1920
+export GRIDFAC=32 MPI_BUFFER_SIZE=500
+#export GRIDFAC=64 MPI_BUFFER_SIZE=1000
+export NSTEP=51
+#
+# job parameter
+#
+export EXECDIR=${SCRATCH}/${CONFEXP}${XYZ}
+#
+export TIME_PIDEAL=1800  # max CPU time for PREP_IDEAL_CASE 
+export QUEUE_PIDEAL=batch # batch queue test/bigmem
+export QUEUE=large # batch queue test/bigmem
+#
+export NTH=1
+export TIME=3600                # max ELAPSE CPU time for MESONH                 
+#export NBP=0001 CORE=32 NTH=1 TIME=1800 
+#3export NBP=0016 CORE=8 NTH=4 TIME=1800 
+#export NBP=0032 CORE=4 NTH=8 TIME=1800  # OK
+#export NBP=0032 CORE=8 NTH=4 TIME=1800 
+export NBP=0064 CORE=8 NTH=4 TIME=1800 
+#export NBP=0004 CORE=32 NTH=1 TIME=1800 
+#export NBP=0008 CORE=32 NTH=1 TIME=1800 
+#export NBP=0016 CORE=32 NTH=1 TIME=1800 
+#export NBP=0128 CORE=32 TIME=1800 
+#export NBP=0256 CORE=4 TIME=1800 PROC_ARCH=nhm QUEUE=prod
+#export NBP=0512 CORE=4 TIME_MNH=7200 PROC_ARCH=nhm
+#export NBP=128 CORE=8 TIME_MNH=7200  PROC_ARCH=hpt
+#export NBP=512 CORE=8 TIME_MNH=3600  PROC_ARCH=nhm
+#export NBP=1024 CORE=8 TIME_MNH=3600  PROC_ARCH=nhm
+#export NBP=1024 CORE=4 TIME=86400 PROC_ARCH=nhm QUEUE=bigprod
+#export NBP=2048 CORE=8 TIME_MNH=3600 PROC_ARCH=nhm
+#export NBP=2048 CORE=4 TIME=24:00:00 PROC_ARCH=nhm # PROBLEM
+#export NBP=2048 CORE=8 TIME_MNH=3600 PROC_ARCH=nhm
+#export NBP=3072 CORE=8 TIME_MNH=3600 PROC_ARCH=nhm
+#export NBP=4096 CORE=8 TIME_MNH=7200 PROC_ARCH=nhm
+#export NBP=8192 CORE=8 TIME_MNH=3600
+#export NBP=10240 CORE=8 TIME_MNH=3600
+#export NBP=12288 CORE=8 TIME_MNH=3600
+#export NBP=16384 CORE=8 TIME_MNH=3600
+#
+#
+export NCPUS=${NCPUS-${CORE}} MPIPROCS=${CORE}                                                                                
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )                                                 
+export RUN_MODE="${CORE}CORE_${NBP}NBP"
+export MEM_MAX=32000000
+export MEM="$( echo " scale=0 ;  ${MEM_MAX} / ${NCPUS} " | bc -l )"
+
+ulimit -c 0
+export MNHENV="
+module load hpctoolkit
+export OMP_NUM_THREADS=1
+#export OMPI_MCA_rmaps_base_schedule_policy=socket # -bysocket
+#export OMPI_MCA_orte_process_binding=core         # -bind-to-core
+export OMPI_MCA_mpool_rdma_print_stats=1
+export OMPI_MCA_mca_param_files=/opt/mpi/bullxmpi/1.1.10.1/etc/openmpi-mca-params.conf
+#export OMPI_MCA_plm_slurm_args=--cpu_bind=mask_cpu:0xFFFFFFFF
+export OMPI_MCA_btl_openib_want_fork_support=0 
+export OMPI_MCA_btl_openib_use_async_event_thread=0
+#export OMPI_MCA_btl_openib_receive_queues=S,4096,8,6,4:S,65536,8,6,4 # OK 9MO*128Proc
+#export OMPI_MCA_btl_openib_receive_queues='S,128,8:S,2048,8:S,12288,8:S,65536,8'
+export OMPI_MCA_btl_openib_receive_queues='S,128,256,192,128:S,2048,256,128,32:S,12288,256,128,32:S,65536,256,128,32'
+export OMPI_MCA_btl_sm_use_knem=0
+"
+export HPCRUN="hpcrun -o dir_messure-${NBP}"
+export MONORUN="mpirun -loadbalance -np $NBP ${HPCRUN}"
+export MPIRUN="mpirun  -np $NBP ${HPCRUN}"
+
+
+# prep_pgd NoPROC write
+export MPI_BUFFER_SIZE=200
+export NB_PROCIO_W_PGD=8
+#export NB_PROCIO_W_PGD=1
+
+#
+# Initial grid & time parameter
+#
+export XLAT0=50.0       XLON0=-60.0
+
+export   NIMAX0=192     NJMAX0=120  CSPLIT="BSPLITTING"
+export XDELTAX0=64000.0 XDELTAY0=64000.0
+
+export XTSTEP0=0.5
+#export NKMAX=64
+export NKMAX=126
+
+export NB_PROCIO_R_MNH=128
+export NB_PROCIO_W_MNH=128
+
+#
+# MNH parameter
+#
+export LISTE_CPRESOPT="CRESI"
+export NITR=16
+export NIMAX=$( echo "${GRIDFAC} * ${NIMAX0} " | bc -l )
+export NJMAX=$( echo "${GRIDFAC} * ${NJMAX0} " | bc -l )
+#
+export XDELTAX=$( echo " scale=5 ; ${XDELTAX0} / ${GRIDFAC} " | bc -l )
+export XDELTAY=$( echo " scale=5 ; ${XDELTAY0} / ${GRIDFAC} " | bc -l )
+export XDX=${XDELTAX}
+export XDY=${XDELTAY}
+
+#
+export CINIFILE=$( printf "KW%4.4d\n" ${NIMAX} )
+#
+export CEXP=$( printf "K%4.4d\n" ${NIMAX} )
+export CSEG="SG474"
+#
+export XTSTEP=$( echo " scale=5 ; ${XTSTEP0} / ${GRIDFAC} " | bc -l )
+export XSEGLEN=$( echo "$NSTEP * $XTSTEP" | bc -l )
+
+# PGDH = PGD Helene
+export CPGDFILE=$( printf "PGD%5.5d" ${NIMAX} )
+
+export CONFEXP=$( printf "grille_%5.5dx%5.5d${SUFFIX}" ${NIMAX} ${NJMAX} )
+export EXECDIR=${SCRATCHDIR}/${CONFEXP}${XYZ}
+#export EXECDIR=${SCRATCHDIR}/${CONFEXP}${XYZ}/${RUN_MODE}

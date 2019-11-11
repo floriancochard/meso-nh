@@ -1,0 +1,82 @@
+=====================================================
+===== Readme for 013_Iroise_ideal_case_coupling
+=====================================================
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~ To compile Meso-NH with the coupling stuff
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The automatic compilation of Meso-NH works with
+gfortran/openMPI.
+
+Adaptation of the Makefile for OASIS is required
+if you want to use another compiler.
+
+-----------------------------------------------------
+1. Define the environnment variables for Meso-NH
+-----------------------------------------------------
+export VER_CDF=CDFAUTO
+export VER_OASIS=OASISAUTO
+#Juan , no needed anymore export CPLOASIS=1
+./configure
+. ../conf/profile_mesonh
+
+
+CDFAUTO and OASISAUTO means you want to use OASIS and
+NETCDF librairies compiled with the Meso-NH package.
+
+-----------------------------------------------------
+2. Compile the MASTER branch of Meso-NH
+-----------------------------------------------------
+make
+make installmaster  
+
+-----------------------------------------------------
+4. To launch the coupling run
+-----------------------------------------------------
+Before launching the coupling run, you have to define
+the environnment variable PREP_PGD_FILES.
+It corresponds to the directory where the files
+needed by the PGD program (ECOCLIMAP, gtopo30, SAND*, CLAY*)
+are stored. You can download these files at this location:
+http://mesonh.aero.obs-mip.fr/mesonh52/Download
+
+The toy model need the etopo2.nc file, you can dowload it there:
+http://mesonh.aero.obs-mip.fr/mesonh49/Download
+You have to put this file at the same location as the pgd files.
+
+Define the PREP_PGD_FILES environnment variable:
+export PREP_PGD_FILES=/full/path/of/your/files/directory
+
+Then go to the coupling ktest:
+cd mnh_v5-3-0/MY_RUN/KTEST/013_Iroise_ideal_case_coupling/
+
+
+Launch the coupling run:
+./run_013_Iroise_real_case_coupling
+
+NB:
+---
+
+~~ By default the toy represent a wave model, to change the toy
+   for an oceanic model, you have to modify the file:
+   A_RUN_MNH_TOY/run_mesonh_xyz
+   and put
+   export TYPE_TOY='OCEAN'
+
+~~ By default the scripts are in NCL (version installed with
+   the Meso-NH package). To use the python scripts, you have to change
+   the scripts run* where python can be used.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~ Tree of the KTEST 013 for the coupling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+013_Iroise_real_case_coupling/
+~~~~ 1_INPUT_MNH/
+~~~~ 2_INPUT_TOY/
+~~~~ 3_INPUT_OASIS/
+~~~~ A_RUN_MNH_TOY/
+~~~~ Readme
+~~~~ Makefile
+~~~~ run_013_Iroise_real_case_coupling
+

@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -sf ../005_conv2dia/DUST7.1.SEG02.004_dia.lfi .
+rm -f dir.0*
+${POSTRUN} diaprog < dirdust
+

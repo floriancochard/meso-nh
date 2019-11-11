@@ -1,0 +1,75 @@
+Description of namelist variables used to run mesonh simulation
+###############################################################
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+######################################################################################################
+
+&NAM_LUNITn  
+CINIFILE 	= "RELIEF3D.48"	; name of the initial file produced by PREP_IDEAL_CASE
+
+&NAM_CONFn  
+LUSERV 		= F 		; switch to use vapor water (prognostic variable)
+
+&NAM_DYNn 
+XTSTEP 		= 45.0 		; time step (in second) 
+LITRADJ 	= T		; switch to adjust the number of iterations for the pressure solver
+LHORELAX_UVWTH 	= F 		; switch to apply the horizontal relaxation on the outermost verticals of the model 
+					for U,V,W TH variables. 
+LHORELAX_RV 	= F 		; switch to apply the horizontal relaxation on the outermost verticals of the model
+                                        for RV variable.
+LVE_RELAX 	= T		; switch to apply the vertical relaxation on the outermost verticals of the model
+NRIMX 		= 6 		; number of points in the lateral relaxation area in the x direction
+NRIMY 		= 3 		; number of points in the lateral relaxation area in the y direction
+XRIMKMAX 	= .001666 	; maximum value (in s-1) of the relaxation coefficient for the lateral relaxation area
+
+&NAM_ADVn 	(scalar advection)
+CMET_ADV_SCHEME	="PPM_01" 	; Advection scheme used for temperature, water substances and TKE variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+				 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+				 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+				 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+				 'PPM_00' PPM advection scheme without constraint 
+				 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+CSV_ADV_SCHEME	="FCT2ND" 	;Advection scheme used for the tracer variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+                                 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+                                 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+                                 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+                                 'PPM_00' PPM advection scheme without constraint
+                                 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+
+&NAM_LBCn 
+CLBCX 		= 2*"OPEN" 	; type of lateral boundary condition at the left and right boundaries along x
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+CLBCY 		= 2*"CYCL" 	; type of lateral boundary condition at the left and right boundaries along y
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+
+&NAM_CONF 
+CCONF 		= "START" 	; configuration of all models
+					('START' or 'RESTAT' for a restart)
+NMODEL 		= 1 		; number of nested models
+NVERB 		= 5		; verbosity level       (0 for minimum of prints
+                                                        5 for intermediate level of prints
+                                                        10 for maximum of prints)
+CEXP 		= "REL3D" 	; experiment name (no blank character)
+CSEG 		= "EXP01" 	; segment name (no blank character)
+
+&NAM_DYN 
+XSEGLEN 	=1000. 		; segment length (in second)
+XASSELIN 	= 0.2 		; amplitude of the Asselin temporal filter for meteorological variables
+LCORIO 		= F 		; switch for the Coriolis parameters
+				  (.FALSE. the Earth rotation effects are neglected
+				   .TRUE. the Earth rotation is taken into account )
+XALKTOP 	= 0.005 	; maximum value of the Rayleigh damping (in s-1)
+					at the top of the upper absorbing layer
+XALZBOT 	= 12570. 	; height (in meter) in the physical space of the upper absorbing layer base
+LNUMDIFU 	=.F. 		; switch to activate the numerical diffusion for momentum
+
+&NAM_BACKUP 
+XBAK_TIME(1,1) 	= 500.		; an array of increments (in second) from the beginning of the segment 
+				to the instant where the i-th fields output on FM-files is realized by model "m" 
+XBAK_TIME(1,2) 	= 1000. 

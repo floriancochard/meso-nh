@@ -1,0 +1,18 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_FILE_NAMES HATMFILE='ecmwf.OD.20000924.12',HATMFILETYPE='GRIBEX',
+                HPGDFILE='pgd_dust_30km',
+                CINIFILE='S7020000924.12' /
+&NAM_AERO_CONF  LORILAM=.FALSE., LDUST=.TRUE. /
+&NAM_REAL_CONF  NVERB=5,
+		CEQNSYS='DUR',
+		CPRESOPT='RICHA' 
+                !JPHEXT=3 , NHALO=3 
+                /
+&NAM_VER_GRID   NKMAX=30,
+                YZGRID_TYPE='FUNCTN',
+                ZDZGRD=100.,
+                ZDZTOP=3000.,
+                ZZMAX_STRGRD=1500.,
+                ZSTRGRD=10.,
+                ZSTRTOP=15. /
+

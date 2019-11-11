@@ -1,0 +1,36 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+
+ln -sf ../002_mesonh/ARM__.1.CEN4T.000.* .
+
+rm -f visu_ARM.*.png
+
+ncl  plot_arm.ncl
+display visu_ARM.000001.png
+display visu_ARM.000002.png
+display visu_ARM.000003.png
+display visu_ARM.000004.png
+display visu_ARM.000005.png
+display visu_ARM.000006.png
+display visu_ARM.000007.png
+display visu_ARM.000008.png
+display visu_ARM.000009.png
+display visu_ARM.000010.png
+display visu_ARM.000011.png
+display visu_ARM.000012.png
+display visu_ARM.000013.png
+display visu_ARM.000014.png
+display visu_ARM.000015.png
+display visu_ARM.000016.png
+display visu_ARM.000017.png
+display visu_ARM.000018.png
+display visu_ARM.000019.png
+display visu_ARM.000020.png
+display visu_ARM.000021.png
+display visu_ARM.000022.png
+display visu_ARM.000023.png
+display visu_ARM.000024.png
+exit 0

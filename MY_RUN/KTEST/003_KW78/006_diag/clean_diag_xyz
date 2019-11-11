@@ -1,0 +1,4 @@
+set -x
+rm -f KWRAI* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+rm -f file_for_xtransfer
+

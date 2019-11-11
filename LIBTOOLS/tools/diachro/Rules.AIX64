@@ -1,0 +1,9 @@
+#
+# Pas de diaprog sur IBM 
+#
+PROGALL = conv2dia
+#
+#############################################################################
+F77FLAGS = -q64 -qfixed -O3 -qstrict
+F90FLAGS = -q64 -qfree=f90 -qsuffix=f=f90 -O3 -qstrict
+

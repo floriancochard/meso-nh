@@ -1,0 +1,4 @@
+set -x
+rm -f 16JAN* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+rm -f DIAG1.nam file_for_xtransfer
+

@@ -1,0 +1,693 @@
+!     ######spl
+      MODULE MODI_PVFCT
+!     ##################
+!
+INTERFACE
+!
+SUBROUTINE PVFCT(PWORKT,PWORK2D,K)
+REAL,DIMENSION(:) :: PWORKT
+REAL,DIMENSION(:,:) :: PWORK2D
+INTEGER           :: K
+END SUBROUTINE PVFCT
+!
+END INTERFACE
+END MODULE MODI_PVFCT
+!     ######spl
+      SUBROUTINE PVFCT(PWORKT,PWORK2D,K)
+!     ##################################
+!
+!!****  *PVFCT* - 
+!!
+!!    PURPOSE
+!!    -------
+!      
+!
+!!**  METHOD
+!!    ------
+!!     
+!!     N.A.
+!!
+!!    EXTERNAL
+!!    --------
+!!      None
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module
+!!
+!!      Module
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       24/11/95
+!!      Updated   PM   02/12/94
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_RESOLVCAR
+USE MODD_COORD
+USE MODD_GRID
+USE MODD_TIT
+USE MODD_GRID1
+USE MODD_TYPE_AND_LH
+USE MODD_PARAMETERS
+USE MODD_DIM1
+USE MODD_TITLE
+USE MODD_CVERT
+USE MODD_PVT
+USE MODD_NMGRID
+USE MODD_SUPER
+USE MODD_ALLOC_FORDIACHRO
+USE MODD_EXPERIM
+USE MODN_NCAR
+USE MODN_PARA
+USE MODE_GRIDPROJ
+USE MODI_VARFCT
+
+IMPLICIT NONE
+
+INTERFACE
+      SUBROUTINE IMCOU_FORDIACHRO(PTABV,PINT,HLEGEND,HTEXT)
+      REAL,DIMENSION(:,:) :: PTABV
+      REAL                :: PINT
+      CHARACTER(LEN=*)    :: HTEXT, HLEGEND
+      END SUBROUTINE IMCOU_FORDIACHRO
+END INTERFACE
+!!! Mars 2000
+INTERFACE
+      SUBROUTINE IMCOUPV_FORDIACHRO(PU,PW,HLEGEND,HTEXT)
+      REAL,DIMENSION(:,:) :: PU,PW
+      CHARACTER(LEN=*)    :: HTEXT, HLEGEND
+      END SUBROUTINE IMCOUPV_FORDIACHRO
+END INTERFACE
+!!! Mars 2000
+
+
+COMMON/TEMV/XZWORKZ,XZZDS,NINX,NINY
+COMMON/LOGI/LVERT,LHOR,LPT,LXABS
+#include "big.h"
+REAL,DIMENSION(N2DVERTX,2500) :: XZWORKZ
+!REAL,DIMENSION(1000,400) :: XZWORKZ
+!REAL,DIMENSION(200,200) :: XZWORKZ
+REAL,DIMENSION(N2DVERTX)     :: XZZDS
+!REAL,DIMENSION(1000)     :: XZZDS
+!REAL,DIMENSION(200)     :: XZZDS
+INTEGER                 :: NINX, NINY
+LOGICAL                 :: LVERT, LHOR, LPT, LXABS
+!
+!*       0.1   Dummy arguments
+!              ---------------
+
+REAL,DIMENSION(:) :: PWORKT
+REAL,DIMENSION(:,:) :: PWORK2D
+INTEGER           :: K
+!
+!*       0.1   Local variables
+!              ---------------
+
+INTEGER          :: J,JILOOP, JKLOOP
+INTEGER          :: ICOMPT=0
+INTEGER,SAVE     :: INUM
+INTEGER          :: JLOOPK, ISUPERDIA
+INTEGER          :: IKU, IKB, IKE, IK1, IK2, IT
+INTEGER          :: ILENT, ILENU
+INTEGER          :: INDN, INDT
+INTEGER          :: IART              
+
+REAL,SAVE        :: ZWL, ZWR, ZWB, ZWT
+REAL,SAVE        :: ZHMIN, ZHMAX
+REAL             :: ZX, ZY, ZLAT, ZLON
+REAL,DIMENSION(:,:,:),ALLOCATABLE,SAVE :: ZWORK2D
+REAL,DIMENSION(:,:),ALLOCATABLE,SAVE :: ZWORK2DT
+REAL,DIMENSION(:),ALLOCATABLE,SAVE :: ZWORK1D
+
+CHARACTER(LEN=40)  :: YTEXTE
+CHARACTER(LEN=16),DIMENSION(:),ALLOCATABLE,SAVE :: YGROUP
+
+!
+!------------------------------------------------------------------------------
+
+!!!!!!!!!!! 110797
+IF(LPVT .AND. NLOOPSUPER == 1)THEN
+ZHMIN=XHMIN; ZHMAX=XHMAX
+ENDIF
+!!!!!!!!!!! 110797
+IKU=NKMAX+2*JPVEXT
+IKB=1+JPVEXT
+IKE=IKU-JPVEXT
+SELECT CASE(CTYPE)
+  CASE('CART','MASK','SPXY')
+    IK1=MAX(IKB,NKL)
+    IK2=MIN(IKE,NKH)
+  CASE DEFAULT
+    IK1=1
+    IK2=NKH
+!   IK2=SIZE(PWORK2D,1)
+END SELECT
+IF(LPBREAD)THEN
+  IF(ALLOCATED(ZWORK2D))THEN
+    DEALLOCATE(ZWORK2D)
+  ENDIF
+  IF(ALLOCATED(ZWORK2DT))THEN
+    DEALLOCATE(ZWORK2DT)
+  ENDIF
+  IF(ALLOCATED(YGROUP))THEN
+    DEALLOCATE(YGROUP)
+  ENDIF
+  ICOMPT=0
+  RETURN
+ENDIF
+IF(LCOLINE)CALL TABCOL_FORDIACHRO
+IF(LPVT .OR. LPXT .OR. LPYT)THEN
+   
+  IF(SIZE(PWORKT) > N2DVERTX)THEN
+!  IF(SIZE(PWORKT) > 1000)THEN
+    IF(LPVT  .OR. LPYT .OR. (LPXT .AND..NOT.LXABSC))THEN
+    print *,' Operation impossible en raison du nombre de points trop eleve sur&
+& l''axe des abscisses (temps)'
+    ELSE IF(LPXT .AND. LXABSC)THEN
+    print *,' Operation impossible en raison du nombre de points trop eleve sur&
+& l''axe des ordonnees (temps)'
+    ENDIF
+    print *,'( Limitation due a la dimension actuelle d''un tableau de travail du NCAR)'
+    print *,' 2 solutions :'
+!    print *,'  - Sortie par plages de 1000 temps '
+    print *,'  - Sortie par plages de ',N2DVERTX,' temps '
+    print *,'  - Introduction d''un increment temporel dans la directive '
+    print *,'    (doit etre 1 multiple entier de l''increment d''enregistrement)'
+    print *,'    Ex :   _T_0_to_36000_by_360 '
+    LPBREAD=.TRUE.
+    RETURN
+  ENDIF
+
+  ICOMPT=ICOMPT+1
+  if(nverbia > 0)then
+    print *,'** Pvfct ICOMPT ',ICOMPT
+  endif
+! On suppose meme longueur temps
+    ALLOCATE(ZWORK2D(SIZE(PWORK2D,1),SIZE(PWORK2D,2),NSUPERDIA))
+  if(nverbia > 0)then
+    print *,'** Pvfct  AP ALLOCATE'
+  endif
+    IF(LPXT .AND. LXABSC)THEN
+      ALLOCATE(ZWORK2DT(SIZE(PWORK2D,1),SIZE(PWORK2D,2)))
+    ELSE
+      ALLOCATE(ZWORK2DT(SIZE(PWORK2D,2),SIZE(PWORK2D,1)))
+    ENDIF
+    ALLOCATE(YGROUP(NSUPERDIA))
+  if(nverbia > 0)then
+    print *,'** Pvfct  AP ALLOCATE,NSUPERDIA ',NSUPERDIA
+  endif
+  IF(ICOMPT == 1)THEN
+    IF(LDATFILE)CALL DATFILE_FORDIACHRO
+    INUM=0
+    IF(NSUPERDIA > 1)THEN
+      LSUPER=.TRUE.
+    ELSE
+      LSUPER=.FALSE.
+    ENDIF
+    NSUPER=0
+  ENDIF
+
+  if(nverbia > 0)then
+ print *,' NMGRID ',NMGRID
+  endif
+  CALL COMPCOORD_FORDIACHRO(NMGRID)
+  if(nverbia > 0)then
+! Elimination de l'impression suivante car souvent plantage si NIINF ...
+! =0 ; par ex cas PVT
+!print *,' NMGRID ',NMGRID,NiINF,NISUP,NJINF,NJSUP,XXX(NIINF,NMGRID),XXX(NISUP,NMGRID)
+   print *,' ** Pvfct AP COMPCOORD'
+  endif
+  IF(ICOMPT > NSUPERDIA)THEN
+    if(nverbia > 0)then
+  print *,' ** PVFCT A Verifier AI mis NSUPERDIA a la place de ICOMPT '
+  print *,' pour essayer de resoudre le pb de _on_ sans rien derriere '
+    endif
+  ZWORK2D(:,:,NSUPERDIA)=PWORK2D(:,:)
+  YGROUP(NSUPERDIA)=CGROUP
+
+  ELSE
+
+  ZWORK2D(:,:,ICOMPT)=PWORK2D(:,:)
+  YGROUP(ICOMPT)=CGROUP
+  ENDIF
+  if(nverbia > 0)then
+! print *,' ICOMPT ZWORK2D ',ICOMPT,ZWORK2D
+  print *,' ICOMPT sans ZWORK2D ',ICOMPT
+  endif
+
+  ! IL FAUDRA CONSIDERER LE CAS L1DT=.TRUE. pour les altitudes
+
+    INUM=INUM+1
+  if(nverbia > 0)then
+ print *,' INUM ',INUM
+  endif
+
+    IKU=NKMAX+2*JPVEXT
+    IKB=1+JPVEXT
+    IKE=IKU-JPVEXT
+
+!00000000000000000000000000000000000000000000000000000000000000000000000
+    IF(ICOMPT == 1)THEN
+
+    IF(LPVT .OR. LPYT .OR. (LPXT .AND..NOT.LXABSC))THEN
+      ZWL=PWORKT(1); ZWR=PWORKT(SIZE(PWORKT,1))
+!!!!!Oct 2001
+   IART=0
+IF(ZWL == ZWR .AND. LUMVMPV)THEN
+   print *,'- Attention ARTIFICE  CORRECT pour sortie Profil vent, cas LUMVMPV=T '
+   IF(LHEURX)THEN
+   ZWR=ZWL+1
+   ZWL=ZWL-1
+   ELSE
+   ZWR=ZWL+1*3600
+   ZWL=ZWL-1*3600
+   ENDIF
+   IART=1
+ENDIF
+!!!!!Oct 2001
+    ELSE IF(LPXT .AND. LXABSC)THEN
+      ZWL=XXX(NIINF,NMGRID); ZWR=XXX(NISUP,NMGRID)
+    ENDIF
+    if(nverbia > 0)then
+    print *,' zwl zwr ',ZWL,ZWR
+    endif
+
+    IF((XHMAX-XHMIN == 0.).OR.(XHMAX<=XHMIN))THEN
+      IF(LPRESY)THEN
+      ELSE
+      XHMIN=0.
+      ENDIF
+    SELECT CASE(CTYPE)
+      CASE('CART')
+        IF(LPVT)THEN
+        IF(L1DT)THEN
+! Mars 2000 Cas d'un profil issu matrice 3D enreg. a hte frequence
+! Besoin de l'altitude vraie
+! On suppose que le compcoord(NMGRID) a ete fait ds oper
+	  IF(NIL /= 1 .OR. NJL /=1)THEN
+!! Mars 2001 Veronique Ducrocq m'a signale le pb
+	    IF(LICP .OR. LJCP)THEN
+              XHMAX=XXZ(IKE,NMGRID)
+	    ELSE
+	      XHMAX=XZZ(NIL,NJL,IKE)
+	    ENDIF
+	  ELSE
+! Cas des bilans par ex MASK resultat de compressions sur 2 axes
+! on les met au point 1,1 
+          XHMAX=XXZ(IKE,NMGRID)
+	  ENDIF
+        ELSE
+          IF(LPRESY .AND. XHMIN > XHMAX)THEN
+          ELSE
+          IF(LPRESY)THEN
+          print *,' ** pvfct size(xpresm,1,2)',SIZE(XPRESM,1),SIZE(XPRESM,2)
+            XHMIN=MAXVAL(XPRESM(:,IKB))
+!         XHMIN=XWORKZ(NPROFILE,IKB,NMGRID)
+          ENDIF
+          IF(LPRESY)THEN
+            XHMAX=MINVAL(XPRESM(:,IKE))
+          ELSE
+            XHMAX=XWORKZ(NPROFILE,IKE,NMGRID)
+          ENDIF
+          ENDIF
+          IF(LPRESY)THEN
+            print *,' LPRESY,XHMIN,XHMAX ',LPRESY,XHMIN,XHMAX
+          ENDIF
+        ENDIF
+        ENDIF
+      CASE('MASK')
+        XHMAX=XXZ(IKE,NMGRID)
+      CASE('SSOL')
+        XHMIN=MIN(0.,XZSOL(1))
+        XHMAX=MAX(0.,XZSOL(SIZE(XZSOL)))
+        IF(XHMAX - XHMIN == 0.)THEN
+          XHMIN=XHMIN-1.
+          XHMAX=XHMAX+1.
+        ENDIF
+      CASE('DRST','RAPL')
+	IF(.NOT.LTINCRDIA(NLOOPSUPER,NLOOPN))THEN
+	  XHMIN=MINVAL(XTRAJZ(NLVLKDIA(1:NBLVLKDIA(NLOOPSUPER,NLOOPN), &
+					 NLOOPSUPER,NLOOPN), &
+          NTIMEDIA(1:NBTIMEDIA(NLOOPSUPER,NLOOPN),NLOOPSUPER,NLOOPN),NLOOPN))
+	  XHMAX=MAXVAL(XTRAJZ(NLVLKDIA(1:NBLVLKDIA(NLOOPSUPER,NLOOPN), &
+					 NLOOPSUPER,NLOOPN), &
+          NTIMEDIA(1:NBTIMEDIA(NLOOPSUPER,NLOOPN),NLOOPSUPER,NLOOPN),NLOOPN))
+	ELSE
+          XHMIN=MINVAL(XTRAJZ(NLVLKDIA(1:NBLVLKDIA(NLOOPSUPER,NLOOPN), &
+					 NLOOPSUPER,NLOOPN), &
+          NTIMEDIA(1,NLOOPSUPER,NLOOPN):NTIMEDIA(2,NLOOPSUPER,NLOOPN): &
+	  NTIMEDIA(3,NLOOPSUPER,NLOOPN),NLOOPN))
+!         NTIMEDIA(1:2:NTIMEDIA(3,NLOOPSUPER,NLOOPN),NLOOPSUPER,NLOOPN),NLOOPN))
+          XHMAX=MAXVAL(XTRAJZ(NLVLKDIA(1:NBLVLKDIA(NLOOPSUPER,NLOOPN), &
+					 NLOOPSUPER,NLOOPN), &
+          NTIMEDIA(1,NLOOPSUPER,NLOOPN):NTIMEDIA(2,NLOOPSUPER,NLOOPN): &
+	  NTIMEDIA(3,NLOOPSUPER,NLOOPN),NLOOPN))
+!         NTIMEDIA(1:2:NTIMEDIA(3,NLOOPSUPER,NLOOPN),NLOOPSUPER,NLOOPN),NLOOPN))
+	ENDIF
+	CALL VALMNMX(XHMIN,XHMAX)
+    END SELECT
+    END IF
+    if(nverbia > 0)then
+    print *,' ** pvfct LPXT,LXABSC ',LPXT,LXABSC
+    endif
+    IF(LPVT)THEN
+      ZWB=XHMIN
+      ZWT=XHMAX
+      if(nverbia > 0)then
+        print *,' **pvfct ZWB,ZWT ',ZWB,ZWT
+      endif
+    ELSE IF(LPXT .AND. LXABSC)THEN
+      ZWB=PWORKT(1)
+      ZWT=PWORKT(SIZE(PWORKT,1))
+!     print *,PWORKT(1),PWORKT(SIZE(PWORKT,1)),SIZE(PWORKT,1)
+    ELSE IF(LPXT .AND..NOT.LXABSC)THEN
+      ZWB=XXX(NIINF,NMGRID)
+      ZWT=XXX(NISUP,NMGRID)
+    ELSE IF(LPYT)THEN
+      ZWB=XXY(NJINF,NMGRID)
+      ZWT=XXY(NJSUP,NMGRID)
+    ENDIF
+    LVERT=.TRUE.
+    LHOR=.FALSE.
+    LPT=LPXT
+    CALL GSCLIP(1)
+    CALL CPSETI('SET',0)
+    CALL CPSETI('MAP',4)
+    if(nverbia > 0)then
+     print *,'** Pvfct ZWL,ZWR,ZWB,ZWT ',ZWL,ZWR,ZWB,ZWT
+    endif
+    IF(LVPTVUSER)THEN
+      CALL SET(XVPTVL,XVPTVR,XVPTVB,XVPTVT,ZWL,ZWR,ZWB,ZWT,1)
+    ELSE
+      CALL SET(.1,.9,.1,.9,ZWL,ZWR,ZWB,ZWT,1)
+    ENDIF
+!   print *,' PVFCT ZWL,ZWR,ZWB,ZWT ',ZWL,ZWR,ZWB,ZWT
+
+    ENDIF
+
+!!!!!Oct 2001
+    IF(IART == 1)THEN
+    CALL FRSTPT((ZWL+ZWR)/2,ZWB)
+    CALL VECTOR((ZWL+ZWR)/2,ZWT)
+    ENDIF
+!!!!!Oct 2001
+!0000000000000000000000000000000000000000000000000000 je crois
+    if(nverbia > 0)then
+      print *,' **pvfct AV NINX ',NINX
+    endif
+
+    IF(LPVT .OR. LPYT .OR. (LPXT .AND..NOT.LXABSC))THEN
+      NINX=SIZE(PWORKT)
+    ELSE IF(LPXT .AND. LXABSC)THEN
+      NINX=SIZE(PWORK2D,1)
+    ENDIF
+    if(nverbia > 0)then
+      print *,' **pvfct NINX ',NINX
+    endif
+    SELECT CASE(CTYPE)
+      CASE('CART','MASK')
+	IF(LPVT)THEN
+          NINY=IKU
+	ELSE IF(LPXT .AND. LXABSC)THEN
+          NINY=SIZE(PWORK2D,2)
+	ELSE IF(LPYT .OR. (LPXT .AND..NOT.LXABSC))THEN
+          NINY=SIZE(PWORK2D,1)
+	ENDIF
+      CASE('SSOL')
+        NINY=SIZE(XZSOL)
+      CASE('DRST','RAPL')
+        NINY=SIZE(PWORK2D,1)
+    END SELECT
+
+    DO JILOOP=1,NINX
+      IF(LPVT .OR. LPYT .OR. (LPXT .AND..NOT.LXABSC))THEN
+        XZZDS(JILOOP)=PWORKT(JILOOP)
+      ELSE IF(LPXT .AND. LXABSC)THEN
+        XZZDS(JILOOP)=XXX(NIINF+JILOOP-1,NMGRID)
+	XZWORKZ(JILOOP,:)=PWORKT(JILOOP)
+      ENDIF
+      DO JKLOOP=1,NINY
+      IF(LPVT)THEN
+      SELECT CASE(CTYPE)
+	CASE('CART')
+	IF(l1DT)THEN
+! Mars 2000 Cas d'un profil issu matrice 3D enreg. a hte frequence
+! Besoin de l'altitude vraie
+! On suppose que le compcoord(NMGRID) a ete fait ds oper
+	  IF(NIL /= 1 .OR. NJL /=1)THEN
+!! Mars 2001 Veronique Ducrocq m'a signale le pb
+	    IF(LICP .OR. LJCP)THEN
+	      XZWORKZ(JILOOP,JKLOOP)=XXZ(JKLOOP,NMGRID)
+	    ELSE
+	      XZWORKZ(JILOOP,JKLOOP)=XZZ(NIL,NJL,JKLOOP)
+	    ENDIF
+	  ELSE
+	    XZWORKZ(JILOOP,JKLOOP)=XXZ(JKLOOP,NMGRID)
+	  ENDIF
+	ELSE
+	  XZWORKZ(JILOOP,JKLOOP)=XWORKZ(NPROFILE,JKLOOP,NMGRID)
+          IF(LPRESY)THEN
+            XZWORKZ(JILOOP,JKLOOP)=XPRESM(JILOOP,JKLOOP)
+            print *,' **pvfct JILOOP,JKLOOP,XPRESM ',JILOOP,JKLOOP,XPRESM(JILOOP,JKLOOP) 
+            IF(JILOOP == NINX .AND. JKLOOP == NINY)THEN
+              DEALLOCATE(XPRESM)
+            ENDIF
+          ENDIF
+        ENDIF
+	CASE('MASK')
+	  XZWORKZ(JILOOP,JKLOOP)=XXZ(JKLOOP,NMGRID)
+	CASE('SSOL')
+          XZWORKZ(JILOOP,JKLOOP)=XZSOL(JKLOOP)
+        CASE('DRST','RAPL')
+	  IF(.NOT.LTINCRDIA(NLOOPSUPER,NLOOPN))THEN
+	    INDT=NTIMEDIA(JILOOP,NLOOPSUPER,NLOOPN)
+	  ELSE
+	    INDT=NTIMEDIA(1,NLOOPSUPER,NLOOPN)+(JILOOP-1)*NTIMEDIA(3, &
+			    NLOOPSUPER,NLOOPN)
+	  ENDIF
+	  XZWORKZ(JILOOP,JKLOOP)=XTRAJZ(NLVLKDIA(JKLOOP,NLOOPSUPER,NLOOPN), &
+					INDT,NLOOPN)
+	END SELECT
+
+      ELSE IF(LPXT .AND..NOT.LXABSC)THEN
+        XZWORKZ(JILOOP,JKLOOP)=XXX(NIINF+JKLOOP-1,NMGRID)
+      ELSE IF(LPYT)THEN
+	XZWORKZ(JILOOP,JKLOOP)=XXY(NJINF+JKLOOP-1,NMGRID)
+      ENDIF
+      ENDDO
+    ENDDO
+    IF(LPVT .OR. LPYT .OR. (LPXT .AND..NOT.LXABSC))THEN
+      IF(INUM> NSUPERDIA)THEN
+        if(nverbia > 0)then
+        print *,' ** PVFCT A Verifier AI mis NSUPERDIA a la place de INUM'
+        print *,' pour essayer de resoudre le pb de _on_ sans rien derriere '
+	endif
+      ENDIF
+      DO JILOOP=1,NINX
+        IF(INUM> NSUPERDIA)THEN
+          ZWORK2DT(JILOOP,:)=ZWORK2D(:,JILOOP,NSUPERDIA)
+	ELSE
+          ZWORK2DT(JILOOP,:)=ZWORK2D(:,JILOOP,INUM)
+	ENDIF
+      ENDDO
+    ELSE IF(LPXT .AND. LXABSC)THEN
+      IF(INUM> NSUPERDIA)THEN
+        if(nverbia > 0)then
+        print *,' ** PVFCT A Verifier AI mis NSUPERDIA a la place de INUM'
+        print *,' pour essayer de resoudre le pb de _on_ sans rien derriere '
+	endif
+        ZWORK2DT(:,:)=ZWORK2D(:,:,NSUPERDIA)
+      ELSE
+        ZWORK2DT(:,:)=ZWORK2D(:,:,INUM)
+      ENDIF
+    ENDIF
+    YTEXTE(1:LEN(YTEXTE))=' '
+    ILENT=LEN_TRIM(CTITGAL)
+    ILENU=LEN_TRIM(CUNITGAL)
+    YTEXTE(1:ILENT)=CTITGAL(1:ILENT)
+    YTEXTE(ILENT+1:ILENT+1)=' '
+    YTEXTE(ILENT+2:ILENT+2+ILENU-1)=CUNITGAL(1:ILENU)
+    SELECT CASE(CTYPE)
+      CASE('CART','MASK')
+        CALL COMPCOORD_FORDIACHRO(NMGRID)
+      CASE('SSOL')
+     END SELECT
+! Mars 2000 + Janv 2001(LUMVM + LDIRWIND)
+     IF(LUMVMPV .OR. LUMVM .OR. LUTVT .OR. LSUMVM .OR. LSUTVT .OR. LDIRWIND)THEN
+       CUNITE(1)=ADJUSTL(CUNITE(1))
+       ILENU=LEN_TRIM(CUNITE(1))
+! Janvier 2001
+       IF(LDIRWIND)THEN
+         YTEXTE(1:LEN(YTEXTE))=' '
+         ILENT=LEN_TRIM(CTITGAL)
+         YTEXTE(1:ILENT)=CTITGAL(1:ILENT)
+	 print *,' **pvfct YTEXTE ',CTITGAL(1:ILENT)
+       ELSE
+! Janvier 2001
+
+       IF(CTITRE(1) == 'UM' .OR. CTITRE(1) == 'VM')THEN
+	 YTEXTE(1:LEN(YTEXTE))=' '
+	 YTEXTE(1:5)='UMVM '
+	 ILENT=4
+	 YTEXTE(ILENT+2:ILENT+2+ILENU-1)=CUNITE(1)(1:ILENU)
+       ENDIF
+       IF(CTITRE(1) == 'UT' .OR. CTITRE(1) == 'VT')THEN
+	 YTEXTE(1:LEN(YTEXTE))=' '
+	 YTEXTE(1:5)='UTVT '
+	 ILENT=4
+	 YTEXTE(ILENT+2:ILENT+2+ILENU-1)=CUNITE(1)(1:ILENU)
+       ENDIF
+! Janvier 2001
+       ENDIF
+       IF(LDIRWIND)THEN
+	 ALLOCATE(XTDIRWIND(SIZE(PWORKT,1)))
+! Chargement des temps pour etre utilises ds IMCOUPV_FORDIACHRO 
+	 XTDIRWIND=PWORKT
+       ENDIF
+! Janvier 2001
+       CALL IMCOUPV_FORDIACHRO(XTEM2D,XTEM2D2,CLEGEND,YTEXTE(1:LEN_TRIM(YTEXTE)))
+! Janvier 2001
+       IF(LDIRWIND)THEN
+	 DEALLOCATE(XTDIRWIND)
+       ENDIF
+! Janvier 2001
+! Mars 2000
+     ELSE
+       if(nverbia > 0)then
+       print *,' **PVFCT YTEXTE AV appel IMCOU ',YTEXTE(1:LEN_TRIM(YTEXTE))
+       endif
+       CALL IMCOU_FORDIACHRO(ZWORK2DT,XDIAINT,CLEGEND,YTEXTE(1:LEN_TRIM(YTEXTE)))
+      ENDIF
+      DEALLOCATE(ZWORK2D)
+      DEALLOCATE(ZWORK2DT)
+      DEALLOCATE(YGROUP)
+!!  Octobre 2001
+    if(nverbia > 0)then
+      print *,' ** pvfct ICOMPT NSUPERDIA ',ICOMPT,NSUPERDIA,CGROUP
+    endif
+    IF(ICOMPT == NSUPERDIA -NBPMT)THEN
+!   IF(ICOMPT == NSUPERDIA)THEN
+      ICOMPT=0
+    ENDIF
+ENDIF
+
+! Mars 2001
+IF(LPVKT .OR. LPVKT1)THEN
+  IF(LDIRWIND .AND. ALLOCATED(XDSX) .AND. ALLOCATED(XTEM2D2) .AND. &
+     NMGRID == 1)THEN
+    ZX=XDSX(NPROFILE,1)
+    ZY=XDSY(NPROFILE,1)
+    CALL SM_LATLON_S(XLATORI,XLONORI,ZX,ZY,ZLAT,ZLON)
+    WHERE(XTEM2D /= XSPVAL .AND. XTEM2D2 /= XSPVAL)
+      XTEM2D=ATAN2(XTEM2D2,XTEM2D)*180./ACOS(-1.)
+    ENDWHERE
+    WHERE(XTEM2D /= XSPVAL .AND. XTEM2D2 /= XSPVAL)
+      XTEM2D=XTEM2D-(XRPK*(ZLON-XLON0)-XBETA)+90.
+    ENDWHERE
+    WHERE(XTEM2D <0. )XTEM2D=XTEM2D+360.
+    WHERE(XTEM2D /= XSPVAL .AND. XTEM2D2 /= XSPVAL)
+      XTEM2D2=360.-XTEM2D
+    ELSEWHERE
+      XTEM2D2=XSPVAL
+    ENDWHERE
+    PWORK2D=XTEM2D2
+  ELSE
+  ENDIF
+ENDIF
+! Mars 2001
+! Remarque :
+! Cas CART + MASK + SPXY : OPER transmet toujours IKU niveaux . Donc la
+! selection des niveaux se fait ici dans PVFCT
+! Dans les autres cas: la selection des niveaux est deja faite dans OPER
+!
+IF(LPVKT)THEN
+! On force NSUPERDIA a la valeur du nb de niveaux K pour une gestion + facile
+! dans varfct
+! En realite on n'a pas demande de superpostions. Donc NSUPERDIA=1
+SELECT CASE(CTYPE)
+  CASE('CART','MASK','SPXY')
+    INDN=1
+  CASE DEFAULT
+    INDN=NLOOPN
+END SELECT
+IF(NSUPERDIA == 1 .AND. NBLVLKDIA(1,INDN) > 1)THEN
+  ISUPERDIA=NSUPERDIA
+  NSUPERDIA=NBLVLKDIA(1,INDN)
+  IT=0
+  DO J=1,NBLVLKDIA(1,INDN)
+  SELECT CASE(CTYPE)
+    CASE('CART','MASK','SPXY')
+    IF(NLVLKDIA(J,1,INDN) < IK1 .OR. NLVLKDIA(J,1,INDN) > IK2)IT=IT+1
+    CASE DEFAULT
+  END SELECT
+  ENDDO
+  NSUPERDIA=NSUPERDIA-IT
+  ALLOCATE(ZWORK1D(SIZE(PWORK2D,2)))
+  DO JLOOPK=1,NBLVLKDIA(1,INDN)
+    SELECT CASE(CTYPE)
+      CASE('CART','MASK','SPXY')
+        IF(NLVLKDIA(JLOOPK,1,INDN) < IK1 .OR. NLVLKDIA(JLOOPK,1,INDN) > IK2)CYCLE
+        ZWORK1D(:)=PWORK2D(NLVLKDIA(JLOOPK,1,INDN),:)
+      CASE DEFAULT
+	ZWORK1D(:)=PWORK2D(JLOOPK,:)
+    END SELECT
+    CALL VARFCT(PWORKT,ZWORK1D,NLVLKDIA(JLOOPK,1,INDN))
+  ENDDO
+  DEALLOCATE(ZWORK1D)
+  NSUPERDIA=ISUPERDIA
+ELSE
+  ALLOCATE(ZWORK1D(SIZE(PWORK2D,2)))
+  L1K=.TRUE.
+  SELECT CASE(CTYPE)
+    CASE('CART','MASK','SPXY')
+      ZWORK1D(:)=PWORK2D(NLVLKDIA(NBLVLKDIA(K,INDN),K,INDN),:)
+    CASE DEFAULT
+      ZWORK1D(:)=PWORK2D(1,:)
+  END SELECT
+      CALL VARFCT(PWORKT,ZWORK1D,NLVLKDIA(NBLVLKDIA(K,INDN),K,INDN))
+  DEALLOCATE(ZWORK1D)
+ENDIF
+ENDIF
+
+! Remarque :
+! Cas CART + MASK + SPXY : OPER transmet toujours IKU niveaux . Donc la
+! selection des niveaux se fait ici dans PVFCT
+! Dans les autres cas: la selection des niveaux est deja faite dans OPER
+!
+IF(LPVKT1)THEN
+  SELECT CASE(CTYPE)
+    CASE('CART','MASK','SPXY')
+      INDN=1
+    CASE DEFAULT
+      INDN=NLOOPN
+  END SELECT
+  ALLOCATE(ZWORK1D(SIZE(PWORK2D,2)))
+  DO JLOOPK=1,NBLVLKDIA(K,INDN)
+    SELECT CASE(CTYPE)
+      CASE('CART','MASK','SPXY')
+        ZWORK1D(:)=PWORK2D(NLVLKDIA(JLOOPK,K,INDN),:)
+      CASE DEFAULT
+	ZWORK1D(:)=PWORK2D(JLOOPK,:)
+    END SELECT
+    CALL VARFCT(PWORKT,ZWORK1D,NLVLKDIA(JLOOPK,K,INDN))
+  ENDDO
+  DEALLOCATE(ZWORK1D)
+ENDIF
+IF(LPVT .AND. (.NOT.LSUPER .OR. (LSUPER .AND. NSUPER == NSUPERDIA)))THEN
+  XHMIN=ZHMIN; XHMAX=ZHMAX
+ENDIF
+RETURN
+END SUBROUTINE PVFCT

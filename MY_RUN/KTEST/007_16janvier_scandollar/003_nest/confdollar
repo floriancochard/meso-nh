@@ -1,0 +1,42 @@
+#!/bin/sh
+##
+##  Import Global Experiment Variables
+##
+. ../confdollar_${CONFEXP}
+
+##############################################################
+## Run Parameters                                            #
+##############################################################
+
+## job parameters
+export NBP=1
+export TIME=3600
+#export MEM="3gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="# "
+export NEXTDIR="\${SUBDIR}/../../004_arp2lfi"
+export NEXTRUN="run_preal_xyz"
+
+##############################################################
+## INTERFACE :: Input Files/Parameters                       #
+##############################################################
+
+# input files/parameters
+export CRT_YNEST="${YNEST}"
+export INP_YPGD1="${CPGDFILE1}"  
+export INP_YPGD2="${CPGDFILE2}" 
+export LISTGET="${INP_YPGD1} ${INP_YPGD2}"
+
+
+##############################################################
+## INTERFACE :: Output Files                                 #
+##############################################################
+
+# output nest pgd file
+export OUT_YPGD1_NEST="${INP_YPGD1}.nest${CRT_YNEST}"  
+export OUT_YPGD2_NEST="${INP_YPGD2}.nest${CRT_YNEST}"              
+export LISTE_PUT="${OUT_YPGD1_NEST} ${OUT_YPGD2_NEST}"
+
+
+

@@ -1,0 +1,2 @@
+set -x
+rm -f dir.* gmeta KWRAI.1.SEG01.00*    OUT_DIA

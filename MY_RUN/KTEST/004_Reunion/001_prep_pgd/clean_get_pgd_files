@@ -1,0 +1,18 @@
+PREP_PGD_FILES=$HOME/PREP_PGD_FILES_WWW ; export PREP_PGD_FILES
+[ ! -d "$PREP_PGD_FILES" ] && exit
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!  WARNING :: CLEAN_PGD_FILES         !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo 
+echo do you real want to delete physigraphique files in
+echo 
+echo PREP_PGD_FILES=$PREP_PGD_FILES  ?????
+echo 
+echo "(yes/no)"
+read ANSWER
+if [ "X$ANSWER" = "Xyes" ] 
+then
+set -x 
+[ -d "$PREP_PGD_FILES" ] && rm -fr  $PREP_PGD_FILES
+fi
+

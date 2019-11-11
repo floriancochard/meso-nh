@@ -1,0 +1,11 @@
+CPP = sxcpp -P -C 
+AR  = sxar
+F90 = sxf90
+F77 = sxf90
+CC  = sxcc
+
+F90FLAGS = -w -Cvsafe
+F77FLAGS = -w -Cvsafe
+
+LDFLAGS = 
+

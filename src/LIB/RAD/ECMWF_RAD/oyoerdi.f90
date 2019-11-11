@@ -1,0 +1,70 @@
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! ECMWF_RAD2 2003/02/19 13:36:48
+!-----------------------------------------------------------------
+MODULE OYOERDI
+
+
+#include "tsmbkind.h"
+
+IMPLICIT NONE
+
+SAVE
+
+!     -----------------------------------------------------------------
+!*    ** *YOERDI* - COEFFICIENTS WITHIN RADIATION INTERFACE
+!     -----------------------------------------------------------------
+
+REAL_B :: RRAE
+REAL_B :: RSUNDUR
+REAL_B :: RALBSEAD
+REAL_B :: RALBICEVS_AR(12)
+REAL_B :: RALBICENI_AR(12)
+REAL_B :: RALBICEVS_AN(12)
+REAL_B :: RALBICENI_AN(12)
+REAL_B :: RALBSFO
+REAL_B :: REMISD
+REAL_B :: REMISL
+REAL_B :: REMISN
+REAL_B :: REMISS
+REAL_B :: RCARDI
+REAL_B :: RCH4
+REAL_B :: RN2O
+REAL_B :: RO3
+REAL_B :: RCFC11
+REAL_B :: RCFC12
+REAL_B :: REPALB
+REAL_B :: REPCLC
+REAL_B :: REPH2O
+
+!        * E.C.M.W.F. PHYSICS PACKAGE *
+
+!     Original  J.-J. MORCRETTE       E.C.M.W.F.      89/07/14
+!     Modified  P. Viterbo    99/03/26    Surface tiling
+
+!  NAME     TYPE     PURPOSE
+!  ----  :  ----   : ---------------------------------------------------
+! RRAE   : EFFECT OF EARTH'S CURVATURE ON COSINE SOLAR ZENITH ANGLE
+! RSUNDUR: MINIMUM DIRECT SOLAR FOR COMPUTING SOLAR DURATION
+! RALBSEAD: OPEN SEA ALBEDO FOR DIFFUSE RADIATION
+! RALBICEVS_AR: MONTHLY SEA ICE ALBEDO FOR VISIBLE RADIATION (ARCTIC)
+! RALBICENI_AR: MONTHLY SEA ICE ALBEDO FOR NEAR-INFRARED RADIATION (ARCTIC)
+! RALBICEVS_AN: MONTHLY SEA ICE ALBEDO FOR VISIBLE RADIATION (ANTARCTIC)
+! RALBICENI_AN: MONTHLY SEA ICE ALBEDO FOR NEAR-INFRARED RADIATION (ANTARCTIC)
+! RALBSFO: SNOW ALBEDO IN THE PRESENCE OF FOREST
+
+! REMISD : LONGWAVE EMISSIVITY OF DESERT LAND SURFACE
+! REMISL : LONGWAVE EMISSIVITY OF LAND
+! REMISN : LONGWAVE EMISSIVITY OF SNOW
+! REMISS : LONGWAVE EMISSIVITY OF SEA
+
+! RCARDI : SPECIFIC ATMOSPHERIC CONTENT IN CO2
+
+! REPALB : SECURITY TO AVOID ZERO ALBEDOS.
+! REPCLC : SECURITY TO AVOID ZERO OR ONE CLOUD COVERS
+! REPH2O : SECURITY TO AVOID WATER VAPOUR CONTENT IN A LAYER
+!          TO BE MORE THAN THE RESPECTIVE VALUE AT SATURATION.
+!     -----------------------------------------------------------------
+END MODULE OYOERDI

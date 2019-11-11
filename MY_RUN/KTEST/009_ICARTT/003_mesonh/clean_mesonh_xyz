@@ -1,0 +1,5 @@
+set -x
+rm -f ICART* CPLCH* OUTPUT_LISTING* pipe*
+rm -f EXSEG?.nam PRESSURE file_for_xtransfer 
+rm -f DATAE1 DATAJ1 DATAS1
+

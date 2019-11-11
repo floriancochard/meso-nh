@@ -1,0 +1,17 @@
+LIBX = -L/usr/X11R6/lib -lX11 -lg2c
+
+LIBV5D = -L/usr/local/lib -lv5d 
+LIBGRB = -L$(HOME)/make/gribex -lMvEmos_pgf
+#LIBGRB = -L$(HOME)/make/gribex/gribex13035 -lemos
+
+#############################################################################
+
+CPPFLAGS += -DLINUX -Dkey_swapio
+F77FLAGS += 
+F90FLAGS += 
+ifeq ($(B),64)
+F77FLAGS += -r8 
+F90FLAGS += -r8 
+endif
+LDFLAGS  +=
+OBJS2=

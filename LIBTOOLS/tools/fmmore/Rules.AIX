@@ -1,0 +1,2 @@
+
+LIBS += -L$(MESONH)/binaries -lbidon

@@ -1,0 +1,370 @@
+# GRILLE 256x128(70)
+#
+# GRID FACTOR & NSTEP
+#
+export SUFFIX="_I8_MED_ATL_${VER_USER}"
+#export GRIDFAC=20 # 5120x2560
+export GRIDFAC=32 # 8000x4000 
+#export GRIDFAC=16 # 4096x2048          
+#export GRIDFAC=12 # 3048x1524          
+#export GRIDFAC=8 # 2048x1024          
+#export GRIDFAC=6 # 1536x768          
+#export GRIDFAC=4 # 1024x512          
+#export GRIDFAC=1 # 1024x512          
+#export GRIDFAC="0.250" # 64x32
+#export NSTEP=1001
+export NSTEP=11
+#
+# job parameter
+#
+export NBP=1 NBT=32 MEM=115.0Gb STACK=115.0Gb  TIME=72000
+export MNHENV="
+export ECMWF_LOCAL_TABLE_PATH='/work/escobar/GRIBEX_LXifortI8/gribtables/'
+export LOCAL_DEFINITION_TEMPLATES='/work/escobar/GRIBEX_LXifortI8/gribtemplates/'
+ulimit -c 0
+export OMP_NUM_THREADS=1
+export MPI_CONNECTIONS_THRESHOLD=16384
+#export MPI_STATS=1
+export MPI_BUFS_PER_HOST=16384
+export MPI_BUFS_PER_PROC=16384
+export MPI_NUM_QUICKS=64
+export MPI_TYPE_MAX=81920
+
+"
+
+#
+#
+case ${STEP} in
+PIDEAL)
+# prep_ideal_case
+export TIME=1800  # max CPU time for PREP_IDEAL_CASE 
+export QUEUE=test # batch queue test/bigmem
+#export NBP=1
+#export NBP=8
+#export NBP=16
+#export NBP=32
+#export NBP=64 CORE=8
+#export NBP=128
+;;
+#
+PGD)
+# prep_pgd
+#export NBP=0002 CORE=1 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+#export NBP=0004 CORE=2 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+#export NBP=0008 CORE=1 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+#export NBP=0064 CORE=1 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+#export NBP=0128 CORE=1 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+#export NBP=0256 CORE=2 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+#export NBP=0512 CORE=2 MEM=59.0Gb STACK=59.0Gb  TIME=3600
+export NBP=1024 CORE=4 MEM=59.0Gb STACK=59.0Gb  TIME=72000
+#export NBP=2048 CORE=4 MEM=59.0Gb STACK=59.0Gb  TIME=36000
+#export NBP=0001 NBT=8 MEM=28.0Gb STACK=28.0Gb  TIME=05:00:00 # 2048x1024
+#export NBP=1 NBT=32 MEM=115.0Gb STACK=115.0Gb  TIME=10:00:00 #  40946x2048
+export NCPUS=${NBT} MPIPROCS=${NBT}
+#export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export MONORUN="mpiexec_mpt -n ${NBP} "
+export MPIRUN="mpiexec_mpt -n ${NBP} "
+export JOBNAME="job_${NBP}"
+export JOBOUT="JOBOUT_${MODE}"
+
+export PREP_PGD_FILES=/scratch/${USER}/PREP_PGD_FILES_WWW
+
+#export MONORUN="hpmcount "
+;;
+ARP)
+# pprep_real/arp
+#export NBP=0001  NBT=4 MEM=6.0Gb STACK=6.0Gb  TIME=36000
+#export NBP=0004  NBT=2 MEM=3.0Gb STACK=3.0Gb  TIME=36000
+#export NBP=0004  NBT=4 MEM=6.0Gb STACK=6.0Gb  TIME=36000
+#export NBP=0008  NBT=4 MEM=6.0Gb STACK=6.0Gb  TIME=36000
+#export NBP=0001 NBT=32 MEM=55.0Gb STACK=55.0Gb  TIME=36000
+#export NBP=0002 NBT=16 MEM=27.5Gb STACK=27.5Gb  TIME=36000 # 1024x512
+#export NBP=0008 NBT=16 MEM=27.5Gb STACK=27.5Gb  TIME=10:00:00 # 2048x1024 OK 2 heures
+export NBP=0016 NBT=4 MEM=13.5Gb STACK=13.5Gb  TIME=1:00:00 # 2048x1024 OK 2 heures
+#export NBP=0064 NBT=8 MEM=13.5Gb STACK=13.5Gb  TIME=10:00:00 # 2048x1024 OK 2 heures
+#export NBP=0032 NBT=1 CORE=1 MEM=13.5Gb STACK=13.5Gb  TIME=24:00:00 # 4096x2048 OK 2 heures
+#export NBP=0064 NBT=1 CORE=1 MEM=13.5Gb STACK=13.5Gb  TIME=1:00:00 # 4096x2048 OK 2 heures
+#export NBP=0064 NBT=4 MEM=7.0Gb STACK=7.0Gb  TIME=05:00:00 # PBMEM 4096x2048 
+export NCPUS=${NBT} MPIPROCS=${NBT}
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export MONORUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export MPIRUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export JOBNAME="job_${NBP}"
+export JOBOUT="JOBOUT_${MODE}"
+;;
+MNH)
+# mesonh 
+export MPI_BUFFER_SIZE=80
+
+case $(hostname) in
+babel*)
+export MPI_BUFFER_SIZE=80
+export TORUS="# @ BG_CONNECTION = TORUS"
+#export NCN=0064 NBP=0256 MODE=VN TIME=3600 # number of processor for MESONH
+#export NCN=0064 NBP=0064 MODE=SMP TIME=3600 # number of processor for MESONH
+#export NCN=512 NBP=512 MODE=SMP TIME=3600 # number of processor for MESONH
+#export NCN=512 NBP=1024 MODE=DUAL TIME=3600 # number of processor for MESONH
+#export NCN=512 NBP=2048 MODE=VN TIME=7200 # number of processor for MESONH
+#export NCN=1024 NBP=2048 MODE=DUAL TIME=3600 # number of processor for MESONH
+#export NCN=1024 NBP=4096 MODE=VN TIME=7200 # PB 4096x2048 number of processor for MESONH
+export NCN=2048 NBP=8192 MODE=VN TIME=7200 # CPUTIME 4096x2048 number of processor for MESONH
+#export NCN=4096 NBP=16384 MODE=VN TIME=7200 #  4096x2048 number of processor for MESONH
+#export NCN=1024 NBP=4096 MODE=VN TIME=3600 # number of processor for MESONH
+#export NCN=1024 NBP=1024 MODE=SMP TIME=3600 # number of processor for MESONH
+export MPIRUN="mpirun -label -mode ${MODE} -np ${NBP} -mapfile TXYZ -exe "
+;;
+
+vargas*)
+export MPI_BUFFER_SIZE=200
+#export NBP=0064 NBT=8 MEM=13.5Gb STACK=13.5Gb  TIME=10:00:00 # 4096x2048 OK 2 heures
+export NBP=0256 NBT=2 MEM=3.7Gb STACK=3.7Gb  TIME=1:00:00 # 4096x2048 OK 2 heures
+#export NBP=0512 NBT=1 MEM=1.8Gb STACK=1.9Gb  TIME=10:00:00 # 4096x2048 PB ?????????
+;;
+ 
+service*)
+export MNHENV="
+ulimit -c 0
+export OMP_NUM_THREADS=1
+export MPI_CONNECTIONS_THRESHOLD=16384
+#export MPI_STATS=1
+export MPI_BUFS_PER_HOST=512
+export MPI_BUFS_PER_PROC=64
+export MPI_NUM_QUICKS=64
+export MPI_TYPE_MAX=81920
+"
+#export NBP=0256 NBT=8 MEM=3.7Gb STACK=3.7Gb  TIME=1:00:00 # 4096x2048 OK 2 heures
+#export NBP=0512 NBT=8 MEM=3.7Gb STACK=3.7Gb  TIME=10:00:00 # 4096x2048 OK 2 heures
+#export NBP=1024 NBT=8 MEM=3.7Gb STACK=3.7Gb  TIME=24:00:00 # 4096x2048 OK 2 heures
+export NBP=1280 NBT=8 MEM=3.7Gb STACK=3.7Gb  TIME=24:00:00 # 4096x2048 OK 2 heures
+#export NBP=2048 NBT=8 MEM=3.7Gb STACK=3.7Gb  TIME=24:00:00 # 3072x1536 OK 2 heures
+export NCPUS=${NBT} MPIPROCS=${NBT}
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export MONORUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export MPIRUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export JOBNAME="job_${NBP}"
+export JOBOUT="JOBOUT_${MODE}"
+;;
+esac
+
+
+;;
+DIAG)
+# diag
+export MPI_BUFFER_SIZE=1000
+#export NBP=0256 NBT=8 MEM=3.7Gb STACK=3.7Gb  TIME=1:00:00 # 4096x2048 OK 2 heures
+export NBP=032 NBT=1 MEM=3.7Gb STACK=3.7Gb  TIME=4:00:00 # 4096x2048 OK 2 heures
+export NCPUS=${NBT} MPIPROCS=${NBT}
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export MONORUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export MPIRUN=" /usr/pbs/bin/mpiexec -n ${NBP} "
+export JOBNAME="job_${NBP}"
+export JOBOUT="JOBOUT_${MODE}"
+;;
+esac
+# default
+#export MONORUN=${MONORUN-"mpirun -np ${NBP}"}
+#export MPIRUN=${MPIRUN-"mpirun -np ${NBP}"}
+#
+# NODE / CORE parameters
+#
+#export CORE=4 
+#export CORE=8 
+#export NCPUS=${CORE} MPIPROCS=${CORE}
+#export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export RMODE="${OPTLEVEL}_${NBP}PROC_${NBNODES}NODES_${NCPUS}CORE.\$$"
+export JOBOUT="JOBOUT_${RMODE}"
+
+export NCPUS=${NCPUS-${CORE}} MPIPROCS=${CORE}
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )
+export MPI_IB_RAILS=1
+
+export JOBNAME="${PROC_ARCH}_${NBP}_${MPI_IB_RAILS}IB"
+export RUN_MODE="${CORE}CORE_${NBP}NBP_${PROC_ARCH}_${MPI_IB_RAILS}IB"
+export EXECDIR=${SCRATCH}/${CONFEXP}${XYZ}/${RUN_MODE}
+
+#
+# Initial grid & time parameter
+#
+# prep_pgd NoPROC write
+export NB_PROCIO_W_PGD=8
+#export NB_PROCIO_W_PGD=1
+
+# prep_real NoPROC write 
+export NB_PROCIO_W_PREAL=64
+
+# mnh NoPROC read/write
+export NB_PROCIO_R_MNH=${NB_PROCIO_W_PREAL}
+export NB_PROCIO_W_MNH=64
+
+# diag NoPRC read/write
+export NB_PROCIO_R_DIAG=${NB_PROCIO_W_MNH}
+export NB_PROCIO_W_DIAG=64
+
+export NIMAX0=256       NJMAX0=128 
+#export NIMAX0=320       NJMAX0=100 
+
+#export XLAT0=44.0       XLON0=-20.0  
+#export XDELTAX0=48000.0 XDELTAY0=48000.0
+
+#export XDELTAX0=4800.0 XDELTAY0=4800.0
+#export XLAT0=44.0       XLON0=0.0
+
+export XLAT0=44.0       XLON0=-20.0  
+#export XLAT0=44.0       XLON0=-35.0  
+export XDELTAX0=24000.0 XDELTAY0=24000.0
+
+#export XTSTEP0=30
+#export XTSTEP0=48*3 # FP(8)
+#export XTSTEP0="48*2"  LITRADJ=T # OK , plantage seg 4
+#export XTSTEP0="48*1.5"  LITRADJ=T # OK
+export XTSTEP0="24*1.5"  LITRADJ=T # OK
+#export XTSTEP0="48*2.5"  LITRADJ=T # PB 3Heures
+
+#
+# MNH parameter
+#
+export NIMAX=$( echo " scale=0 ; ${GRIDFAC} * ${NIMAX0} * ${NIMAX0} / ${NIMAX0} " | bc -l )
+export NJMAX=$( echo " scale=0 ; ${GRIDFAC} * ${NJMAX0} * ${NJMAX0} / ${NJMAX0} " | bc -l )
+#
+export XDELTAX=$( echo " scale=5 ; ${XDELTAX0} / ${GRIDFAC} " | bc -l )
+export XDELTAY=$( echo " scale=5 ; ${XDELTAY0} / ${GRIDFAC} " | bc -l )
+export XDX=${XDELTAX}
+export XDY=${XDELTAY}
+#
+export CONFEXP=$( printf "grille_%4.4dx%4.4d${SUFFIX}" ${NIMAX} ${NJMAX} )
+#export CINIFILE=$( printf "MEDATL%4.4dX%4.4d" ${NIMAX} ${NJMAX} )
+
+#export CPGDFILE=$( printf "PGDM%4.4d" ${NIMAX} )
+# PGDH = PGD Helene
+export CPGDFILE=$( printf "PGDH%4.4d" ${NIMAX} )
+
+#export PREP_PGD_FILES="${WORKDIR}/PREP_PGD_FILES_WWW"
+# 
+# Prep Real
+#
+export HATMFILE=arpifs.AN.19980116.06
+export DATE1=20060922.00
+export DATE2=20060922.06
+export DATE3=20060922.12
+export DATE4=20060922.18
+export DATE5=20060923.00
+export DATE6=20060923.06
+export DATE7=20060923.12
+export DATE8=20060923.18
+
+export  LISTE_DATE="20060923.00 20060923.06 20060923.12 20060923.18 20060924.00" 
+#export  LISTE_DATE="20060923.00 20060923.06 20060923.12 20060923.18 20060924.00"
+#export  LISTE_DATE="20060924.06 20060924.12 20060924.18 20060925.00 20060925.06 20060925.12 20060925.18 20060926.00 20060926.06 20060926.12 20060926.18 20060927.00"
+#export  LISTE_DATE="20060923.00 20060924.00 20060925.00 20060926.00 20060927.00" 
+
+
+#export HATMFILE=ecmwf.OD.${DATE1} CINIFILE_PR=$( printf "M%4.4d.${DATE1}" ${NIMAX} )
+#export HATMFILE=ecmwf.OD.${DATE2} CINIFILE_PR=$( printf "M%4.4d.${DATE2}" ${NIMAX} )
+#export HATMFILE=ecmwf.OD.${DATE3} CINIFILE_PR=$( printf "M%4.4d.${DATE3}" ${NIMAX} )
+#export HATMFILE=ecmwf.OD.${DATE4} CINIFILE_PR=$( printf "M%4.4d.${DATE4}" ${NIMAX} )
+#export HATMFILE=ecmwf.OD.${DATE5} CINIFILE_PR=$( printf "M%4.4d.${DATE5}" ${NIMAX} )
+
+#export CINIFILE=$( printf "M%4.4d.${DATE1}" ${NIMAX} )
+export CINIFILE=$( printf "H%4.4d.${DATE1}" ${NIMAX} )
+export HPGDFILE=${CPGDFILE}
+#export NKMAX=70
+export NKMAX=62
+
+export CEXP=$( printf "H%4.4d\n" ${NIMAX} )
+export CSEG="HER01"
+export CSPLIT="BSPLITTING"
+#
+export XTSTEP=$( echo " scale=5 ; ${XTSTEP0} / ${GRIDFAC} " | bc -l )
+#export XSEGLEN=$( echo "$NSTEP * $XTSTEP" | bc -l )
+export XSEGLEN=$( echo "24 * 3600 - 60 " | bc -l )
+#export XSEGLEN=60.0 
+
+#export XBAK_TIME="XBAK_TIME(1,1) =  1800., XBAK_TIME(1,2)  =  3600. , XBAK_TIME(1,3)  =  5400., XBAK_TIME(1,4)  = 7200., \
+#               XBAK_TIME(1,5) =  9000., XBAK_TIME(1,6)  = 10800. , XBAK_TIME(1,7)  = 12600., XBAK_TIME(1,8)  = 14400. , \
+#               XBAK_TIME(1,9) = 16200., XBAK_TIME(1,10) = 18000. , XBAK_TIME(1,11) = 19800., XBAK_TIME(1,12) = 21600. "
+#export XBAK_TIME="XBAK_TIME(1,1)  =  3600. , XBAK_TIME(1,2)  = 7200., \
+#               XBAK_TIME(1,3)  = 10800. , XBAK_TIME(1,4)  = 14400. , \
+#               XBAK_TIME(1,5) = 18000. , XBAK_TIME(1,6) = 21600. "
+#export XBAK_TIME="XBAK_TIME(1,1) =  21600. , XBAK_TIME(1,2)  =  43200. , XBAK_TIME(1,3)  =  64800. , XBAK_TIME(1,4)  = 86400. "
+export XBAK_TIME="XBAK_TIME(1,1) =  21540. , XBAK_TIME(1,2)  =  43140. , XBAK_TIME(1,3)  =  64740. , XBAK_TIME(1,4)  = 86340. "
+#export XBAK_TIME="XBAK_TIME(1,1) =  60. "
+
+
+#export XR=2.0
+#export XT4=400.0 # 200.0 OK
+#export XRIMKMAX=$( echo " scale=5 ; ${XR}/( ${XT4}* ${XTSTEP} ) " | bc -l )
+#export XT4DIFF=$( echo " ${XT4} * ${XTSTEP} " | bc -l )
+
+#export XRIMKMAX=0.0005   # OK  4KM
+#export XT4DIFF=4000.0    # OK  4KM 3000x1500 pts
+
+#export XRIMKMAX=0.00133  # PB 4KM 
+#export XT4DIFF=1500.0  # PB 4KM 
+
+export XRIMKMAX=0.0011 # PB 0.002 
+export XT4DIFF=1800.
+
+#export XR=2.0
+#export XT4=400.0 # 200.0 OK
+#export XRIMKMAX_RE=$( echo " scale=5 ; ${XR}/( ${XT4}* ${XTSTEP} ) " | bc -l )
+#export XT4DIFF_RE=$( echo " ${XT4} * ${XTSTEP} " | bc -l )
+
+#export XRIMKMAX_RE=0.0005 
+#export XT4DIFF_RE=4000.0
+
+export XRIMKMAX_RE=0.002  # CSEG=HER02
+export XT4DIFF_RE=1800.   # CSEG=HER02
+
+export XRIMKMAX_RE=0.002  # CSEG=HES02
+export XT4DIFF_RE=2900.   # CSEG=HES02
+
+if  [ $(echo " scale=0 ; ( ${XDX} - 5000.0 ) / 1 " | bc -l ) -gt 0 ] ; then
+# XDX > 5KM
+export CDCONV="KAFR" LSUBG_COND="T" LSUBG_AUCV="T" LSIGMAS="F" LSIG_CONV="T" 
+else
+export CDCONV="NONE" LSUBG_COND="F" LSUBG_AUCV="F" LSIGMAS="F" LSIG_CONV="F"
+fi
+
+#
+# restart
+#
+export CINIFILEN="${CEXP}.1.${CSEGN_1}.${CSTEP}" # 
+ 
+#
+# MNH restart
+#
+#export                  CSEGN="HER01" DA1=23 DA2=24 # SEG1
+#export CSEGN_1="HER01" CSEGN="HER02" DA1=23 DA2=24 # SEG2
+export CSEGN_1="HER01" CSEGN="HES02" DA1=23 DA2=24 # SEG2
+#export CSEGN_1="HER02" CSEGN="HER03" DA1=25 DA2=26 # SEG3
+#export CSEGN_1="HER03" CSEGN="HER04" DA1=26 DA2=27 # SEG4
+#export CSEGN_1="HER04" CSEGN="HER05" DA1=27 DA2=28 # SEG5
+
+export DATE1=200609${DA1}.00
+export DATE2=200609${DA1}.06
+export DATE3=200609${DA1}.12
+export DATE4=200609${DA1}.18
+export DATE5=200609${DA2}.00
+
+export CINIFILE=$( printf "H%4.4d.${DATE1}" ${NIMAX} )
+export CCPLFILE1=$( printf "H%4.4d.${DATE2}" ${NIMAX} )
+export CCPLFILE2=$( printf "H%4.4d.${DATE3}" ${NIMAX} )
+export CCPLFILE3=$( printf "H%4.4d.${DATE4}" ${NIMAX} )
+export CCPLFILE4=$( printf "H%4.4d.${DATE5}" ${NIMAX} )
+
+#export CINIFILEN="${CEXP}.1.${CSEGN_1}.004"
+export CINIFILEN="${CEXP}.1.${CSEGN_1}.001"
+
+#
+# diag
+#
+#export YINIFILE=${CEXP}.1.${CSEG}.001
+#export YINIFILE=H3072.1.MED01.001
+
+#export CSEGD="HER02"  OUTD="001" YSUFFIX="zzz"
+#export CSEGD="HER03"  OUTD="003" YSUFFIX="zzz"
+export CSEGD="HER01"  OUTD="004" YSUFFIX="zzz"
+
+export YINIFILE=${CEXP}.1.${CSEGD}.${OUTD}
+
+

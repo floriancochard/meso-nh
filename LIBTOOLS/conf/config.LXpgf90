@@ -1,0 +1,11 @@
+CPP = cpp -P -traditional -Wcomment
+AR = ar
+CC = cc
+F77 = pgf90
+F90 = pgf90
+
+CPPFLAGS = -Dpgf
+F90FLAGS = -w 
+F77FLAGS = -w 
+LDFLAGS = -Wl,-noinhibit-exec -Wl,-warn-once 
+

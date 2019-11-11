@@ -1,0 +1,20 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#IDRIS rhodes --> cros compile "uqbar" NEc-SX5
+VERSION=-7.4.1.2_313
+
+F90 = sxmpif90
+F77 = sxmpif90
+F77FLAGS +=
+F90FLAGS = -C vsafe -f4 -dw -Wf,'-A dbl4' -Nw
+CPPFLAGS = -DMNH_MPI_DOUBLE_PRECISION -DMNH_MPI_BSEND -DMNH_SX5
+#F90FLAGS = -P static -C vsafe -f4 -dw -Wf,'-A dbl4' -Nw
+#CPPFLAGS = -DMNH_MPI_DOUBLE_PRECISION -DMNH_MPI_BSEND -DMNH_SX5
+
+#include path for 'mpif.h'
+#INC +=
+
+#OTHER = mode_construct_ll.o mode_exchange_ll.o mode_exchange2_ll.o
+#$(OTHER) : F90FLAGS = -P static -C vsafe -f4 -dw -Wf,'-A dbl4' -Wf,'-O nodarg' -Nw

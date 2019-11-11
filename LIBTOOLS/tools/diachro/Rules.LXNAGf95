@@ -1,0 +1,26 @@
+#LIBX = -L/usr/X11R6/lib -lX11 -lg2c
+LIBX = -L/usr/X11R6/lib -lX11 /usr/lib64/libgfortran.so.1
+
+LIBV5D = -L$(DIR_V5D)/$(ARCH) -lv5d
+#LIBV5D = /usr/local/lib/libv5d.a
+#LIBV5D = -L/mesonh/MAKE/lib/vis5d/LXNAGf95 -lv5d 
+
+LIBGRB = -L$(DIR_GRB) -lemosR64
+
+#############################################################################
+
+CPPFLAGS += -DLINUX -DNAGf95 -Dkey_swapio
+F77FLAGS += 
+#F90FLAGS = -kind=byte -w -gline -O2 -mismatch_all -target=pentium 
+#F90FLAGS = -kind=byte -w -gline -O2 -C -target=pentium
+F90FLAGS = -kind=byte -w -gline -O2 -C -mismatch_all
+ifeq ($(B),64)
+#F90FLAGS += -r8 
+#F90FLAGS = -r8 -kind=byte -w -gline -O2 -mismatch_all -target=pentium
+F90FLAGS = -r8 -kind=byte -w -gline -O2 -mismatch_all
+endif
+LDFLAGS  += -Wl,-Xlinker,-noinhibit-exec -Wl,-Xlinker,-warn-once
+#
+#OBJS2 = image_fordiachro.o
+#$(OBJS2) : F90FLAGS = -kind=byte -w -gline -O2
+

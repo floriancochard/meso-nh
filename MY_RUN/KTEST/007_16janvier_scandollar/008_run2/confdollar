@@ -1,0 +1,36 @@
+###############################################################
+#  Import Global Variables                                    #
+###############################################################
+. ../confdollar_${CONFEXP}
+
+###############################################################
+# Run Parameters                                              #
+###############################################################
+
+## job parameters
+export NBP=4 
+export TIME=3600
+#export MEM="3gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="# "
+export NEXTDIR="\${SUBDIR}/../../009_diag"
+export NEXTRUN="run_diag_xyz"
+
+###############################################################
+# Input  Variables                                            #
+###############################################################
+
+export INP_CINIFILE1=${CINIFILE1} 
+export INP_CINIFILE2=${CINIFILE2} 
+export INP_CINIFILEPGD1="${YDOMAIN1}"
+export INP_CINIFILEPGD2="${YDOMAIN2}"
+export LISTGET="${INP_CINIFILE1} ${INP_CINIFILE2} ${INP_CINIFILEPGD1} ${INP_CINIFILEPGD2}"
+
+###############################################################
+# Output Variables                                            #
+###############################################################
+
+export CRT_CEXP=${CEXP} CRT_CSEG=${CSEG}
+export OUT_XBAK_TIME="${CRT_CEXP}.?.${CRT_CSEG}.???"
+

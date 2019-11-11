@@ -1,0 +1,36 @@
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+# Classe : ns np
+# @ class       = np
+# @ core_limit  = 0   
+# @ total_tasks = 1
+# @ job_type         = parallel
+# Temps CPU max. en seconde (d'un processus)
+# @ cpu_limit        = 12000
+# @ wall_clock_limit = 12000
+# Memoire max. utilisee (ici 10 Go)
+# @ resources        = ConsumableMemory(10gb)
+# @ parallel_threads = 8
+# Temps CPU max. en seconde (d'un processus)
+# @ wall_clock_limit  = 12000
+# Nom du travail LoadLeveler
+# @ job_name   = Sortie   
+# Fichier de sortie standard du travail       
+# @ output     = $(job_name).$(jobid)
+# Fichier de sortie d'erreur du travail
+# @ error      =  $(job_name).$(jobid)
+# @ queue                   
+
+# Pour avoir l'echo des commandes
+set -x
+cd $LOADL_STEP_INITDIR
+
+.  ../conf/profile_mesonh-AIX64-R8I4-MNH-V5-4-2-MPIAUTO-O2
+
+time gmake -r -j1
+time gmake installmaster
+#time gmake -r -j8 user
+#time gmake installuser
+

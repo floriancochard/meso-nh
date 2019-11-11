@@ -1,0 +1,37 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#### Get highres coastline data for ncl
+./get_ncl_highres_files
+set -x
+# Set NCARG_RANGS variable if highres data were downloaded
+[ ! -f rangs\(0\).zip ] || export NCARG_RANGS=`pwd`
+echo $NCARG_RANGS
+#### MNH file to convert in netcdf
+ln -sf ../004_convdia/REUNI.1.00A20.004dg.lfi .
+rm -f REUNI.1.00A20.004dg?KCL
+#### Conversion to netcdf using extractdia
+extractdia < dir_exnetcdf
+#~/LIBMNH/libtools/tools/diachro/LXgfortran_32/extractdia < dir_exnetcdf
+# Check if ncl is installed 
+path_ncl=`which ncl`
+if [ "$path_ncl" == "" ]
+then
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!   ERROR: NCL is not installed or the path to   !"
+echo "!     ncl binary is not set correctly            !"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+exit
+fi
+#### Running  ncl scripts  with file REUNI.1.00A20.004dgKCL.nc
+# Plot topography
+ncl  mnh_BasicMap1.ncl
+# Horizontal cross sections on model levels
+ncl  mnh_ModelLevels1.ncl
+# Horizontal cross section on model levels of microphysics variables
+ncl mnh_Cloud1.ncl
+# Vertical cross section along an arbitrary line
+ncl mnh_CrossSection1.ncl
+# Horizontal cross section on pessure level (interpolation)
+ncl mnh_PressureLevel1.ncl

@@ -1,0 +1,5 @@
+set -x
+
+rm -f *.dir *.hdr file_for_xtransfer 
+rm -f 16JAN98* 16JANM6_9km.* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+

@@ -1,0 +1,36 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+#
+PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"}
+export PREP_PGD_FILES
+#
+if [ ! -d $PREP_PGD_FILES ]
+then
+cat << EOF
+
+Your directory  PREP_PGD_FILES=$PREP_PGD_FILES
+
+containing the files gtopo30*, ecoclimats_v2* 
+doesn't exist ( or was not found !!! )
+use the script 'get_pgd_files' to download 
+this files from the MESONH WEB PAGES !!!
+( or change the variable PREP_PGD_FILES ... )
+
+After fixing it , run this script again !!!
+ 
+EOF
+exit 1
+else
+ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
+ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
+ln -sf $PREP_PGD_FILES/gtopo30.??? .
+ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
+
+rm -f 16JAN98_36km.* OUTPUT_LISTING* pipe* *.tex
+#ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 ./PREP_PGD${XYZ}
+time ${MPIRUN} PREP_PGD${XYZ}
+fi

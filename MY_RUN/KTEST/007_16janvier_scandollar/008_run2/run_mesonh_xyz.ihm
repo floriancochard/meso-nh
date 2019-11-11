@@ -1,0 +1,188 @@
+${JOBMULTI}
+#!/bin/sh
+
+###############################################################
+# Script                                                      #
+###############################################################
+
+set -x
+#set -e
+
+
+true   '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true   '!!              Input/Output parameters                                      !!'
+true   '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+export PROFILE_MESONH="$SRC_MESONH/conf/profile_mesonh${XYZ}"
+export EXECDIR="${EXECDIR}"
+export SUBDIR="${SUBDIR}"
+export INP_CINIFILE1=${INP_CINIFILE1} 
+export INP_CINIFILE2=${INP_CINIFILE2} 
+export INP_CINIFILEPGD1="${INP_CINIFILEPGD1}"
+export INP_CINIFILEPGD2="${INP_CINIFILEPGD2}"
+export LISTGET="${LISTGET}"
+export CRT_CEXP=${CRT_CEXP} CRT_CSEG=${CRT_CSEG}
+export OUT_XBAK_TIME="${OUT_XBAK_TIME}"
+export RMINDIR="${RMINDIR}"
+export MPIRUN="${MPIRUN}"
+export MESONH="${SRC_MESONH}/exe/MESONH${XYZ}"
+export OUTDIR="${OUTDIR}"
+export RMOUTDIR="${RMOUTDIR}"
+export NEXTDIR="${NEXTDIR}"
+export NEXTRUN="${NEXTRUN}"
+
+#################################################################
+#################################################################
+#                                                               #
+# Don't touch after this line (or know what your ar doing !!! ) #
+#                                                               #
+#################################################################
+#################################################################
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Init Mesonh environnment                                     !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+
+. \${PROFILE_MESONH}
+
+set -e
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              goto execdir                                                 !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+
+mkdir -p \${EXECDIR}
+cd \${EXECDIR}
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Clean before run                                             !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+# clean input
+for file in \${LISTGET} ; do 
+ rm -f \${file}.???  
+done
+
+# clean output
+rm -f  \${OUT_XBAK_TIME}.???
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Get files                                                    !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+for file in \${LISTGET} 
+ do ${GETFILES} \${RMINDIR}/\${file}.??? .
+done
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!              Definition of NAMELIST = RUN PARAMETERS                      !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+true '!!!!!!!!!!!!!!!!!!!!'
+true '!!     EXSEG1.nam !!'
+true '!!!!!!!!!!!!!!!!!!!!'
+
+cat <<EOF > EXSEG1.nam
+&NAM_LUNITn  CINIFILE="\${INP_CINIFILE1}" , CINIFILEPGD="\${INP_CINIFILEPGD1}" /
+&NAM_DYNn  XTSTEP = 30.,  CPRESOPT = "RICHA", NITR = 8,
+           LHORELAX_UVWTH = T, LHORELAX_RV = T, LVE_RELAX = T,
+           NRIMX = 5, NRIMY = 5, XRIMKMAX = 0.0083, XT4DIFU = 5000. /
+&NAM_ADVn  CMET_ADV_SCHEME = "FCT2ND", CSV_ADV_SCHEME = "FCT2ND" /
+&NAM_PARAMn  CCLOUD = "KESS", CTURB = "TKEL", CRAD = "ECMWF", CDCONV = "KAFR" /
+&NAM_PARAM_RADn  XDTRAD = 3600., XDTRAD_CLONLY = 3600., NRAD_COLNBR = 400 /
+&NAM_PARAM_CONVECTn XDTCONV = 300., NICE = 1 LREFRESH_ALL = T,
+             LDEEP = T, LSHAL = T, LDOWN = T /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_TURBn  CTURBLEN = "BL89", CTURBDIM = "1DIM", LSUBG_COND = F /
+&NAM_CH_MNHCn LUSECHEM = F /
+&NAM_CONF  CCONF = "START", NVERB=5, NMODEL = 2,
+            CEXP = "\${CRT_CEXP}", CSEG = "\${CRT_CSEG}" ,
+            CSPLIT='BSPLITTING' /
+&NAM_DYN  XSEGLEN = 300., LCORIO = T, LNUMDIFU = T,
+           XALKTOP = 0.001, XALZBOT = 14500. /
+&NAM_NESTING NDAD(2) = 1, NDTRATIO(2) = 4, XWAY(2) = 2. /
+&NAM_BACKUP XBAK_TIME(1,1) = 300. /
+&NAM_DIAG_SURFn  /
+&NAM_ISBAn CSCOND="NP89", CALBEDO="DRY", CROUGH='Z01D',
+       CC1DRY='DEF', CSOILFRZ='DEF', CDIFSFCOND='DEF', CSNOWRES='DEF' /
+&NAM_DIAG_ISBAn /
+&NAM_SEAFLUXn CSEA_ALB="UNIF" /
+&NAM_BLANK /
+
+EOF
+
+true '!!!!!!!!!!!!!!!!!!!!'
+true '!!     EXSEG2.nam !!'
+true '!!!!!!!!!!!!!!!!!!!!'
+
+cat <<EOF > EXSEG2.nam
+&NAM_LUNITn  CINIFILE = "\${INP_CINIFILE2}" CINIFILEPGD="\${INP_CINIFILEPGD2}" /
+&NAM_DYNn CPRESOPT = "RICHA", NITR = 8, XRELAX = 1.,
+           LHORELAX_UVWTH = F, LHORELAX_RV = F, LHORELAX_RC= F, LHORELAX_RR= F,
+           LHORELAX_RS= F, LHORELAX_RI= F, LHORELAX_RG= F, LHORELAX_TKE= F,
+           NRIMX = 0, NRIMY = 0, LVE_RELAX = T, XT4DIFU = 1500. /
+&NAM_ADVn CMET_ADV_SCHEME = "FCT2ND", CSV_ADV_SCHEME = "FCT2ND" /
+&NAM_PARAMn  CCLOUD = "KESS", CTURB = "TKEL", CRAD = "ECMW", CDCONV = "KAFR" /
+&NAM_PARAM_RADn  XDTRAD = 1800., XDTRAD_CLONLY = 1800., LCLEAR_SKY = F,
+             NRAD_COLNBR = 400 /
+&NAM_PARAM_CONVECTn XDTCONV = 300., NICE = 1, LREFRESH_ALL = T,
+             LDEEP = T, LSHAL = T, LDOWN = T /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN", XCPHASE = 20. /
+&NAM_TURBn  XIMPL = 1., CTURBLEN = "BL89", CTURBDIM = "1DIM" ,
+            LTURB_FLX = F, LTURB_DIAG = F, LSUBG_COND = F /
+&NAM_CH_MNHCn LUSECHEM = F /
+&NAM_DIAG_SURFn  /
+&NAM_ISBAn CSCOND  = "NP89", CALBEDO = "DRY",
+       CC1DRY = 'DEF', CSOILFRZ = 'DEF', CDIFSFCOND = 'DEF', CSNOWRES = 'DEF'  /
+&NAM_DIAG_ISBAn /
+&NAM_SEAFLUXn CSEA_ALB="UNIF" /
+&NAM_BLANK /
+
+EOF
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!               End NAMELIST = RUN PARAMETERS                               !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!               RUN MESONH                                                  !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+time \${MPIRUN} \${MESONH}
+
+for file in OUTPUT_LISTING* ; do
+ ${CAT} \${file}
+done
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                Save Files                                                 !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${RMMKDIR}  \${OUTDIR}
+${PUTFILES} \${OUT_XBAK_TIME}.??? \${RMOUTDIR}
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!               Next job                                                    !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${RMSHELL} "cd \${NEXTDIR}/${CONFEXP}; ${QSUB} \${NEXTRUN} "
+
+

@@ -1,0 +1,22 @@
+#LIBX = -L/usr/X11R6/lib64 -lX11 -lg2c
+LIBX = -L/usr/X11R6/lib -lX11 /usr/lib64/libgfortran.so.1
+
+#LIBV5D = /usr/local/lib/libv5d.a
+#LIBV5D = -L/mesonh/MAKE/lib/vis5d/LXNAGf95 -lv5d 
+
+LIBGRB = -L$(DIR_GRIB) -lemosR64
+
+#############################################################################
+
+CPPFLAGS += -DLINUX -DG95 -Dkey_swapio
+F77FLAGS += 
+#F90FLAGS = -w -O2
+F90FLAGS +=  -w -O2  
+ifeq ($(B),64)
+F90FLAGS += -r8 
+endif
+LDFLAGS  += -Wl,-noinhibit-exec -Wl,-warn-once
+#
+#OBJS2 = image_fordiachro.o
+#$(OBJS2) : F90FLAGS = -w -O2
+

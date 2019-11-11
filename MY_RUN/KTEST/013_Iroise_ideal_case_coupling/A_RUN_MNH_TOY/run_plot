@@ -1,0 +1,11 @@
+#!/bin/bash 
+
+ncl plot_coupling_model_toy.ncl
+#python plot_coupling_model_toy.py
+
+display */*0.png
+display */*1.png
+display */*2.png
+display */*3.png
+display */*4.png
+

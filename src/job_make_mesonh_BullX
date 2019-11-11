@@ -1,0 +1,26 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#SBATCH --verbose
+#SBATCH --job-name=compile
+#SBATCH --time=04:05:00
+#SBATCH --mem=9600
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --share
+#SBATCH -o MasterI.eo%j   #
+#SBATCH -e MasterI.eo%j   #
+#SBATCH --export=NONE
+
+set -x
+# On va lancer la compilation dans le répertoire de lancement du job
+pwd
+
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-4-2-MPIINTEL-O3
+
+time gmake -j 4
+time gmake -j 1 installmaster
+

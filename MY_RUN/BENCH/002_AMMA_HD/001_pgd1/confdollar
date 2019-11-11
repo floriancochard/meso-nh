@@ -1,0 +1,3 @@
+. ../${CONFEXP}
+#
+export TIME=${TIME_PGD}

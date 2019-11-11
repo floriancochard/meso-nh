@@ -1,0 +1,2 @@
+CPPFLAGS += -DHP -DF90HP
+LDFLAGS  += -lm

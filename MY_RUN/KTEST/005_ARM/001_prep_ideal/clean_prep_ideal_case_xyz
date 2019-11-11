@@ -1,0 +1,1 @@
+rm -f eurocs* OUTPUT_LISTING* pipe* *.tex

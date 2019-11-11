@@ -1,0 +1,26 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#
+# For NEC-SX : bypass underflow
+#
+export F_ERROPT1=271,271,0,0,2,2,2,2
+#
+# Stop on error in argument of log-exp
+#
+export F_ERROPT2=351,355,0,0,1,1,1,0
+#
+# OPTIMISATION IO UNFORMATTED
+#
+#export F_SETBUF=102400
+export F_SETBUF=10240
+#
+# Recl Unit set type BYTE
+#
+export F_RECLUNIT=BYTE
+
+#
+# Performance MPI
+#
+export MPIPROGINF=detail

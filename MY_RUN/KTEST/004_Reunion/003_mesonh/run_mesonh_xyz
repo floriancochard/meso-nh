@@ -1,0 +1,21 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+
+ln -fs ../002_prep_ideal_case/REUNION_IDEA*.{des,lfi,nc} .
+ln -sf ../001_prep_pgd/REUNION_PGD_1km5.{des,lfi,nc} .
+
+if [ "x${MNH_ECRAD}" != "x" ]  ; then
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/RAD* .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/*.nc .
+sed -e's/ECMW/ECRA/g' EXSEG1.nam.src > EXSEG1.nam
+else
+cp EXSEG1.nam.src EXSEG1.nam
+fi
+
+rm -f REUNI.1.* OUT*
+time ${MPIRUN} MESONH${XYZ}

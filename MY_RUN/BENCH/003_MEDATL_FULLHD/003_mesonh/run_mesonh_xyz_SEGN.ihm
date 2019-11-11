@@ -1,0 +1,146 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+${TORUS}
+${JOBMULTI}
+
+set -x
+
+#
+# init env
+#
+[ "x\$XYZ" = "x" ] && . $SRC_MESONH/conf/profile_mesonh${XYZ}
+
+set -e
+cd ${SUBDIR}
+
+${MNHENV}
+export MPIRUN="${MPIRUN}"
+
+#
+# Link input data
+#
+#cp ../../002_arp2lfi/${CONFEXP}/${CINIFILE}*.??? .
+#ln -fs ../../002_arp2lfi/${CONFEXP}/${CINIFILEN}*.??? .
+ln -fs ../../002_arp2lfi/${CONFEXP}/${CCPLFILE1}*.??? .
+#
+# First SEG 
+#
+cat > EXSEG1.nam  << EOF
+&NAM_LUNITn  
+ CINIFILE    = "${CINIFILEN}" 
+ , CCPLFILE(1) = "${CCPLFILE1}"
+/
+&NAM_CONFn  
+ LUSERV = T,
+ LUSERC = T,
+ LUSERR = T,
+ LUSERI = T,
+ LUSERS = T,
+ LUSERG = T,
+ LUSERH = F,
+ LUSECI= T /
+
+&NAM_CONFZ
+ NZ_PROC=2 ,
+ NZ_SPLITTING=10 , ! 1
+ NB_PROCIO_R=${NB_PROCIO_R_MNH} ,
+ NB_PROCIO_W=${NB_PROCIO_W_MNH} ,
+ MPI_BUFFER_SIZE = ${MPI_BUFFER_SIZE}
+/
+
+
+&NAM_DYNn 
+ XTSTEP = ${XTSTEP} ,
+ CPRESOPT = "CRESI",
+ NITR = 12, 
+ LITRADJ = T,
+ XRELAX = 1.,
+ LHORELAX_UVWTH = T,
+ LHORELAX_RV = T,
+ LVE_RELAX = T,
+ NRIMX = 6,
+ NRIMY = 6,
+ XRIMKMAX = ${XRIMKMAX} , ! 0.0005,
+ XT4DIFF = ${XT4DIFF} ! 4000. 
+/
+
+&NAM_ADVn 
+ CUVW_ADV_SCHEME = "CEN4TH",
+ CMET_ADV_SCHEME = "PPM_01",
+ CSV_ADV_SCHEME = "PPM_01" 
+/
+
+&NAM_PARAMn 
+ CTURB = "TKEL",
+ CRAD = "ECMW",
+ CCLOUD = "ICE3",
+ CDCONV = "${CDCONV}"  ! NONE
+/
+
+&NAM_PARAM_RADn 
+ XDTRAD = 1800.,
+ XDTRAD_CLONLY = 1800.,
+ LCLEAR_SKY = F,
+ NRAD_COLNBR = 500 
+/
+
+&NAM_PARAM_CONVECTn 
+ XDTCONV = 300.,
+ NICE = 1,
+ LREFRESH_ALL = T,
+ LDEEP = T,
+ LSHAL = T,
+ LDOWN = T 
+/
+
+&NAM_LBCn 
+ CLBCX = 2*"OPEN",
+ CLBCY = 2*"OPEN",
+ XCPHASE = 20. 
+/
+
+&NAM_TURBn 
+ XIMPL = 1.,
+ CTURBLEN = "BL89",
+ CTURBDIM = "1DIM",
+ LTURB_FLX = F,
+ LTURB_DIAG = F,
+ LSUBG_COND= ${LSUBG_COND},
+ LSUBG_AUCV= ${LSUBG_AUCV} ,
+ LSIGMAS= ${LSIGMAS} ,
+ LSIG_CONV= ${LSIGMAS}
+/
+
+&NAM_CONF 
+ CCONF = "RESTA",
+ LFLAT = F,
+ CEQNSYS = "DUR",
+ CSPLIT = "${CSPLIT}",
+ NMODEL = 1,
+ NVERB = 5,
+ CEXP = "${CEXP}",
+ CSEG = "${CSEGN}" 
+/
+
+&NAM_DYN 
+ XSEGLEN=${XSEGLEN},
+ XASSELIN = 0.2,
+ LCORIO = T,
+ LNUMDIFF = T,
+ XALKTOP = 0.001,
+ XALZBOT = 20000. 
+/
+
+&NAM_FMOUT
+ ${XBAK_TIME} 
+/ 
+EOF
+cp EXSEG1.nam SURF1.nam      
+
+rm -f ${CEXP}.?.${CSEGN}.*??? OUTPUT_LISTING? 
+#
+time \${MPIRUN} ${SRC_MESONH}/exe/MESONH${XYZ}
+cp OUTPUT_LISTING1 OUTPUT_LISTING1_1STEP_${RMODE}
+cat OUTPUT_LISTING1

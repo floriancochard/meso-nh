@@ -1,0 +1,135 @@
+&NAM_CONFIO LCDF4=.TRUE.,
+            LLFIOUT=.FALSE.,
+            LLFIREAD=.FALSE. /
+
+&NAM_SFX_WAVE_CPL XTSTEP_CPL_WAVE = 60.0,
+                  CWAVE_U10       = 'MNH__U10',
+                  CWAVE_V10       = '        ',    
+                  CWAVE_CHA       = 'MNH__CHA',
+                  CWAVE_UCU       = '        ',
+                  CWAVE_VCU       = '        ',
+                  CWAVE_HS        = '        ',
+                  CWAVE_TP        = '        ' /
+
+&NAM_SFX_SEA_CPL XTSTEP_CPL_SEA  =  -1.0,
+                 CSEA_FWSU       = '        ',
+                 CSEA_FWSV       = '        ',
+                 CSEA_HEAT       = '        ',
+                 CSEA_SNET       = '        ',
+                 CSEA_WIND       = '        ',
+                 CSEA_FWSM       = '        ',
+                 CSEA_EVAP       = '        ',
+                 CSEA_RAIN       = '        ',
+                 CSEA_SNOW       = '        ',
+                 CSEA_WATF       = '        ',
+                 CSEA_PRES       = '        ',
+                 CSEA_SST        = '        ',
+                 CSEA_UCU        = '        ',
+                 CSEA_VCU        = '        ' /
+
+&NAM_OASIS LOASIS=.TRUE.,
+           LOASIS_GRID=.TRUE.,
+           CMODEL_NAME='mesonh' /
+
+&NAM_CONFZ MPI_BUFFER_SIZE=200 /
+
+&NAM_CONF CCONF = "START",
+          NVERB=5,
+          NMODEL = 1,
+          CEXP = "IROIS",
+          CSEG = "00-01",
+          CSPLIT='BSPLITTING' /
+
+&NAM_DYN XSEGLEN = 360.,
+         LCORIO = .TRUE.,
+         LNUMDIFU = .TRUE.,
+         LNUMDIFTH = .FALSE.,
+         XALKTOP = 0.001,
+         XALZBOT = 1200. /
+
+&NAM_BACKUP  XBAK_TIME(1,1)=360. /
+
+&NAM_CONFn LUSERV=.TRUE.,
+           LUSECI=.TRUE.,
+           LUSERC=.TRUE.,
+           LUSERR=.TRUE.,
+           LUSERI=.TRUE.,
+           LUSERS=.TRUE.,
+           LUSERG=.TRUE.,
+           LUSERH=.FALSE.,
+           NSV_USER=0 /
+
+&NAM_LUNITn CINIFILE = "IROISE_5KM_201109_02_00",
+            CINIFILEPGD="IROISE_5KM" /
+
+&NAM_DYNn  XTSTEP = 10.,  
+           CPRESOPT = "ZRESI", 
+           LITRADJ=.TRUE.,
+           NITR = 8,
+           LHORELAX_UVWTH = .FALSE.,
+           LHORELAX_RV = .FALSE.,
+           LVE_RELAX = .TRUE.,
+           NRIMX = 5,
+           NRIMY = 5,
+           XRIMKMAX = 0.01,
+           XT4DIFU = 300.,
+           XT4DIFTH = 300. /
+
+&NAM_ADVn CUVW_ADV_SCHEME = "CEN4TH",CTEMP_SCHEME='LEFR',
+          CMET_ADV_SCHEME = "PPM_01",
+          CSV_ADV_SCHEME = "PPM_01" /
+
+&NAM_PARAMn CCLOUD = "ICE3",
+            CTURB = "TKEL",
+            CRAD = "ECMW",
+            CDCONV = "NONE",
+            CSCONV="EDKF" /
+
+&NAM_PARAM_RADn XDTRAD = 600.,
+                XDTRAD_CLONLY = 600. /
+
+&NAM_LBCn CLBCX = 2*"OPEN",
+          CLBCY = 2*"OPEN",
+          XCPHASE = 20.,
+          XCPHASE_PBL = 0. /
+
+&NAM_LES /
+
+&NAM_TURBn CTURBLEN = "BL89",
+           CTURBDIM = "1DIM",
+           LRMC01 = .FALSE.,
+           LTURB_FLX=.TRUE.,
+           LTURB_DIAG=.TRUE.,
+           LSUBG_COND =.FALSE.,
+           XKEMIN=0.0000001 /
+
+&NAM_CH_MNHCn LUSECHEM = F /
+
+&NAM_DIAG_SURFn N2M=2,
+                LSURF_BUDGET=.TRUE.,
+                LCOEF=.TRUE. /
+
+&NAM_DIAG_SURF_ATMn LFRAC=.TRUE.,
+                    LDIAG_GRID=.TRUE. /
+
+&NAM_ISBA CALBEDO="DRY" /
+&NAM_ISBAn CSCOND="NP89",
+           CC1DRY='DEF',
+           CSOILFRZ='DEF',
+           CDIFSFCOND='DEF',
+           CSNOWRES='DEF' /
+
+&NAM_SSOn CROUGH='BE04' /
+
+&NAM_DIAG_ISBAn /
+
+&NAM_SEAFLUXn CSEA_FLUX='COARE3',
+              CSEA_ALB='TA96',
+              LPWG=.FALSE.,
+              LPRECIP=.FALSE.,
+              LPWEBB=.FALSE.,
+              LPROGSST=.FALSE.,
+              NGRVWAVES=0,
+              CINTERPOL_SST='NONE',
+              XICHCE=0.0 /
+

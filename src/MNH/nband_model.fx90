@@ -1,0 +1,2312 @@
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! MASDEV4_7 diag 2006/05/18 13:07:25
+!-----------------------------------------------------------------
+***FILE:     nband_model.f
+***AUTHOR:   J.-P. Chaboureau *LA*
+***DATE:     29/03/00
+***ORIGINAL: original from JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+***MODIFIED: I.Mallet (02/11/00) added F90 Interface (MODD_RAD_TRANSF)
+*                               and changed name of variables concerned
+*                               indicated by "*MNH"
+*                                named nband_model.f90 and compiled with -Fixed
+*           J.Escobar (1/12/2017) bug => intialized all ZV=0.0 in spectr
+      SUBROUTINE NBMVEC
+     I ( KIDIA  ,KFDIA ,KLON,KLEV,KGL,KCABS,KNG1,KUABS
+     I , KH2O   ,KCO2  ,KO3,KCNT,KN2O,KCH4,KCO,KC11,KC12,KCFC
+     I , KINIS  ,KENDS ,KCONF,KCLOUD,KOVLP
+     L , LPVOIGT, LPTDEP
+     R , PTAVE, PQVAVE, PO3AVE, PPL, PT
+     R , PANGLE , PCLDLD, PCLDLU
+     R , PDT0   ,PEM0 
+c     R , PFBBDC ,PFBBDT,PFBBUC,PFBBUT
+c     R , PFDC   ,PFDT  ,PFDTI,PFUC,PFUT,PFUTI
+     R , PRADC  ,PRADT)
+C
+C**** *NBMVEC* - VECTORIZED NARROW BAND MODEL OF THE LONGWAVE RADIATION
+C                TRANSFER
+C
+C**   INTERFACE
+C     ---------
+C          *NBMVEC* IS CALLED BY *NARROW*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C        KIDIA    : START OF VECTOR
+C        KFDIA    : END OF VECTOR
+C        KLON     : TOTAL LENGTH OF VECTOR
+C        KLEV     : NUMBER OF FULL-LEVELS (LAYERS)
+C        KGL      : NUMBER OF SUB-LAYERS IN VERTICAL INTEGRATION
+C        KCABS    : CONFIGURATION INDEX FOR ABSORBERS
+C        LPVOIGT  : .T. IF VOIGT PROFILE IS ACCOUNTED FOR
+C     === OUTPUTS ===
+C        PFBBDC   : BROAD-BAND DOWNWARD CLEAR-SKY FLUXES (SURF./TOA)
+C        PFBBDT   : BROAD-BAND DOWNWARD TOTAL     FLUXES (SURF./TOA)
+C        PFBBUC   : BROAD-BAND   UPWARD CLEAR-SKY FLUXES (SURF./TOA)
+C        PFBBUT   : BROAD-BAND   UPWARD TOTAL     FLUXES (SURF./TOA)
+C        PFDC,PFUC: CLEAR-SKY FLUXES (ALL HALF-LEVELS)
+C        PFDT,PFUT: TOTAL     FLUXES (ALL HALF-LEVELS)
+C        PRADC    : CLEAR-SKY SPECTRAL RADIANCE AT T.O.A. 
+C        PRADT    : TOTAL-SKY SPECTRAL RADIANCE AT T.O.A. 
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+C
+C     MODIFICATIONS
+C     -------------
+C
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+*MNH
+                                !include 'implic.h'
+      LOGICAL LPTDEP, LPVOIGT
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+                                !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomrad.h'
+*MNH  integer NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  real CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,FTEMP(JV3),
+*MNH &     FCH2O(JV3),FCCO2(JV3),FCO3(JV3),XLIM(JV10),CLIM(JV2)
+*MNH  COMMON/YOMRADI/NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  COMMON /YOMRADR/CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,
+*MNH &     FTEMP,FCH2O,FCCO2,FCO3,XLIM,CLIM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &     RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+*MNH  real WNUTOT(2,20), POLPLCKTOT(6,2,20), RODWALTOT(6,8,20)
+*MNH  COMMON /YOMSPET/ WNUTOT, RODWALTOT, POLPLCKTOT
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+C
+      REAL PDT0(KLON), PEM0(KLON), PPL(KLON,KLEV+1), PT(KLON,KLEV+1)
+      REAL PO3AVE(KLON,KLEV), PQVAVE(KLON,KLEV), PTAVE(KLON,KLEV)
+      REAL PCLDLD(KLON,KLEV), PCLDLU(KLON,KLEV)
+      REAL PANGLE(KLON)  
+      REAL PRADC(KLON,20), PRADT(KLON,20)
+C     ------------------------------------------------------------------
+C     
+      REAL
+     *    ZDPM(KLON,3*KLEV)    , ZDUC(KLON,3*KLEV)
+     *  , ZSSIG(KLON,3*KLEV+1)     
+     *  , ZU(KLON,8,3*KLEV+1)  , ZUPM(KLON,3*KLEV)
+     *  , ZXT(KLON,3,3*KLEV+1) , ZXOZ(KLON)    , ZXWV(KLON) 
+C     ------------------------------------------------------------------
+C
+C     ------------------------------------------------------------------
+C
+C          1.     INITIALISATION
+C                 --------------
+  100 CONTINUE
+C
+C     IF (NIMP.EQ.0) STOP
+      
+      PVGH2O = 30.
+      PVGCO2 = 60.
+      PVGO3  = 400.
+      RG = 9.80665
+      ZEPSCO = 1.E-12
+      !ZEPSCQ = 1.E-12 NOT ENOUGH
+      ZEPSCQ = 1.E-8
+*MNH      PCMCO2 = CVCO2 * RCO2M / RAIRM
+      PCMCO2 = X1CO2 * XCO2M / XAIRM
+*MNH      PCMN2O = CVN2O * RN2OM / RAIRM
+      PCMN2O = XN2O * XN2OM / XAIRM
+*MNH       PCMCH4 = CVCH4 * RCH4M / RAIRM
+      PCMCH4 = XCH4 * XCH4M / XAIRM
+C      
+      DO 103 JA=1,8
+      DO 102 JK=1,KGL+1  
+      DO 101 JL=KIDIA,KFDIA
+      ZU(JL,JA,JK)=0.
+ 101  CONTINUE
+ 102  CONTINUE
+ 103  CONTINUE     
+      DO 106 JA=1,3
+      DO 105 JK=1,KGL+1  
+      DO 104 JL=KIDIA,KFDIA
+      ZXT(JL,JA,JK)=0.
+ 104  CONTINUE
+ 105  CONTINUE
+ 106  CONTINUE 
+c      DO 113 JNIV=1,2
+c      DO 112 JSI=1,10  
+c      DO 111 JL=KIDIA,KFDIA
+c      PFBBDC(JL,JSI,JNIV)=0.
+c      PFBBUC(JL,JSI,JNIV)=0.
+c      PFBBDT(JL,JSI,JNIV)=0.
+c      PFBBUT(JL,JSI,JNIV)=0.
+c 111  CONTINUE
+c 112  CONTINUE
+c 113  CONTINUE     
+C
+C     ------------------------------------------------------------------
+C
+C*         2.    PRESSURE OVER GAUSS SUB-LEVELS
+C                ------------------------------
+C
+ 200  CONTINUE
+C
+      IG1P1=KNG1+1
+      DO 201 JL=KIDIA,KFDIA
+      ZSSIG(JL,1)=PPL(JL,1)
+ 201  CONTINUE
+C      
+      DO 206 JK = 1 , KLEV
+      JKJ=(JK-1)*IG1P1+1
+      JKJR = JKJ
+      JKJP = JKJ + IG1P1
+      DO 203 JL = KIDIA,KFDIA
+      ZSSIG(JL,JKJP)=PPL(JL,JK+1)
+ 203  CONTINUE
+      DO 205 IG1=1,KNG1
+      JKJ=JKJ+1
+      DO 204 JL = KIDIA,KFDIA
+      ZSSIG(JL,JKJ)= (ZSSIG(JL,JKJR)+ZSSIG(JL,JKJP))*0.5
+*MNH     S  + RT1(IG1) * (ZSSIG(JL,JKJP) - ZSSIG(JL,JKJR)) * 0.5
+     S  + XRT1(IG1) * (ZSSIG(JL,JKJP) - ZSSIG(JL,JKJR)) * 0.5
+ 204  CONTINUE
+ 205  CONTINUE
+ 206  CONTINUE
+C      
+C-----------------------------------------------------------------------
+C
+C*         3.    PRESSURE THICKNESS AND MEAN PRESSURE OF SUB-LAYERS
+C                --------------------------------------------------
+C
+ 300  CONTINUE
+C
+      DO 302 JKI=1,KGL
+      JKIP1=JKI+1
+      DO 301 JL = KIDIA,KFDIA
+      ZUPM(JL,JKI)=(ZSSIG(JL,JKI)+ZSSIG(JL,JKIP1))*0.5
+      ZDPM(JL,JKI)=(ZSSIG(JL,JKI)-ZSSIG(JL,JKIP1))/(10.*RG)
+ 301  CONTINUE
+C      IF (NIMP.EQ.0) THEN
+C      JL=KIDIA
+C      PRINT 9301,JKI,ZDPM(JL,JKI),ZUPM(JL,JKI)
+C 9301 FORMAT(1X,I4,2E13.6)
+C      END IF     
+ 302  CONTINUE
+C
+      DO 306 JK = 1 , KLEV
+      JKP1=JK+1
+      JKL = KLEV+1 - JK
+      DO 303 JL = KIDIA,KFDIA
+      ZXWV(JL) = MAX (PQVAVE(JL,JK) , ZEPSCQ )
+      ZXOZ(JL) = MAX (PO3AVE(JL,JK) , ZEPSCO )
+ 303  CONTINUE
+      JKJ=(JK-1)*IG1P1+1
+      JKJPN=JKJ+KNG1
+      DO 305 JKK=JKJ,JKJPN
+      DO 304 JL = KIDIA,KFDIA
+      ZUPMH2O = ( ZUPM(JL,JKK) + PVGH2O ) * ZDPM(JL,JKK) / 101325.
+      ZUPMCO2 = ( ZUPM(JL,JKK) + PVGCO2 ) * ZDPM(JL,JKK) / 101325.
+      ZUPMO3  = ( ZUPM(JL,JKK) + PVGO3  ) * ZDPM(JL,JKK) / 101325. 
+      ZDUC(JL,JKK)= ZDPM(JL,JK)
+      ZU6= ZXWV(JL) * ZUPMH2O
+      ZFPPW= 1.6078 * ZXWV(JL) / (1.+0.608*ZXWV(JL))
+      ZU(JL, 1,JKK) = ZXWV(JL) * ZDPM(JL,JKK)
+      ZU(JL, 2,JKK) = ZXWV(JL) * ZUPMH2O
+      ZU(JL, 3,JKK) = PCMCO2    * ZDPM(JL,JKK)
+      ZU(JL, 4,JKK) = PCMCO2    * ZUPMCO2
+      ZU(JL, 5,JKK) = ZXOZ(JL) * ZDPM(JL,JKK)
+      ZU(JL, 6,JKK) = ZXOZ(JL) * ZUPMO3
+      ZU(JL, 7,JKK) = ZU6      * ZFPPW
+      ZU(JL, 8,JKK) = ZU6      * (1.-ZFPPW)
+ 304  CONTINUE
+ 305  CONTINUE
+ 306  CONTINUE
+      DO 308 JA=1,8
+      DO 307 JL=KIDIA,KFDIA
+      ZU(JL,JA,KGL+1) = 0.
+ 307  CONTINUE     
+ 308  CONTINUE     
+C      IF (NIMP.EQ.0) THEN
+C      DO 312 JK=1,KGL+1
+C      PRINT 9312,JK,(ZU(KIDIA,JA,JK),JA=1,8)
+C 9312 FORMAT(1X,I4,8E13.6)
+C 312  CONTINUE 
+C      END IF    
+C           
+      CALL SPECTR 
+     I ( KIDIA,KFDIA,KLON,KLEV,KGL,KCABS,KNG1,KUABS
+     I , KH2O,KCO2,KO3,KCNT,KN2O,KCH4,KCO,KC11,KC12,KCFC
+     I , KINIS,KENDS,KCONF,KCLOUD,KOVLP
+     L , LPVOIGT,LPTDEP
+     R , PCMCO2, PCMN2O, PCMN2O, PCMCH4, PCMO2, PCMF11, PCMF12
+     R , PANGLE,PCLDLD, PCLDLU
+     R , PDT0,PEM0
+     R , PT,PTAVE
+     R , ZU
+     R , PRADC,PRADT
+     S )
+      
+C
+C     ------------------------------------------------------------------
+C
+      RETURN
+      END
+      SUBROUTINE SPECTR 
+     I ( KIDIA,KFDIA,KLON,KLEV,KGL,KCABS,KNG1,KUABS
+     I , KH2O,KCO2,KO3,KCNT,KN2O,KCH4,KCO,KC11,KC12,KCFC
+     I , KINIS,KENDS,KCONF,KCLOUD,KOVLP
+     L , LPVOIGT,LPTDEP
+     R , PCMCO2, PCMN2O, PCMCO, PCMCH4, PCMO2, PCMF11, PCMF12
+     R , PANGLE,ZCLDLD, ZCLDLU
+     R , PDT0,PEM0, PT,PTAVE, PU , PRADC,PRADT)
+C
+C**** *SPECTR* - PERFORMS THE SPECTRAL INTEGRATION
+C
+C**   INTERFACE
+C     ---------
+C          *SPECTR* IS CALLED BY *NBMVEC*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C        KIDIA    : START OF VECTOR
+C        KFDIA    : END OF VECTOR
+C        KLON     : TOTAL LENGTH OF VECTOR
+C        KLEV     : NUMBER OF FULL-LEVELS (LAYERS)
+C        KGL      : NUMBER OF SUB-LAYERS IN VERTICAL INTEGRATION
+C        KCABS    : CONFIGURATION INDEX FOR ABSORBERS
+C        LPVOIGT  : .T. IF VOIGT PROFILE IS ACCOUNTED FOR
+C     === OUTPUTS ===
+C        PRADC    : CLEAR-SKY SPECTRAL RADIANCE (UPWARD AT TOA)
+C        PRADT    : TOTAL-SKY SPECTRAL RADIANCE (UPWARD AT TOA)
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+C
+C     MODIFICATIONS
+C     -------------
+C        Remy Roca LMD 97 03 03
+c     This version is only dedicated to the calculation of the radiance
+c     as the satellite may have seen - Jean-Pierre Chaboureau (Dec. 1998).
+c     Thus all the flux outputs have been removed to save memory space.
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+*MNH
+      LOGICAL LPTDEP, LPVOIGT, LLCNT
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+                                !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomrad.h'
+*MNH  integer NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  real CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,FTEMP(JV3),
+*MNH &     FCH2O(JV3),FCCO2(JV3),FCO3(JV3),XLIM(JV10),CLIM(JV2)
+*MNH  COMMON/YOMRADI/NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  COMMON /YOMRADR/CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,
+*MNH &     FTEMP,FCH2O,FCCO2,FCO3,XLIM,CLIM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &  RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+*MNH  real WNUTOT(2,20), POLPLCKTOT(6,2,20), RODWALTOT(6,8,20)
+*MNH  COMMON /YOMSPET/ WNUTOT, RODWALTOT, POLPLCKTOT
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+C
+      REAL PT(KLON,KLEV+1),PDT0(KLON),PEM0(KLON)
+      REAL PTAVE(KLON,KLEV)
+      REAL PANGLE(KLON), PU(KLON,8,KGL+1)
+      REAL ZCLDLD(KLON,KLEV),ZCLDLU(KLON,KLEV)
+C
+      REAL PCNTRB(KLON,KLEV+1,KLEV+1),PRADC(KLON,20),PRADT(KLON,20)
+C     ------------------------------------------------------------------
+C
+C          0.2  LOCAL ARRAYS
+C
+      REAL
+     *     ZBINT(KLON,KLEV+1)        
+     *  ,  ZBLAY(KLON,KLEV)
+     *  ,  ZBLEV(KLON,KLEV+1)
+     *  ,  ZCNTRB(KLON,KLEV+1,KLEV+1)
+     *  ,  ZDZ(KLON,KLEV)
+     *  ,  ZTAVSL(KLON,3*KLEV)
+*MNH     *  ,  ZV(KLON,JUABS,3*KLEV+1)
+     *  ,  ZV(KLON,JPUABS,3*KLEV+1)
+     *  ,  ZDBSL(KLON,2*KLEV)
+     *  ,  ZCDBSL(KLON,2*KLEV)
+      REAL
+     *     ZBSUI(KLON),  ZRES(KLON) ,ZRES2(KLON), ZTI(KLON)
+     *  ,  ZTI2(KLON)
+     *  ,  ZBSUR(KLON)
+      REAL
+     *    ZFDC(KLON,KLEV+1),ZFDT(KLON,KLEV+1)
+     *  , ZFUC(KLON,KLEV+1),ZFUT(KLON,KLEV+1)
+C
+C     ------------------------------------------------------------------
+C
+C*         1.   INITIALIZATION
+C
+ 100  CONTINUE
+C
+C     IF (NIMP.EQ.0) STOP
+ 
+      IF (KCONF.EQ.0) THEN
+         IBOT=1
+         ITOP=KLEV+1
+         IVDIS=KLEV
+      ELSE IF (KCONF.EQ.1) THEN
+         IBOT=1
+         ITOP=KLEV+1
+         IVDIS=1
+      ELSE
+         IBOT=1
+         ITOP=KLEV+1
+         IVDIS=1
+         WRITE (NULOUT,9101) KCONF
+      END IF
+C
+       
+                  
+      INH2O=1
+      INCO2=2
+      INO3 =3
+      INN2O=4
+      INCH4=5
+      INCO =6
+      INC11=7
+      INC12=8
+      INCFC=9
+C
+      DO 103 JK1=1,KLEV+1
+      DO 102 JK2=1,KLEV+1
+      DO 101 JL=KIDIA,KFDIA
+      PCNTRB(JL,JK1,JK2)=0.
+ 101  CONTINUE
+ 102  CONTINUE
+ 103  CONTINUE
+C 
+      IG1P1=KNG1+1
+      DO 113 JK=1,KLEV
+      JJ=(JK-1)*IG1P1+1
+      JJPN=JJ+KNG1
+      DO 112 JKSL=JJ,JJPN
+      DO 111 JL=KIDIA,KFDIA
+      ZTAVSL(JL,JKSL)=PTAVE(JL,JK)
+ 111  CONTINUE
+ 112  CONTINUE
+ 113  CONTINUE
+      DO JK=1,2*KLEV
+      DO JL=KIDIA,KFDIA
+      ZCDBSL(JL,JK)=0.
+      END DO
+      END DO
+C
+C     ------------------------------------------------------------------
+C
+C          2.   LOOP ON WAVENUMBER
+C
+ 200  CONTINUE
+C
+      DO 499 JWVN=KINIS,KENDS
+C
+      IH2O=1
+      ICNT=1
+      ICO2=1
+      IO3 =1
+      IN2O=1
+      ICH4=1
+      ICO =1
+      IC11=1
+      IC12=1
+      ICFC=1
+C
+C
+C*         2.1  READ COEFFICIENTS FOR A GIVEN SPECTRAL INTERVAL
+C
+ 210  CONTINUE
+      do JNU=1,2
+*MNH         WNU(JNU)= WNUTOT(JNU,JWVN)
+         XWNU(JNU)= XWNUTOT(JNU,JWVN)
+*MNH
+      end do
+      do JPLA=1,2
+         do JPOL=1,6
+*MNH             POLPLCK(JPOL,JPLA)= POLPLCKTOT(JPOL,JPLA,JWVN)
+             XPOLPLCK(JPOL,JPLA)= XPOLPLCKTOT(JPOL,JPLA,JWVN)
+*MNH
+         end do
+      end do
+      do JABS=1,NA
+         do JCOE=1,6
+*MNH            RODWAL(JCOE,JABS)= RODWALTOT(JCOE,JABS,JWVN)
+            XRODWAL(JCOE,JABS)= XRODWALTOT(JCOE,JABS,JWVN)
+*MNH
+       end do
+      end do
+C
+C
+C*         2.2  INITIALIZATION
+C
+ 220  CONTINUE
+C
+      IBBF=1
+      DO ICHAN=1,NCHAN
+*MNH      IF (WNU(1).GE.XLIM(ICHAN)) IBBF=ICHAN
+      IF (XWNU(1).GE.XXLIM(ICHAN)) IBBF=ICHAN
+*MNH 
+      END DO
+c      IF (WNU(1).GE.XLIM(1)) IBBF=1
+c      IF (WNU(1).GE.XLIM(2)) IBBF=2
+c      IF (WNU(1).GE.XLIM(3)) IBBF=3
+c      IF (WNU(1).GE.XLIM(4)) IBBF=4
+c      IF (WNU(1).GE.XLIM(5)) IBBF=5
+c      IF (WNU(1).GE.XLIM(6)) IBBF=6
+c      IF (WNU(1).GE.XLIM(7)) IBBF=7
+c      IF (WNU(1).GE.XLIM(8)) IBBF=8
+c      IF (WNU(1).GE.XLIM(9)) IBBF=9
+C
+*MNH      ZWVN=0.5*(WNU(1)+WNU(2))
+      ZWVN=0.5*(XWNU(1)+XWNU(2))
+*MNH      WVNA(JWVN)=WNU(1)
+      XWVNA(JWVN)=XWNU(1)
+*MNH      WVNB(JWVN)=WNU(2)
+      XWVNB(JWVN)=XWNU(2)
+*MNH
+C
+      DO 224 JKSL=1,2*KLEV
+      DO 221 JL=KIDIA,KFDIA
+      ZDBSL(JL,JKSL)=0.
+ 221  CONTINUE
+      DO 223 JABS=1,KUABS
+      DO 222 JL=KIDIA,KFDIA
+C       ZV(JL,JABS,JKSL)=0.
+ 222  CONTINUE
+ 223  CONTINUE
+ 224  CONTINUE
+C
+      ZV = 0.0
+C
+      LLCNT=.FALSE.
+*MNH      IF (WNU(1).LT.CLIM(1) .OR. WNU(1).GE.CLIM(2)) ICNT=0
+      IF (XWNU(1).LT.XCLIM(1) .OR. XWNU(1).GE.XCLIM(2)) ICNT=0
+*MNH      IF (WNU(1).GE.330.     .OR. WNU(1).LE.1300.   ) LLCNT=.TRUE.
+      IF (XWNU(1).GE.330.     .OR. XWNU(1).LE.1300.   ) LLCNT=.TRUE.
+*MNH
+CCO2  IF (WNU(1).LT.500.     .OR. WNU(1).GE.1250.   ) ICO2=0
+CO3   IF (WNU(1).LT.970.     .OR. WNU(1).GE.1110.   ) IO3 =0
+C
+*MNH      ZA1=RODWAL(1,INH2O)
+      ZA1=XRODWAL(1,INH2O)
+*MNH      ZA2=RODWAL(1,INCO2)
+      ZA2=XRODWAL(1,INCO2)
+*MNH      ZA3=RODWAL(1,INO3 )
+      ZA3=XRODWAL(1,INO3 )
+*MNH      ZA4=RODWAL(1,INN2O)
+      ZA4=XRODWAL(1,INN2O)
+*MNH      ZA5=RODWAL(1,INCH4)
+      ZA5=XRODWAL(1,INCH4)
+*MNH
+C
+C      IF (NIMP.EQ.0) THEN
+C      PRINT 9224,ZA1,ZA2,ZA3,ZA4,ZA5,KH2O,KCO2,KO3 ,KN2O,KCH4
+C 9224 FORMAT(1X,5E13.6,5I3)     
+C      END IF
+      IF (ZA1.EQ.0. .OR. KH2O.EQ.0) IH2O=0
+      IF (ZA2.EQ.0. .OR. KCO2.EQ.0) ICO2=0
+      IF (ZA3.EQ.0. .OR. KO3 .EQ.0) IO3 =0
+      IF (ZA4.EQ.0. .OR. KN2O.EQ.0) IN2O=0
+      IF (ZA5.EQ.0. .OR. KCH4.EQ.0) ICH4=0
+      IF (NCNT.EQ.0) ICNT=0
+      ICO = 0
+      IC11= 0
+      IC12= 0
+      ICFC= 0
+C
+c      PRINT 9221,JWVN,WNU(1),WNU(2),IH2O,ICO2,IO3,IN2O,ICH4,ICNT
+c     $ ,ICO,IC11,IC12,ICFC
+C      IF (NIMP.EQ.0) THEN
+C      PRINT 9221,JWVN,WNU(1),WNU(2),IH2O,ICO2,IO3,IN2O,ICH4,ICNT
+C     $ ,ICO,IC11,IC12,ICFC
+C 9221 FORMAT(1X,'JWVN= ',I3,' WV= ',F8.2,' - ',F8.2,2X,10I3)     
+C      END IF
+C
+C
+C
+C
+C*         2.3  INTRODUCTION OF THE TEMPERATURE EFFECT
+C
+ 230  CONTINUE
+C
+      IF (IH2O.NE.0) THEN
+         DO 232 JKSL=KGL,1,-1
+         DO 231 JL=KIDIA,KFDIA
+         IF (LPTDEP) THEN
+*MNH            ZTX =ZTAVSL(JL,JKSL)-TREF
+            ZTX =ZTAVSL(JL,JKSL)-XTREF
+            ZTX2=ZTX*ZTX
+*MNH            ZPHI=RODWAL(3,INH2O)*ZTX+RODWAL(4,INH2O)*ZTX2
+            ZPHI=XRODWAL(3,INH2O)*ZTX+XRODWAL(4,INH2O)*ZTX2
+*MNH            ZPSI=RODWAL(5,INH2O)*ZTX+RODWAL(6,INH2O)*ZTX2
+            ZPSI=XRODWAL(5,INH2O)*ZTX+XRODWAL(6,INH2O)*ZTX2
+*MNH
+            ZUA =PU(JL,1,JKSL)*EXP  (ZPHI)
+            ZUB =PU(JL,2,JKSL)*EXP  (2.*ZPSI)
+         ELSE
+            ZUA =PU(JL,1,JKSL)
+            ZUB =PU(JL,2,JKSL)
+         END IF
+         ZV(JL,1,JKSL)=ZV(JL,1,JKSL+1)+ZUA
+         ZV(JL,2,JKSL)=ZV(JL,2,JKSL+1)+ZUB
+ 231     CONTINUE
+ 232     CONTINUE
+      END IF
+C      IF (NIMP.EQ.0) print *,' SPECTR after 232 '
+C
+      IF (ICO2.NE.0) THEN
+         DO 234 JKSL=KGL,1,-1
+         DO 233 JL=KIDIA,KFDIA
+         IF (LPTDEP) THEN
+*MNH            ZTX =ZTAVSL(JL,JKSL)-TREF
+            ZTX =ZTAVSL(JL,JKSL)-XTREF
+            ZTX2=ZTX*ZTX
+*MNH            ZPHI=RODWAL(3,INCO2)*ZTX+RODWAL(4,INCO2)*ZTX2
+            ZPHI=XRODWAL(3,INCO2)*ZTX+XRODWAL(4,INCO2)*ZTX2
+*MNH            ZPSI=RODWAL(5,INCO2)*ZTX+RODWAL(6,INCO2)*ZTX2
+            ZPSI=XRODWAL(5,INCO2)*ZTX+XRODWAL(6,INCO2)*ZTX2
+*MNH
+            ZUA =PU(JL,3,JKSL)*EXP  (ZPHI)
+            ZUB =PU(JL,4,JKSL)*EXP  (2.*ZPSI)
+         ELSE
+            ZUA =PU(JL,3,JKSL)
+            ZUB =PU(JL,4,JKSL)
+         END IF
+         ZV(JL,3,JKSL)=ZV(JL,3,JKSL+1)+ZUA
+         ZV(JL,4,JKSL)=ZV(JL,4,JKSL+1)+ZUB
+ 233     CONTINUE
+ 234     CONTINUE
+      END IF
+C
+      IF (IO3 .NE.0) THEN
+         DO 236 JKSL=KGL,1,-1
+         DO 235 JL=KIDIA,KFDIA
+         IF (LPTDEP) THEN
+*MNH            ZTX =ZTAVSL(JL,JKSL)-TREF
+            ZTX =ZTAVSL(JL,JKSL)-XTREF
+            ZTX2=ZTX*ZTX
+*MNH            ZPHI=RODWAL(3,INO3 )*ZTX+RODWAL(4,INO3 )*ZTX2
+            ZPHI=XRODWAL(3,INO3 )*ZTX+XRODWAL(4,INO3 )*ZTX2
+*MNH            ZPSI=RODWAL(5,INO3 )*ZTX+RODWAL(6,INO3 )*ZTX2
+            ZPSI=XRODWAL(5,INO3 )*ZTX+XRODWAL(6,INO3 )*ZTX2
+*MNH
+            ZUA =PU(JL,5,JKSL)*EXP  (ZPHI)
+            ZUB =PU(JL,6,JKSL)*EXP  (2.*ZPSI)
+         ELSE
+            ZUA =PU(JL,5,JKSL)
+            ZUB =PU(JL,6,JKSL)
+         END IF
+         ZV(JL,5,JKSL)=ZV(JL,5,JKSL+1)+ZUA
+         ZV(JL,6,JKSL)=ZV(JL,6,JKSL+1)+ZUB
+ 235     CONTINUE
+ 236     CONTINUE
+      END IF
+C
+      IF (ICNT.NE.0) THEN
+         DO 238 JKSL=KGL,1,-1
+         DO 237 JL=KIDIA,KFDIA
+         IF (LPTDEP) THEN
+            ZFACTC= 6.08*(296./ZTAVSL(JL,JKSL)-1.)
+            ZUA =PU(JL,7,JKSL)*EXP  (ZFACTC)
+            ZUB =PU(JL,8,JKSL)
+         ELSE
+            ZUA =PU(JL,7,JKSL)
+            ZUB =PU(JL,8,JKSL)
+         END IF
+         ZV(JL,11,JKSL)=ZV(JL,11,JKSL+1)+ZUA
+         ZV(JL,12,JKSL)=ZV(JL,12,JKSL+1)+ZUB
+ 237     CONTINUE
+ 238     CONTINUE
+      END IF
+C
+      IF (IN2O.NE.0) THEN
+        DO 242 JKSL=KGL,1,-1
+         DO 241 JL=KIDIA,KFDIA
+         IF (LPTDEP) THEN
+*MNH            ZTX =ZTAVSL(JL,JKSL)-TREF
+            ZTX =ZTAVSL(JL,JKSL)-XTREF
+            ZTX2=ZTX*ZTX
+*MNH            ZPHI=RODWAL(3,INN2O)*ZTX+RODWAL(4,INN2O)*ZTX2
+            ZPHI=XRODWAL(3,INN2O)*ZTX+XRODWAL(4,INN2O)*ZTX2
+*MNH            ZPSI=RODWAL(5,INN2O)*ZTX+RODWAL(6,INN2O)*ZTX2
+            ZPSI=XRODWAL(5,INN2O)*ZTX+XRODWAL(6,INN2O)*ZTX2
+*MNH
+            ZUA =PU(JL,3,JKSL)*EXP  (ZPHI)   *PCMN2O/PCMCO2
+            ZUB =PU(JL,4,JKSL)*EXP  (2.*ZPSI)*PCMN2O/PCMCO2
+         ELSE
+            ZUA =PU(JL,3,JKSL)*PCMN2O/PCMCO2
+            ZUB =PU(JL,4,JKSL)*PCMN2O/PCMCO2
+         END IF
+         ZV(JL,7,JKSL)=ZV(JL,7,JKSL+1)+ZUA
+         ZV(JL,8,JKSL)=ZV(JL,8,JKSL+1)+ZUB
+ 241     CONTINUE
+ 242     CONTINUE
+      END IF
+C
+      IF (ICH4.NE.0) THEN
+         DO 244 JKSL=KGL,1,-1
+         DO 243 JL=KIDIA,KFDIA
+         IF (LPTDEP) THEN
+*MNH            ZTX =ZTAVSL(JL,JKSL)-TREF
+            ZTX =ZTAVSL(JL,JKSL)-XTREF
+            ZTX2=ZTX*ZTX
+*MNH            ZPHI=RODWAL(3,INCH4)*ZTX+RODWAL(4,INCH4)*ZTX2
+            ZPHI=XRODWAL(3,INCH4)*ZTX+XRODWAL(4,INCH4)*ZTX2
+*MNH            ZPSI=RODWAL(5,INCH4)*ZTX+RODWAL(6,INCH4)*ZTX2
+            ZPSI=XRODWAL(5,INCH4)*ZTX+XRODWAL(6,INCH4)*ZTX2
+*MNH
+            ZUA =PU(JL,3,JKSL)*EXP  (ZPHI)   *PCMCH4/PCMCO2
+            ZUB =PU(JL,4,JKSL)*EXP  (2.*ZPSI)*PCMCH4/PCMCO2
+         ELSE
+            ZUA =PU(JL,3,JKSL)*PCMCH4/PCMCO2
+            ZUB =PU(JL,4,JKSL)*PCMCH4/PCMCO2
+         END IF
+         ZV(JL, 9,JKSL)=ZV(JL, 9,JKSL+1)+ZUA
+         ZV(JL,10,JKSL)=ZV(JL,10,JKSL+1)+ZUB
+ 243     CONTINUE
+ 244     CONTINUE
+      END IF
+C 
+C      IF (NIMP.LE.2) THEN
+C         WRITE (NULOUT,9244) KCABS,KH2O,KCO2,KO3,KCNT,KN2O,KCH4,KCO
+C     *     ,KC11,KC12,KCFC
+C     *     ,JWVN,IH2O,ICO2,IO3,ICNT,IN2O,ICH4,ICO,IC11,IC12,ICFC
+C         WRITE (NULOUT,9245) KIDIA,(ZV(KIDIA,JABS,1),JABS=1,KUABS)
+C         WRITE (NULOUT,9245) KFDIA,(ZV(KFDIA,JABS,1),JABS=1,KUABS)
+C      END IF
+C
+C
+C
+C*         2.5  COMPUTES PLANCK FUNCTIONS
+C
+ 250  CONTINUE
+C
+      INDPLK=1
+      DO 253 JK=1,KLEV
+      DO 251 JL=KIDIA,KFDIA
+      ZTI(JL)=PT(JL,JK)
+      ZTI2(JL)=PTAVE(JL,JK)
+ 251  CONTINUE
+C
+      CALL POLPLK (KIDIA,KFDIA,KLON,INDPLK,ZTI ,ZRES )
+      CALL POLPLK (KIDIA,KFDIA,KLON,INDPLK,ZTI2,ZRES2)
+C
+      DO 252 JL=KIDIA,KFDIA
+      ZBLEV(JL,JK)=ZRES(JL)
+      ZBLAY(JL,JK)=ZRES2(JL)
+      ZBINT(JL,JK)=ZBINT(JL,JK)+ZRES(JL)
+ 252  CONTINUE
+C      IF (NIMP.EQ.0) THEN
+C      JL=KIDIA
+C      print 9252,0,PT(JL,JK),PTAVE(JL,JK)
+C     $ ,ZBLAY(JL,JK),ZBLEV(JL,JK),ZBINT(JL,JK)
+C 9252 FORMAT(1X,I3,2F8.3,3F14.7)     
+C      END IF
+ 253  CONTINUE
+C
+      DO 254 JL=KIDIA,KFDIA
+      ZTI2(JL)=PT(JL,1)+PDT0(JL)
+      ZTI (JL)=PT(JL,KLEV+1)
+ 254  CONTINUE
+C
+      CALL POLPLK (KIDIA,KFDIA,KLON,INDPLK,ZTI2,ZBSUR)
+      CALL POLPLK (KIDIA,KFDIA,KLON,INDPLK,ZTI ,ZRES )
+C
+      DO 255 JL=KIDIA,KFDIA
+      ZBLEV(JL,KLEV+1)=ZRES(JL)
+      ZBINT(JL,KLEV+1)=ZBINT(JL,KLEV+1)+ZRES(JL)
+      ZBSUI(JL)=ZBSUI(JL)+ZBSUR(JL)
+ 255  CONTINUE
+C      IF (NIMP.EQ.0) THEN
+C      JL=KIDIA
+C      print 9255, JWVN,ZTI(JL),ZTI2(JL)
+C     $ ,ZBSUR(JL),ZBSUI(JL),ZBLEV(JL,KLEV+1),ZBINT(JL,KLEV+1)
+C 9255 FORMAT(1X,I3,2F8.3,4F14.7)
+C      END IF
+C
+      DO 257 JK = 1 , KLEV
+      JK2 = 2 * JK
+      JK1 = JK2 - 1
+      DO 256 JL = KIDIA,KFDIA
+      ZDBSL(JL,JK1) = ZBLAY(JL,JK  ) - ZBLEV(JL,JK)
+      ZDBSL(JL,JK2) = ZBLEV(JL,JK+1) - ZBLAY(JL,JK)
+      ZCDBSL(JL,JK1)= ZCDBSL(JL,JK1) + ZDBSL(JL,JK1)
+      ZCDBSL(JL,JK2)= ZCDBSL(JL,JK2) + ZDBSL(JL,JK2)
+ 256  CONTINUE
+C      IF (NIMP.EQ.0) THEN
+C      JL=KIDIA
+C      print 9256,JK,PTAVE(JL,JK),ZDBSL(JL,JK1),ZDBSL(JL,JK2)
+C     $                          ,ZCDBSL(JL,JK1),ZCDBSL(JL,JK2)
+C 9256 FORMAT(1X,I3,F8.3,4F14.7)     
+C      END IF
+ 257  CONTINUE
+ 259  CONTINUE
+C      IF (NIMP.EQ.0) print *,' SPECTR after 259 '
+C
+C
+C
+C*         2.6  CALL VERTICAL INTEGRATION
+C
+ 260  CONTINUE
+C
+      CALL VERTI
+     I ( KIDIA,KFDIA,KLON,KLEV,KGL,KCABS,KNG1,KUABS,KCONF
+     I , KH2O,KCO2,KO3,KCNT,KN2O,KCH4,KCO,KC11,KC12,KCFC
+     I , IBOT,ITOP,IVDIS
+     L , LPVOIGT
+     R , PANGLE,ZBLEV,ZBSUR,ZCNTRB,ZDZ,PEM0
+     R , ZV,ZDBSL,ZWVN
+     R , ZFDC,ZFUC )
+C
+       DO 263 JK1=1,KLEV+1
+       DO 262 JK2=1,KLEV+1
+       DO 261 JL=KIDIA,KFDIA
+       PCNTRB(JL,JK1,JK2)=PCNTRB(JL,JK1,JK2)+ZCNTRB(JL,JK1,JK2)
+ 261   CONTINUE
+ 
+C       IF (NIMP.EQ.0) THEN
+C       JL=KIDIA
+C       PRINT 9261,JK1,JK2,ZCNTRB(JL,JK1,JK2),PCNTRB(JL,JK1,JK2)
+C 9261  FORMAT(1X,2I4,2E15.8) 
+C       END IF     
+ 262   CONTINUE
+ 263   CONTINUE
+C
+       DO 265 JK=1,KLEV+1
+       DO 264 JL=KIDIA,KFDIA
+       ZFUT(JL,JK)=0.
+       ZFDT(JL,JK)=0.
+       ZFUT(JL,JK)=ZFUC(JL,JK)
+       ZFDT(JL,JK)=ZFDC(JL,JK)
+ 264   CONTINUE
+ 265   CONTINUE
+C       IF (NIMP.EQ.0) print *,' SPECTR after 265 '
+C
+C
+C     ------------------------------------------------------------------
+C
+C*         3.   INTRODUCE CLOUD EFFECTS (ON A SPECTRAL BASIS)
+C
+ 300  CONTINUE
+C
+      IF (KCONF.EQ.0 .OR. KCONF.EQ.1) THEN
+C
+
+         CALL CLOUD
+     I     ( KIDIA , KFDIA, KLON  , KLEV
+     I     , KCLOUD, KOVLP
+     R     , ZBSUR , ZCLDLD, ZCLDLU, ZCNTRB, ZFUC, ZFDC, ZBLEV, PEM0
+     R     , ZFUT  , ZFDT 
+     S     )
+C
+C
+C
+      END IF
+C
+C
+C
+C
+C     ------------------------------------------------------------------
+C
+C*         4.   FILLING-UP BROAD-BAND FLUXES ARRAYS
+C
+ 400  CONTINUE
+C
+      ILEV=0
+      IF (KCONF.EQ.0) THEN
+         IVSTP=1
+      ELSE
+         IVSTP=KLEV
+      END IF   
+      DO JL=KIDIA,KFDIA
+      PRADC(JL,JWVN)=ZFUC(JL,KLEV+1)
+      PRADT(JL,JWVN)=ZFUT(JL,KLEV+1)
+      END DO
+C
+C
+C
+C
+C
+C
+C
+C
+C          4.9  END OF SPECTRAL LOOP
+C
+C***
+ 499  CONTINUE
+
+ 9101 FORMAT (1X,'*VERTI* IMPROPER CONFIGURATION:',I2)
+ 9201 FORMAT (1X,'*SPECTR* NULL ABSORBER AMOUNTS IUX= ',I2,' IUY= ',I2)
+ 9244 FORMAT (1X,'REQUIRED:',11I3,' JWVN= ',I3,' ACTIVE:',10I3)
+ 9245 FORMAT (1X,I3,14E9.3)
+C
+C     ------------------------------------------------------------------
+C
+      RETURN
+      END
+      SUBROUTINE POLPLK 
+     I ( KIDIA,KFDIA,KLON,KINDT
+     R , PT
+     R , PRES
+     S )
+C
+C**** *POLPLK* - COMPUTES PLANCK FUNCTIONS FROM POLYNOMIAL EXPANSION
+C
+C**   INTERFACE
+C     ---------
+C          *POLPLK* IS CALLED BY *SPECTR*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C        KIDIA   : START OF VECTOR
+C        KFDIA   : END OF VECTOR
+C        KLON    : TOTAL LENGTH OF VECTOR
+C        KINDT   : 1. PLANCK FUNCTION   2. DERIVATIVE W.R.T. TEMPERATURE
+C        PT      : TEMPERATURE
+C     === OUTPUTS ===
+C        PRES    : B(T) OR DB(T)/DT
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+C
+C     MODIFICATIONS
+C     -------------
+C
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+*MNH
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+                               !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &  RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+      REAL PT(KLON),PRES(KLON)
+C
+C     ------------------------------------------------------------------
+C
+C          0.2  LOCAL ARRAYS
+C
+      REAL ZT(KLON)
+C
+C     ------------------------------------------------------------------
+C
+C          1.
+C
+ 100  CONTINUE
+C
+      DO 101 JL=KIDIA,KFDIA
+*MNH      ZT(JL)=(PT(JL)-TPOLY)/TPOLY
+      ZT(JL)=(PT(JL)-XTPOLY)/XTPOLY
+*MNH      PRES(JL)=POLPLCK(6,KINDT)
+      PRES(JL)=XPOLPLCK(6,KINDT)
+*MNH
+ 101  CONTINUE
+C
+      DO 103 JPOL=5,1,-1
+      DO 102 JL=KIDIA,KFDIA
+*MNH      PRES(JL)=PRES(JL)*ZT(JL)+POLPLCK(JPOL,KINDT)
+      PRES(JL)=PRES(JL)*ZT(JL)+XPOLPLCK(JPOL,KINDT)
+*MNH
+ 102  CONTINUE
+ 103  CONTINUE
+C
+C     ------------------------------------------------------------------
+C
+      RETURN
+      END
+      SUBROUTINE VERTI 
+     I ( KIDIA, KFDIA, KLON , KLEV, KGL , KCABS, KNG1, KUABS, KCONF
+     I , KH2O , KCO2 , KO3  , KCNT, KN2O, KCH4 
+     I , KCO  , KC11 , KC12 , KCFC
+     I , KBOT , KTOP , KVDIS
+     L , LPVOIGT
+     R , PANGLE,PB   ,PBSUR,PCNTRB, PDZ, PEM0 , PV  , PDBSL, PWVN
+     R , PFDC  ,PFUC
+     S )
+C
+C**** *VERTI* - PERFORMS THE VERTICAL INTEGRATION
+C
+C**   INTERFACE
+C     ---------
+C          *VERTI* IS CALLED BY *SPECTR*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C     I  KIDIA   : START OF VECTOR
+C     I  KFDIA   : END OF VECTOR
+C     I  KLON    : TOTAL LENGTH OF VECTOR
+C     I  KLEV    : NUMBER OF FULL-LEVELS (LAYERS)
+C     I  KGL     : NUMBER OF SUB-LAYERS IN VERTICAL INTEGRATION
+C     I  KCABS   : CONFIGURATION INDEX FOR ABSORBERS
+C     L  LPVOIGT : .T. IF VOIGT PROFILE IS ACCOUNTED FOR
+C     R  PANGLE  : 1./COS(VIEWING ANGLE) OR DIFFUSIVITY FACTOR
+C     R  PB      : PLANCK FUNCTION ON HALF-LEVELS
+C     R  PBSUR   : SURFACE PLANCK FUNCTION
+C     R  PCNTRB  : ENERGY EXCHANGE MATRIX
+C     R  PDZ     : LAYER THICKNESS
+C
+C     === OUTPUTS ===
+C        PFDC    : DOWNWARD CLEAR-SKY FLUXES
+C        PFUC    : UPWARD   CLEAR-SKY FLUXES
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   92/12/04
+C
+C     MODIFICATIONS
+C     -------------
+C
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+*MNH
+      LOGICAL LPVOIGT
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+                                !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &  RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+      REAL
+     *     PANGLE(KLON)
+     *  ,  PB(KLON,KLEV+1)  , PBSUR(KLON)
+     *  ,  PCNTRB(KLON,KLEV+1,KLEV+1)
+     *  ,  PDT0(KLON) , PDZ(KLON,KLEV)
+*MNH     *  ,  PEM0(KLON) , PV(KLON,JUABS,KGL+1)
+     *  ,  PEM0(KLON) , PV(KLON,JPUABS,KGL+1)
+CBUG     *  ,  PDBSL(KLON,2*KLEV+1) , PXT(KLON,3,3*KLEV+1)
+     *  ,  PDBSL(KLON,2*KLEV) , PXT(KLON,3,3*KLEV+1)
+C
+      REAL
+     *    PFDC(KLON,KLEV+1)          , PFUC(KLON,KLEV+1)
+C
+C     ------------------------------------------------------------------
+C
+C          0.2  LOCAL ARRAYS
+C
+      INTEGER
+     *       INDCL(KLON,KLEV+1)
+C
+      REAL
+     *     ZDISD(KLON),ZDISU(KLON)
+     *  ,  ZCNSU(KLON),ZCNTP(KLON)
+     *  ,  ZDR(KLON),ZSR(KLON),ZDG(KLON)
+     *  ,  ZUG(KLON),ZBGND(KLON)
+     *  ,  ZTR(KLON),ZUR(KLON),ZFU(KLON)
+     *  ,  ZFD(KLON),ZFD1(KLON)
+      REAL
+     *ZDAU0(KLON),ZDAU1(KLON),ZDAU2(KLON), ZDAU3(KLON),ZDAU4(KLON)
+     *,ZDAU5(KLON),ZDAU6(KLON),ZDAU7(KLON),ZDAU8(KLON),ZDAU9(KLON)
+     *,ZSAU0(KLON),ZSAU1(KLON),ZSAU2(KLON),ZSAU3(KLON),ZSAU4(KLON)
+     *,ZSAU5(KLON),ZSAU6(KLON),ZSAU7(KLON),ZSAU8(KLON),ZSAU9(KLON)
+     *,ZTAU0(KLON),ZTAU1(KLON),ZTAU2(KLON),ZTAU3(KLON),ZTAU4(KLON)
+     *,ZTAU5(KLON),ZTAU6(KLON),ZTAU7(KLON),ZTAU8(KLON),ZTAU9(KLON)
+     *,ZUAU0(KLON),ZUAU1(KLON),ZUAU2(KLON),ZUAU3(KLON),ZUAU4(KLON)
+     *,ZUAU5(KLON),ZUAU6(KLON),ZUAU7(KLON),ZUAU8(KLON),ZUAU9(KLON)
+C     ------------------------------------------------------------------
+C
+C*         1.   INITIALIZATION
+C
+ 100  CONTINUE
+C
+c      PRINT *,' Verti '
+C     IF (NIMP.EQ.0) STOP
+      
+C
+      DO 103 JK1=1,KLEV+1
+      DO 102 JK2=1,KLEV+1
+      DO 101 JL=KIDIA,KFDIA
+      PCNTRB(JL,JK1,JK2)=0.
+ 101  CONTINUE
+ 102  CONTINUE
+ 103  CONTINUE
+C      IF (NIMP.EQ.0) print *,' VERTI after 103 '
+	
+C
+C
+C
+C     ------------------------------------------------------------------
+C
+C*         2.   VERTICAL INTEGRATION USING GAUSS QUADRATURE
+C
+ 200  CONTINUE
+C
+C      IF (NIMP.EQ.0) print *,' Vertical integration '
+      DO 249 JK=KBOT,KTOP,KVDIS
+      ISL=(JK-1)*(KNG1+1)+1
+      IL12 = 2 * (JK - 1)
+C
+      DO 201 JL=KIDIA,KFDIA
+      ZDISD(JL)=0.
+      ZDISU(JL)=0.
+      ZDR  (JL)=1.
+      ZSR  (JL)=1.
+      ZTR  (JL)=1.
+      ZUR  (JL)=1.
+      PFUC(JL,JK)=0.
+      PFDC(JL,JK)=0.
+ 201  CONTINUE
+C
+C
+C*         2.1  DOWNWARD FLUXES
+C
+ 210  CONTINUE
+C
+      IF (JK.NE.KLEV+1) THEN
+C
+         DO 218 JK1=JK,KLEV
+         ISLX=(JK1-1)*(KNG1+1)+1
+         ID12 = 2 * (JK1 - 1)
+         
+         DO 211 JL=KIDIA,KFDIA
+         ZDG(JL)=0.
+ 211     CONTINUE
+         DO 214 JG=1,KNG1
+         ISLXG=ISLX+JG
+         IDS = ID12 + JG
+         
+         DO 212 JL=KIDIA,KFDIA
+         ZDAU0(JL)=0.
+         ZDAU1(JL)=0.
+         ZDAU2(JL)=0.
+         ZDAU3(JL)=0.
+         ZDAU4(JL)=0.
+         ZDAU5(JL)=0.
+         ZDAU6(JL)=0.
+         ZDAU7(JL)=0.
+         ZDAU8(JL)=0.
+         ZDAU9(JL)=0.
+ 212     CONTINUE
+C
+C         IF (NIMP.EQ.0) print 9212,JK,ISL,JK1,JG,ISLXG
+C 9212    FORMAT(1X,' Downward JK,ISL,JK1,JG,ISLXG ',5I4) 
+         IF (KCNT.EQ.1) THEN
+            CALL CNTINU (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG, KCABS
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU0 )
+         END IF
+         IF (KH2O.EQ.1) THEN
+           CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  1  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU1 )
+         END IF
+          IF (KCO2.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  2  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU2 )
+         END IF
+         IF (KO3 .EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  3  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU3 )
+         END IF
+         IF (KN2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  4  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU4 )
+         END IF
+         IF (KCH4.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  5  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU5 )
+         END IF
+         IF (KC11.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  6  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU6 )
+         END IF
+         IF (KC12.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  7  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU7 )
+         END IF
+        IF (KCFC.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,ISLXG,  8  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZDAU8 )
+         END IF
+C
+         DO 213 JL=KIDIA,KFDIA
+         ZDR(JL)=EXP  (-ZDAU0(JL)-ZDAU1(JL)-ZDAU2(JL)-ZDAU3(JL)
+     *       -ZDAU4(JL)-ZDAU5(JL)-ZDAU6(JL)-ZDAU7(JL)-ZDAU8(JL))
+*MNH         ZDG(JL)=ZDG(JL)+PDBSL(JL,IDS)*ZDR(JL)*WG1(JG)
+         ZDG(JL)=ZDG(JL)+PDBSL(JL,IDS)*ZDR(JL)*XWG1(JG)
+*MNH
+ 213     CONTINUE
+ 
+C         IF (NIMP.EQ.0) THEN 
+C         JL=KIDIA
+C         print 9213,JK,JK1,JG,IDS,ZDR(JL),PDBSL(JL,IDS),ZDG(JL)
+C 9213    format(1x,'Dn',4I4,F8.5,2F14.7) 
+C         END IF         
+ 214     CONTINUE
+C
+         IK1P1=JK1+1
+C
+         DO 215 JL=KIDIA,KFDIA
+         PCNTRB(JL,JK,IK1P1)=ZDG(JL)
+         ZDISD(JL)=ZDISD(JL)+ZDG(JL)
+ 215     CONTINUE
+C
+ 218     CONTINUE
+      END IF
+C
+C
+C
+C
+C*         2.2  UPWARD FLUXES
+C
+ 220  CONTINUE
+C
+      IF (JK.NE.1) THEN
+C
+         DO 228 JK1= JK-1,1,-1
+         ISLX=(JK1-1)*(KNG1+1)+1
+         IU12 = 2 * (JK1 - 1)
+         
+         DO 221 JL=KIDIA,KFDIA
+         ZUG(JL)=0.
+ 221     CONTINUE
+         DO 224 JG=1,KNG1
+         ISLXG=ISLX+JG
+         IUS = IU12 + JG
+         
+         DO 222 JL=KIDIA,KFDIA
+         ZUAU0(JL)=0.
+         ZUAU1(JL)=0.
+         ZUAU2(JL)=0.
+         ZUAU3(JL)=0.
+         ZUAU4(JL)=0.
+         ZUAU5(JL)=0.
+         ZUAU6(JL)=0.
+         ZUAU7(JL)=0.
+         ZUAU8(JL)=0.
+         ZUAU9(JL)=0.
+ 222     CONTINUE
+C
+C        IF (NIMP.EQ.0) print 9222,JK,ISL,JK1,JG,ISLXG
+ 9222    FORMAT(1X,' Upward JK,ISL,JK1,JG,ISLXG ',5I4)        
+         IF (KCNT.EQ.1) THEN
+            CALL CNTINU (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL, KCABS
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU0 )
+         END IF
+         IF (KH2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  1  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU1 )
+         END IF
+         IF (KCO2.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  2  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU2 )
+         END IF
+         IF (KO3 .EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  3  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU3 )
+         END IF
+         IF (KN2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  4  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU4 )
+         END IF
+         IF (KCH4.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  5  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU5 )
+         END IF
+         IF (KC11.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  6  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU6 )
+         END IF
+         IF (KC12.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  7  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU7 )
+         END IF
+         IF (KCFC.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISLXG,ISL,  8  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZUAU8 )
+         END IF
+C
+         DO 223 JL=KIDIA,KFDIA
+         ZUR(JL)=EXP  (-ZUAU0(JL)-ZUAU1(JL)-ZUAU2(JL)-ZUAU3(JL)
+     *       -ZUAU4(JL)-ZUAU5(JL)-ZUAU6(JL)-ZUAU7(JL)-ZUAU8(JL))
+*MNH         ZUG(JL)=ZUG(JL)+PDBSL(JL,IUS)*ZUR(JL)*WG1(JG)
+         ZUG(JL)=ZUG(JL)+PDBSL(JL,IUS)*ZUR(JL)*XWG1(JG)
+*MNH
+ 223     CONTINUE
+C         IF (NIMP.EQ.0) THEN 
+C         JL=KIDIA
+C         print 9223,JK,JK1,JG,IUS,ZUR(JL),PDBSL(JL,IDS),ZUG(JL)
+C 9223    format(1x,'Up',4I4,F8.5,2F14.7)
+C         END IF         
+ 224     CONTINUE
+C
+         DO 225 JL=KIDIA,KFDIA
+         PCNTRB(JL,JK,JK1  )=ZUG(JL)
+         ZDISU(JL)=ZDISU(JL)+ZUG(JL)
+ 225     CONTINUE
+C
+ 228     CONTINUE
+      END IF
+C
+C
+C
+C
+C
+C
+C*         2.3  EXCHANGE WITH THE TOP OF THE ATMOSPHERE
+C
+ 230  CONTINUE
+C
+      IF (JK.NE.KLEV+1) THEN
+C
+         DO 231 JL=KIDIA,KFDIA
+         ZTAU0(JL)=0.
+         ZTAU1(JL)=0.
+         ZTAU2(JL)=0.
+         ZTAU3(JL)=0.
+         ZTAU4(JL)=0.
+         ZTAU5(JL)=0.
+         ZTAU6(JL)=0.
+         ZTAU7(JL)=0.
+         ZTAU8(JL)=0.
+         ZTAU9(JL)=0.
+ 231     CONTINUE
+C
+C        IF (NIMP.EQ.0) print 9231,JK,ISL,KGL+1
+ 9231    FORMAT(1X,' Top JK,ISL,KGL+1 ',5I4)        
+         IF (KCNT.EQ.1) THEN
+            CALL CNTINU (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, KCABS
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU0 )
+         END IF
+         IF (KH2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 1  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU1 )
+         END IF
+         IF (KCO2.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 2  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU2 )
+         END IF
+         IF (KO3 .EQ.1) THEN
+             CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 3  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU3 )
+         END IF
+         IF (KN2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 4  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU4 )
+         END IF
+         IF (KCH4.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 5  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU5 )
+         END IF
+         IF (KC11.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 6  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU6 )
+         END IF
+         IF (KC12.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 7  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU7 )
+         END IF
+         IF (KCFC.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, ISL,KGL+1, 8  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZTAU8 )
+         END IF
+C
+         DO 232 JL=KIDIA,KFDIA
+         ZTR(JL)=EXP  (-ZTAU0(JL)-ZTAU1(JL)-ZTAU2(JL)-ZTAU3(JL)
+     *       -ZTAU4(JL)-ZTAU5(JL)-ZTAU6(JL)-ZTAU7(JL)-ZTAU8(JL))
+ 232     CONTINUE
+      END IF
+C
+      DO 233 JL=KIDIA,KFDIA
+      ZCNTP(JL)=ZTR(JL)*PB(JL,KLEV+1)
+      ZFD(JL)=ZCNTP(JL)-PB(JL,JK)-ZDISD(JL)
+      PFDC(JL,JK)=ZFD(JL)
+ 233  CONTINUE
+C      IF (NIMP.EQ.0) THEN 
+C      JL=KIDIA
+C      print 9233,JK,ZTR(JL),PB(JL,KLEV+1),ZCNTP(JL),PB(JL,JK),ZDISD(JL)
+C     $             ,ZFD(JL) 
+C 9233 format(1x,'Xchg Top',I4,F8.5,5F14.7)
+C      END IF          
+C
+      IF (JK.EQ.1) THEN
+         DO 234 JL=KIDIA,KFDIA
+         ZFD1(JL)=-ZFD(JL)
+ 234     CONTINUE
+      END IF
+C
+C
+C
+C
+C
+C*         2.4  EXCHANGE WITH THE SURFACE
+C
+ 240  CONTINUE
+C
+      DO 241 JL=KIDIA,KFDIA
+      ZBGND(JL)=PBSUR(JL)*PEM0(JL)+(1.-PEM0(JL))*ZFD1(JL)-PB(JL,1)
+C     ZSR(JL)=1.
+ 241  CONTINUE
+C      IF (NIMP.EQ.0. AND. JK.EQ.1) THEN
+C      JL=KIDIA
+C      print 9241,PBSUR(JL),PEM0(JL),ZFD1(JL),PB(JL,1),ZBGND(JL)
+C 9241 FORMAT(1X,'Surf ',F12.5,F8.5,3F12.5)      
+C      END IF
+C
+      IF (JK.NE.1) THEN
+C
+         DO 242 JL=KIDIA,KFDIA
+         ZSAU0(JL)=0.
+         ZSAU1(JL)=0.
+         ZSAU2(JL)=0.
+         ZSAU3(JL)=0.
+         ZSAU4(JL)=0.
+         ZSAU5(JL)=0.
+         ZSAU6(JL)=0.
+         ZSAU7(JL)=0.
+         ZSAU8(JL)=0.
+         ZSAU9(JL)=0.
+ 242     CONTINUE
+C
+C        IF (NIMP.EQ.0) print 9242,JK,1,ISL
+ 9242    FORMAT(1X,' Surface JK,1,ISL ',5I4)        
+         IF (KCNT.EQ.1) THEN
+            CALL CNTINU (KIDIA,KFDIA,KLON, KLEV, 1, ISL, KCABS
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU0 )
+         END IF
+         IF (KH2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 1  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU1 )
+         END IF
+         IF (KCO2.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 2  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU2 )
+         END IF
+         IF (KO3 .EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 3  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU3 )
+         END IF
+         IF (KN2O.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 4  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU4 )
+         END IF
+         IF (KCH4.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 5  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU5 )
+         END IF
+         IF (KC11.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 6  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU6 )
+         END IF
+         IF (KC12.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 7  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU7 )
+         END IF
+         IF (KCFC.EQ.1) THEN
+            CALL TRANSM (KIDIA,KFDIA,KLON, KLEV, 1, ISL, 8  ,KCABS
+     L  ,                LPVOIGT
+     R  ,                PANGLE,PV,PWVN
+     R  ,                ZSAU8 )
+         END IF
+C
+         DO 243 JL=KIDIA,KFDIA
+         ZSR(JL)=EXP  (-ZSAU0(JL)-ZSAU1(JL)-ZSAU2(JL)-ZSAU3(JL)
+     *       -ZSAU4(JL)-ZSAU5(JL)-ZSAU6(JL)-ZSAU7(JL)-ZSAU8(JL))
+ 243     CONTINUE
+      END IF
+C
+      DO 244 JL=KIDIA,KFDIA
+      ZCNSU(JL)=ZSR(JL)*ZBGND(JL)
+      ZFU(JL)=ZCNSU(JL)+PB(JL,JK)-ZDISU(JL)
+      PFUC(JL,JK)=ZFU(JL)
+ 244  CONTINUE
+C      IF (NIMP.EQ.0) THEN 
+C      JL=KIDIA
+C      print 9244,JK,ZSR(JL),ZBGND(JL),ZCNSU(JL),PB(JL,JK),ZDISU(JL)
+C     $             ,ZFU(JL) 
+C 9244 format(1x,'Xchg Sur',I4,F8.5,5F14.7)
+C      END IF         
+C
+ 249  CONTINUE
+C
+C     ------------------------------------------------------------------
+C
+      RETURN
+      END
+      SUBROUTINE CNTINU (KIDIA,KFDIA,KLON, KLEV, KINF,KSUP, KCABS
+     R  ,                PANGLE,PV,PWVN
+     R  ,                PTAU )
+C
+C**** *CNTINU* - TRANSMISSION BY WATER VAPOR CONTINUUM
+C
+C**   INTERFACE
+C     ---------
+C          *CNTINU* IS CALLED BY *VERTI*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C        KIDIA   : START OF VECTOR
+C        KFDIA   : END OF VECTOR
+C        KLON    : TOTAL LENGTH OF VECTOR
+C        KCABS   : CONFIGURATION INDEX FOR ABSORBERS
+C        KINF    : LOWER LEVEL OF LAYER CONSIDERED
+C        KSUP    : UPPER LEVEL OF LAYER CONSIDERED
+C        PANGLE  : 1./COS(VIEWING ANGLE) OR DIFFUSITY FACTOR
+C        PWVN    : WAVENUMBER
+C        PV      : REDUCED ABSORBER AMOUNTS CUMULATED FROM MODEL TOP
+C     === OUTPUTS ===
+C        PTAU    : OPTICAL THICKNESS DUE TO WATER VAPOR CONTINUUM
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+C
+C     MODIFICATIONS
+C     -------------
+C
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+*MNH
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+                                !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomrad.h'
+*MNH  integer NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  real CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,FTEMP(JV3),
+*MNH &     FCH2O(JV3),FCCO2(JV3),FCO3(JV3),XLIM(JV10),CLIM(JV2)
+*MNH  COMMON/YOMRADI/NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  COMMON /YOMRADR/CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,
+*MNH &     FTEMP,FCH2O,FCCO2,FCO3,XLIM,CLIM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &  RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+*MNH      REAL PANGLE(KLON),PV(KLON,JUABS,3*KLEV+1)
+      REAL PANGLE(KLON),PV(KLON,JPUABS,3*KLEV+1)
+C
+      REAL PTAU(KLON)
+C
+C     ------------------------------------------------------------------
+C
+C          0.2  LOCAL ARRAYS
+C
+      REAL ZE(KLON),ZP(KLON),ZTAUE(KLON),ZTAUP(KLON)
+	REAL ZCOEF
+C
+C     ------------------------------------------------------------------
+C
+C          1.
+C
+ 100  CONTINUE
+C
+      DO 101 JL=KIDIA,KFDIA
+      PTAU(JL)=0.
+ 101  CONTINUE
+C
+*MNH      IF (PWVN.GT.CLIM(1)  .AND. PWVN.LT.CLIM(2)) THEN
+      IF (PWVN.GT.XCLIM(1)  .AND. PWVN.LT.XCLIM(2)) THEN
+C
+         ZCOEF=4.18 + 5578.*EXP(-7.87e-03*PWVN)
+         DO 102 JL=KIDIA,KFDIA
+         ZE(JL)=PV(JL,11,KINF)-PV(JL,11,KSUP)
+         ZP(JL)=PV(JL,12,KINF)-PV(JL,12,KSUP)
+         ZTAUE(JL)=PANGLE(JL)*ZCOEF*ZE(JL)
+         ZTAUP(JL)=PANGLE(JL)*ZCOEF*ZP(JL)*0.002
+ 102     CONTINUE
+C
+         IF (KCABS.EQ.20) THEN
+            DO 103 JL=KIDIA,KFDIA
+            ZTAUE(JL)=0.
+ 103        CONTINUE
+         END IF
+         IF (KCABS.EQ.21) THEN
+            DO 104 JL=KIDIA,KFDIA
+            ZTAUP(JL)=0.
+ 104        CONTINUE
+         END IF
+C
+         DO 105 JL=KIDIA,KFDIA
+         PTAU(JL)=ZTAUE(JL)+ZTAUP(JL)
+ 105     CONTINUE
+      END IF
+C
+C     ------------------------------------------------------------------
+C
+      RETURN
+      END
+      SUBROUTINE TRANSM 
+     I ( KIDIA,KFDIA,KLON, KLEV, KINF,KSUP, KABS,KCABS
+     L , LPVOIGT
+     R , PANGLE,PV,PWVN
+     R , PTAU
+     S )
+C
+C**** *TRANSM* - COMPUTES TRANSMISSION FUNCTIONS
+C
+C**   INTERFACE
+C     ---------
+C          *TRANSM* IS CALLED BY *VERTI*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C        KIDIA   : START OF VECTOR
+C        KFDIA   : END OF VECTOR
+C        KLON    : TOTAL LENGTH OF VECTOR
+C        KINF    : LOWER LEVEL OF LAYER CONSIDERED
+C        KSUP    : UPPER LEVEL OF LAYER CONSIDERED
+C        KABS    : INDEX OF CONSIDERED ABSORBER
+C        KCABS   : CONFIGURATION INDEX FOR ABSORBERS
+C        LPVOIGT : .T. IF VOIGT PROFILE IS ACCOUNTED FOR
+C        PANGLE  : 1./COS(VIEWING ANGLE) OR DIFFUSITY FACTOR
+C        PV      : REDUCED ABSORBER AMOUNTS CUMULATED FROM MODEL TOP
+C        PWVN    : WAVENUMBER
+C     === OUTPUTS ===
+C        PTAU    : OPTICAL THICKNESS DUE TO WATER VAPOR CONTINUUM
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+C
+C     MODIFICATIONS
+C     -------------
+C
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+      USE MODD_CST
+*MNH
+                                !include 'implic.h'
+      LOGICAL LPVOIGT
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+*MNH                                !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &  RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+C
+*MNH      REAL PANGLE(KLON),PV(KLON,JUABS,3*KLEV+1)
+      REAL PANGLE(KLON),PV(KLON,JPUABS,3*KLEV+1)
+C
+      REAL PTAU(KLON)
+C
+C     ------------------------------------------------------------------
+C
+C          0.2  LOCAL ARRAYS
+C
+      REAL ZA(KLON),ZB(KLON),ZC(KLON)
+      REAL ZD(KLON),ZF(KLON),ZG(KLON)
+      REAL ZAB(KLON),ZSQ(KLON),ZX(KLON)
+      REAL ZY(KLON)
+C
+C     ------------------------------------------------------------------
+C
+C          1.   INITIALIZATION
+C
+ 100  CONTINUE
+C
+      DO 101 JL=KIDIA,KFDIA
+      PTAU(JL)=0.
+c	print *,'TRANSM:',JL,PANGLE(JL)
+ 101  CONTINUE
+C
+*MNH      ZA1=RODWAL(1,KABS)
+      ZA1=XRODWAL(1,KABS)
+*MNH      ZA2=RODWAL(2,KABS)
+      ZA2=XRODWAL(2,KABS)
+*MNH
+c	print *,'TRANSM: ',ZA1,ZA2
+C
+C     ------------------------------------------------------------------
+C
+C          2.   SKIP COMPUTATION IF NO ABSORPTION OR NO ABSORBER
+C
+ 200  CONTINUE
+C
+      IF (ZA1.EQ.0.) RETURN
+C
+      IUX=2*KABS-1
+      IUY=IUX+1
+C
+      DO 201 JL=KIDIA,KFDIA
+      ZX(JL)=PANGLE(JL)*(PV(JL,IUX,KINF)-PV(JL,IUX,KSUP))
+      ZY(JL)=PANGLE(JL)*(PV(JL,IUY,KINF)-PV(JL,IUY,KSUP))
+C      IF (ZX(JL).EQ.0. .OR. ZY(JL).EQ.0.) THEN
+C         PRINT 9201,IUX,IUY,KINF,KSUP
+C         print *,'ZX=',ZX(JL),' ZY=',ZY(JL)
+C         print *,PV(JL,IUX,KINF),PV(JL,IUX,KSUP)
+C         print *,PV(JL,IUY,KINF),PV(JL,IUY,KSUP)
+C         print *,'KABS ',kabs
+C	 print *,'PROFILE NUMBER:',JL,' PANGLE:',PANGLE(JL)
+C         STOP
+C      END IF
+ 201  CONTINUE
+C
+C     ------------------------------------------------------------------
+C
+C          3.   COMPUTATION DEPEND ON ABSORBER AND LINE PROFILE
+C
+ 300  CONTINUE
+C
+      IF (KABS.GE.4) GO TO 400
+      IF (LPVOIGT) GO TO 600
+      GO TO 500
+C
+C     ------------------------------------------------------------------
+C
+C          4.   GOODY'S STATISTICAL MODEL FOR N2O, CH4, CO
+C
+ 400  CONTINUE
+C
+      DO 401 JL=KIDIA,KFDIA
+      ZSQ(JL)=SQRT  (1.+ZA1*ZX(JL)*ZX(JL)/(ZA2*ZY(JL)))
+      PTAU(JL)=ZA1*ZX(JL)/ZSQ(JL)
+ 401  CONTINUE
+C
+      RETURN
+C
+C
+C     ------------------------------------------------------------------
+C
+C          5.   MALKMUS'S STATISTICAL MODEL FOR H2O, CO2, O3  - LORENTZ
+C
+ 500  CONTINUE
+C
+      DO 501 JL=KIDIA,KFDIA
+      ZSQ(JL)=SQRT  (1.+4.*ZA1*ZX(JL)*ZX(JL)/(ZA2*ZY(JL))) - 1.
+      PTAU(JL)=ZA2*ZY(JL)*ZSQ(JL)/(2.*ZX(JL))
+ 501  CONTINUE
+C
+      RETURN
+C
+C
+C     ------------------------------------------------------------------
+C
+C          6.   MALKMUS'S STATISTICAL MODEL FOR H2O, CO2, O3  - VOIGT
+C
+ 600  CONTINUE
+C
+      IF (KABS-2.LT.0) GO TO 610
+      IF (KABS-2.EQ.0) GO TO 620
+      IF (KABS-2.GT.0) GO TO 630
+C
+C          6.1  WATER VAPOUR
+C
+ 610  CONTINUE
+      ZDELTA=2.00
+*MNH      ZALPHA=RALPHA*SQRT(1./RH2OM)
+      ZALPHA=XALPHA*SQRT(1./XH2OM)
+*MNH      ZALPHA=RALPHA*SQRT(1./RH2OM)
+      ZALPHA=XALPHA*SQRT(1./XH2OM)
+      GO TO 650
+C
+C
+C          6.2  CARBON DIOXIDE
+C
+ 620  CONTINUE
+      ZDELTA=0.75
+*MNH      ZALPHA=RALPHA*SQRT(1./RCO2M)
+      ZALPHA=XALPHA*SQRT(1./XCO2M)
+*MNH
+      GO TO 650
+C
+C
+C          6.3  OZONE
+C
+ 630  CONTINUE
+      ZDELTA=0.25
+*MNH      ZALPHA=RALPHA*SQRT(1./RO3M)
+      ZALPHA=XALPHA*SQRT(1./XO3M)
+*MNH      GO TO 650
+C
+C          6.5  APPROXIMATE TREATMENT OF VOIGT LINE A LA FELS (1979)
+C
+ 650  CONTINUE
+C
+      ZALPHD=ZALPHA*PWVN
+      DO 651 JL=KIDIA,KFDIA
+      ZA(JL)=ZA1*ZX(JL)
+*MNH      ZB(JL)=ZA2*ZY(JL)/(RPI*RPI*ZX(JL))
+      ZB(JL)=ZA2*ZY(JL)/(XPI*XPI*ZX(JL))
+*MNH
+      ZAB(JL)=ZA(JL)*ZB(JL)
+      ZC(JL)=4.*ZB(JL) + 1.4*ZALPHD/ZDELTA
+      ZD(JL)=0.5-ZB(JL)/ZC(JL)
+      ZSQ(JL)=SQRT  (ZAB(JL))
+      ZF(JL)=ZSQ(JL) * ATAN( ZSQ(JL)/ZC(JL) )
+      ZG(JL)=1. + ZA(JL)*ZD(JL)/ZC(JL)
+      PTAU(JL)=4.*ZF(JL)
+     *        +2.*ZC(JL)*LOG(ZG(JL)/(1.+ZAB(JL)/(ZC(JL)*ZC(JL))))
+ 651  CONTINUE
+C
+C     ------------------------------------------------------------------
+C
+ 9201 FORMAT (1X,'*TRANSM* NULL ABSORBER AMOUNTS IUX= ',I2,' IUY= ',I2
+     *,' BETWEEN LEVELS',I3,' AND',I3)
+C
+C     ------------------------------------------------------------------
+C
+      RETURN
+      END
+      SUBROUTINE CLOUD
+     I ( KIDIA , KFDIA, KLON  , KLEV
+     I , KCLOUD, KOVLP
+     R , PBSUR , PCLDLD,PCLDLU , PCNTRB, PFUC, PFDC, PBLEV, PEM0
+     R , PFUT  , PFDT 
+     S )
+C
+C**** *CLOUD* - INTRODUCES CLOUD EFFECT ON RADIATION FIELDS
+C
+C**   INTERFACE
+C     ---------
+C          *CLOUD* IS CALLED BY *SPECTR*
+C
+C     ARGUMENTS
+C     ---------
+C     === INPUTS ===
+C     === OUTPUTS ===
+C
+C     METHOD
+C     ------
+C
+C     REFERENCE
+C     ---------
+C
+C     AUTHOR
+C     ------
+C        JEAN-JACQUES MORCRETTE  *ECMWF*   96/12/20
+C
+C     MODIFICATIONS
+C     -------------
+C
+C     ------------------------------------------------------------------
+*MNH
+      USE MODD_RAD_TRANSF
+*MNH
+                                !include 'param.h'
+*MNH  INTEGER JNINT,JUABS,JUAMO,JV2,JV3,JV10
+*MNH  PARAMETER (JNINT=225,JUABS=14,JUAMO=8,JV2=2,JV3=3,JV10=10)
+                                !include 'yomgos.h'
+*MNH  real RT1(2),WG1(2)
+*MNH  COMMON /YOMGOS/ RT1,WG1
+                                !include 'yomio.h'
+*MNH  integer IMP,NIMP,NULOUT,NULINA,NULNAM
+*MNH  COMMON /YOMIO/ IMP,NIMP,NULOUT,NULINA,NULNAM
+                                !include 'yomrad.h'
+*MNH  integer NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  real CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,FTEMP(JV3),
+*MNH &     FCH2O(JV3),FCCO2(JV3),FCO3(JV3),XLIM(JV10),CLIM(JV2)
+*MNH  COMMON/YOMRADI/NABS,NATM,NATMS,NSPWV,NTMP1,NTEMP,NCH2O,NCCO2,NCO3,
+*MNH &     NCHAN,NH2O,NCO2,NO3,NCNT,NN2O,NCH4,NCO,NC11,NC12,NCFC,NO2
+*MNH  COMMON /YOMRADR/CVCO2,CVN2O,CVCO,CVCH4,CVF11,CVF12,CVO2,
+*MNH &     FTEMP,FCH2O,FCCO2,FCO3,XLIM,CLIM
+                                !include 'yomspe.h'
+*MNH  integer N_INT,NA
+*MNH  real TREF,TPOLY
+*MNH  real WNU(JV2),RODWAL(6,8),POLPLCK(6,2),WVNA(JNINT),WVNB(JNINT),
+*MNH &     RALPHA,RPI,RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,
+*MNH &     RF11M,RF12M
+*MNH  COMMON /YOMSPEI/ N_INT,NA,TREF,TPOLY     
+*MNH  COMMON /YOMSPER/ WNU,RODWAL,POLPLCK,WVNA,WVNB,RALPHA,RPI,
+*MNH &  RAIRM,RH2OM,RCO2M,RO3M,RN2OM,RCOM,RCH4M,RO2M,RF11M,RF12M
+C     ------------------------------------------------------------------
+C
+C          0.1  ARGUMENTS
+C
+      REAL PBSUR(KLON)      , PBLEV(KLON,KLEV+1)
+     R  ,  PCLDLD(KLON,KLEV)  , PCNTRB(KLON,KLEV+1,KLEV+1)
+     R  ,  PEM0(KLON), PCLDLU(KLON,KLEV)
+     R  ,  PFDC(KLON,KLEV+1), PFUC(KLON,KLEV+1)
+C     
+     R  ,  PFDT(KLON,KLEV+1), PFUT(KLON,KLEV+1)
+C
+C    -------------------------------------------------------------------
+C
+C*       0.2   LOCAL ARRAYS
+C              ------------
+C
+      REAL ZCLEAR(KLON)            , ZCLOUD(KLON)
+     S  ,  ZCLM(KLON,KLEV+1,KLEV+1)
+     S  ,  ZDNF(KLON,KLEV+1,KLEV+1)
+     S  ,  ZFD(KLON)               , ZFU(KLON)
+     S  ,  ZUPF(KLON,KLEV+1,KLEV+1)
+C
+C     ------------------------------------------------------------------
+C
+C*         1.      INITIALIZE TO CLEAR-SKY FLUXES
+C                  ------------------------------
+C
+ 100  CONTINUE
+      IMAXC=KLEV
+      REPSEC=1.E-12
+      REPSEC=1.e-7 ! JPChaboureau's modification to avoid division by zero
+C
+      DO 102 JK = 1 , KLEV+1
+      DO 101 JL = KIDIA,KFDIA
+      PFDT(JL,JK) = PFDC(JL,JK)
+      PFUT(JL,JK) = PFUC(JL,JK)
+ 101  CONTINUE
+ 102  CONTINUE
+C
+      DO 105 JK1=1,KLEV+1
+      DO 104 JK2=1,KLEV+1
+      DO 103 JL = KIDIA,KFDIA
+      ZUPF(JL,JK2,JK1)=PFUC(JL,JK1)
+      ZDNF(JL,JK2,JK1)=PFDC(JL,JK1)
+ 103  CONTINUE
+ 104  CONTINUE
+ 105  CONTINUE
+C
+C     ------------------------------------------------------------------
+C
+C*         2.      FLUXES FOR ONE OVERCAST UNITY EMISSIVITY CLOUD
+C                  ----------------------------------------------
+C
+ 200  CONTINUE
+C
+      DO 229 JKC = 1 , IMAXC
+      JCLOUD=JKC
+      JKCP1=JCLOUD+1
+C
+C*         2.1     ABOVE THE CLOUD
+C                  ---------------
+C
+ 210  CONTINUE
+C
+      DO 215 JK=JKCP1,KLEV+1
+      JKM1=JK-1
+      DO 211 JL = KIDIA,KFDIA
+      ZFU(JL)=0.
+ 211  CONTINUE
+      IF (JK .GT. JKCP1) THEN
+         DO 213 JKJ=JKCP1,JKM1
+         DO 212 JL = KIDIA,KFDIA
+         ZFU(JL) = ZFU(JL) + PCNTRB(JL,JK,JKJ)
+ 212     CONTINUE
+ 213     CONTINUE
+      END IF
+C
+      DO 214 JL = KIDIA,KFDIA
+      ZUPF(JL,JKCP1,JK)=PBLEV(JL,JK)-ZFU(JL)
+ 214  CONTINUE
+ 215  CONTINUE
+C
+C
+C*         2.2     BELOW THE CLOUD
+C                  ---------------
+C
+ 220  CONTINUE
+C
+      DO 225 JK=1,JCLOUD
+      JKP1=JK+1
+      DO 221 JL = KIDIA,KFDIA
+      ZFD(JL)=0.
+ 221  CONTINUE
+C
+      IF (JK .LT. JCLOUD) THEN
+         DO 223 JKJ=JKP1,JCLOUD
+         DO 222 JL = KIDIA,KFDIA
+         ZFD(JL) = ZFD(JL) + PCNTRB(JL,JK,JKJ)
+ 222     CONTINUE
+ 223     CONTINUE
+      END IF
+      DO 224 JL = KIDIA,KFDIA
+      ZDNF(JL,JKCP1,JK)=-PBLEV(JL,JK)-ZFD(JL)
+ 224  CONTINUE
+ 225  CONTINUE
+C
+ 229  CONTINUE
+C
+C     ------------------------------------------------------------------
+C
+C*         3.      CLOUD COVER MATRIX
+C                  ------------------
+C
+C*    ZCLM(JK1,JK2) IS THE OBSCURATION FACTOR BY CLOUD LAYERS BETWEEN
+C     HALF-LEVELS JK1 AND JK2 AS SEEN FROM JK1
+C
+ 300  CONTINUE
+C
+      DO 303 JK1 = 1 , KLEV+1
+      DO 302 JK2 = 1 , KLEV+1
+      DO 301 JL = KIDIA,KFDIA
+      ZCLM(JL,JK1,JK2) = 0.
+ 301  CONTINUE
+ 302  CONTINUE
+ 303  CONTINUE
+C
+C
+C
+C*         3.1     CLOUD COVER BELOW THE LEVEL OF CALCULATION
+C                  ------------------------------------------
+C
+ 310  CONTINUE
+C
+      DO 314 JK1 = 2 , KLEV+1
+      DO 311 JL = KIDIA,KFDIA
+      ZCLEAR(JL)=1.
+      ZCLOUD(JL)=0.
+ 311  CONTINUE
+      DO 313 JK = JK1 - 1 , 1 , -1
+      DO 312 JL = KIDIA,KFDIA
+      IF (KOVLP.EQ.1) THEN
+c* maximum-random       
+         ZCLEAR(JL)=ZCLEAR(JL)*(1.0-MAX(PCLDLU(JL,JK),ZCLOUD(JL)))
+     *                        /(1.0-MIN(ZCLOUD(JL),1.-REPSEC))
+         ZCLM(JL,JK1,JK) = 1.0 - ZCLEAR(JL)
+         ZCLOUD(JL) = PCLDLU(JL,JK)
+      ELSE IF (KOVLP.EQ.2) THEN 
+c* maximum      
+c         ZCLOUD(JL) = AMAX1(ZCLOUD(JL) , PCLDLU(JL,JK))
+	ZCLOUD(JL)=MAX(ZCLOUD(JL),PCLDLU(JL,JK))
+         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+      ELSE IF (KOVLP.EQ.3) THEN
+c* random      
+         ZCLEAR(JL) = ZCLEAR(JL)*(1.0 - PCLDLU(JL,JK))
+         ZCLOUD(JL) = 1.0 - ZCLEAR(JL)
+         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+      END IF
+ 312  CONTINUE
+ 313  CONTINUE
+ 314  CONTINUE
+C
+C
+C*         3.2     CLOUD COVER ABOVE THE LEVEL OF CALCULATION
+C                  ------------------------------------------
+C
+ 320  CONTINUE
+C
+      DO 324 JK1 = 1 , KLEV
+      DO 321 JL = KIDIA,KFDIA
+      ZCLEAR(JL)=1.
+      ZCLOUD(JL)=0.
+ 321  CONTINUE
+      DO 323 JK = JK1 , KLEV
+      DO 322 JL = KIDIA,KFDIA
+      IF (KOVLP.EQ.1) THEN
+c* maximum-random       
+         ZCLEAR(JL)=ZCLEAR(JL)*(1.0-MAX(PCLDLD(JL,JK),ZCLOUD(JL)))
+     *                        /(1.0-MIN(ZCLOUD(JL),1.-REPSEC))
+         ZCLM(JL,JK1,JK) = 1.0 - ZCLEAR(JL)
+         ZCLOUD(JL) = PCLDLD(JL,JK)
+      ELSE IF (KOVLP.EQ.2) THEN 
+c* maximum      
+c         ZCLOUD(JL) = AMAX1(ZCLOUD(JL) , PCLDLD(JL,JK))
+	ZCLOUD(JL)=MAX(ZCLOUD(JL) , PCLDLD(JL,JK))
+         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+      ELSE IF (KOVLP.EQ.3) THEN
+c* random      
+         ZCLEAR(JL) = ZCLEAR(JL)*(1.0 - PCLDLD(JL,JK))
+         ZCLOUD(JL) = 1.0 - ZCLEAR(JL)
+         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+      END IF
+ 322  CONTINUE
+ 323  CONTINUE
+ 324  CONTINUE
+C
+C
+C     ------------------------------------------------------------------
+C
+C*         4.      FLUXES FOR PARTIAL/MULTIPLE LAYERED CLOUDINESS
+C                  ----------------------------------------------
+C
+ 400  CONTINUE
+C
+C*         4.1     DOWNWARD FLUXES
+C                  ---------------
+C
+ 410  CONTINUE
+C
+      DO 411 JL = KIDIA,KFDIA
+      PFDT(JL,KLEV+1) = 0.
+ 411  CONTINUE
+C
+      DO 417 JK1 = KLEV , 1 , -1
+C
+C*                 CONTRIBUTION FROM CLEAR-SKY FRACTION
+C
+      DO 412 JL = KIDIA,KFDIA
+      ZFD (JL) = (1. - ZCLM(JL,JK1,KLEV)) * ZDNF(JL,1,JK1)
+ 412  CONTINUE
+C
+C*                 CONTRIBUTION FROM ADJACENT CLOUD
+C
+      DO 413 JL = KIDIA,KFDIA
+      ZFD(JL) = ZFD(JL) + ZCLM(JL,JK1,JK1) * ZDNF(JL,JK1+1,JK1)
+ 413  CONTINUE
+C
+C*                 CONTRIBUTION FROM OTHER CLOUDY FRACTIONS
+C
+      DO 415 JK = KLEV-1 , JK1 , -1
+      DO 414 JL = KIDIA,KFDIA
+      ZCFRAC = ZCLM(JL,JK1,JK+1) - ZCLM(JL,JK1,JK)
+      ZFD(JL) =  ZFD(JL) + ZCFRAC * ZDNF(JL,JK+2,JK1)
+ 414  CONTINUE
+ 415  CONTINUE
+C
+      DO 416 JL = KIDIA,KFDIA
+      PFDT(JL,JK1) = ZFD (JL)
+ 416  CONTINUE
+C
+ 417  CONTINUE
+C
+C
+C
+C
+C*         4.2     UPWARD FLUX AT THE SURFACE
+C                  --------------------------
+C
+ 420  CONTINUE
+C
+      DO 421 JL = KIDIA,KFDIA
+      PFUT(JL,1) = PEM0(JL)*PBSUR(JL)-(1.-PEM0(JL))*PFDT(JL,1)
+ 421  CONTINUE
+C
+C
+C
+C
+C*         4.3     UPWARD FLUXES
+C                  -------------
+C
+ 430  CONTINUE
+C
+      DO 437 JK1 = 2 , KLEV+1
+C
+C*                 CONTRIBUTION FROM CLEAR-SKY FRACTION
+C
+      DO 432 JL = KIDIA,KFDIA
+      ZFU (JL) = (1. - ZCLM(JL,JK1,1)) * ZUPF(JL,1,JK1)
+ 432  CONTINUE
+C
+C*                 CONTRIBUTION FROM ADJACENT CLOUD
+C
+      DO 433 JL = KIDIA,KFDIA
+      ZFU(JL) =  ZFU(JL) + ZCLM(JL,JK1,JK1-1) * ZUPF(JL,JK1,JK1)
+ 433  CONTINUE
+C
+C*                 CONTRIBUTION FROM OTHER CLOUDY FRACTIONS
+C
+      DO 435 JK = 2 , JK1-1
+      DO 434 JL = KIDIA,KFDIA
+      ZCFRAC = ZCLM(JL,JK1,JK-1) - ZCLM(JL,JK1,JK)
+      ZFU(JL) =  ZFU(JL) + ZCFRAC * ZUPF(JL,JK  ,JK1)
+ 434  CONTINUE
+ 435  CONTINUE
+C
+      DO 436 JL = KIDIA,KFDIA
+      PFUT(JL,JK1) = ZFU (JL)
+ 436  CONTINUE
+C
+ 437  CONTINUE
+C
+C-----------------------------------------------------------------------
+C
+      RETURN
+      END

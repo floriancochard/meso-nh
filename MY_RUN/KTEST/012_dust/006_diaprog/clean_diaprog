@@ -1,0 +1,2 @@
+set -x
+rm -f dir.* gmeta DUST* OUT_DIA

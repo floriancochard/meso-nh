@@ -1,0 +1,22 @@
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+#MNH_LIC for details. version 1.
+#PBS -q compile               # obligatoire pour rester sur la frontale TX-7
+#PBS -l cputim_prc=36000      # temps CPU par processus (défaut 30mn,  max 5h)
+#PBS -l memsz_job="9gb,8gb"             # mémoire par job         
+#PBS -l memsz_prc=2gb                   # mémoire par processus   (défaut 256mb, max 2gb)
+#PBS -j o 
+
+export VER_USER=            ######## le meme nom qu'en interactif
+set -x
+# On va lancer la compilation dans le répertoire de lancement du job
+[ ${PBS_O_WORKDIR} ] && cd ${PBS_O_WORKDIR}
+
+
+. ../conf/profile_mesonh-SX8-R8I4-MNH-V5-4-2-${VER_USER}-MPIAUTO-O4
+
+time gmake user
+time gmake -j 1 installuser
+
+/usr/local/bin/ja

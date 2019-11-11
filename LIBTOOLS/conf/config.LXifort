@@ -1,0 +1,12 @@
+CPP = cpp -P -traditional -Wcomment
+AR = ar
+CC = cc 
+F77 = ifort
+F90 = ifort
+
+CPPFLAGS = 
+F90FLAGS =
+F77FLAGS =
+
+LDFLAGS =
+

@@ -1,0 +1,130 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_LUNITn     CINIFILE = "SCHAR-JUNGFRAU" /
+
+&NAM_DYNn       XTSTEP = 10.0, 
+                CPRESOPT = "CRESI", 
+                NITR = 8, 
+                XRELAX = 1.,
+                LHORELAX_UVWTH=F,
+                LHORELAX_RV = F, 
+                LHORELAX_RC = F,
+                LHORELAX_RR = F,
+                LHORELAX_RI = F,
+                LHORELAX_RS = F,
+                LHORELAX_RG = F,
+                LHORELAX_TKE = F,
+                LHORELAX_SV = F,
+                LVE_RELAX = T, 
+                XRIMKMAX = 0.01,
+                NRIMX = 10,
+                XT4DIFU =  100.,
+                XT4DIFTH = 200.,
+                XT4DIFSV = 200. /
+
+&NAM_ADVn       CUVW_ADV_SCHEME = "CEN4TH",CTEMP_SCHEME='LEFR',
+                CMET_ADV_SCHEME = "PPM_01",
+                CSV_ADV_SCHEME = "PPM_01" /
+
+&NAM_PARAMn     CTURB = "TKEL",
+                CRAD = "NONE",
+                CCLOUD = "LIMA",
+                CDCONV = "NONE" /
+
+&NAM_LBCn       CLBCX = 2*"OPEN",
+                CLBCY = 2*"CYCL" /
+
+&NAM_TURBn      XIMPL = 1.,
+                CTURBLEN = "DELT",
+                CTURBDIM = "3DIM",
+                LTURB_DIAG = F,
+                LTURB_FLX = F,
+                CSUBG_AUCV = 'NONE',
+                LSUBG_COND = F /
+
+&NAM_CH_MNHCn   LUSECHEM = F /
+
+&NAM_CONF       CCONF = "START",
+                LFLAT = F,
+                NMODEL = 1,
+                NVERB = 5,
+                CEXP = 'XPREF',       
+                CSEG = "SEG01",
+                LFORCING = F,
+		NHALO=1,
+		JPHEXT=1 / 
+
+&NAM_DYN        XSEGLEN = 3600.,
+                XASSELIN = 0.2,
+                LCORIO = F,
+                XALKTOP = 0.01,
+                XALZBOT = 10000.,
+                LNUMDIFU =.T.,
+                LNUMDIFTH = .F.,
+                LNUMDIFSV = .F. /
+
+&NAM_BACKUP     XBAK_TIME(1,1) = 1800., XBAK_TIME(1,2) = 3600. /
+
+&NAM_BUDGET     CBUTYPE = 'CART',
+                NBUMOD = 1,
+                XBULEN=3600.,
+                XBUWRI=3600.,
+                NBUKL = 2,
+                NBUKH = 51,
+                LBU_KCP = .FALSE.,
+                NBUIL = 2,
+                NBUIH = 181,
+                NBUJL = 2,
+                NBUJH = 2,
+                LBU_ICP = .FALSE.,
+                LBU_JCP = .FALSE. /
+
+&NAM_PARAM_LIMA LWARM = T,
+		LACTI = T,
+                HINI_CCN='AER',
+                HTYPE_CCN(1)='C',
+                NMOD_CCN = 1,          ! Nombre de modes de CCN
+                LACTIT=T,
+                LRAIN=T,
+                LSEDC=F,
+                LBOUND=T, 
+                LSCAV=F,               ! Scavenging
+                LAERO_MASS=F,
+                LCCN_HOM=F,             ! Concentration en CCN homogène selon z
+                CCCN_MODES='JUNGFRAU',  ! Choix des modes de CCN
+                XCCN_CONC(1)=250.,          ! Concentration du mode 1 de CCN (/cm3)
+                LCOLD = T,
+		LNUCL = T,
+                LSEDI=T,
+                LHHONI=T,
+                LSNOW=T,
+                NMOD_IFN=1,            ! Nombre de modes d'IFN
+                CPRISTINE_ICE_LIMA = 'PLAT', 
+                CHEVRIMED_ICE_LIMA = 'GRAU',
+                NIND_SPECIE = 1,
+                LMEYERS = F,
+                NMOD_IMM=0,            ! Nombre de modes de CCN agissant par IMM
+                LIFN_HOM=T,             ! Concentration en IFN homogène selon z
+                CIFN_SPECIES='',        ! 
+                CINT_MIXING='',         ! DM1, DM2, BC, O, default (Phillips 2008)
+                XIFN_CONC(1)=1000./         ! Concentration du mode 1 d'IFN (/L)
+
+
+&NAM_BU_RU      LBU_RU  = T /
+
+&NAM_BU_RW      LBU_RW  = T /
+
+&NAM_BU_RTH     LBU_RTH = T /
+
+&NAM_BU_RRV     LBU_RRV = T /
+
+&NAM_BU_RRC     LBU_RRC = T /
+
+&NAM_BU_RRR     LBU_RRR = T /
+
+&NAM_BU_RRI     LBU_RRI = T /
+
+&NAM_BU_RRS     LBU_RRS = T /
+
+&NAM_BU_RRG     LBU_RRG = T /
+
+&NAM_BU_RSV     LBU_RSV = T /

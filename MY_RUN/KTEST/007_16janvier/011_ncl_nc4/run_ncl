@@ -1,0 +1,25 @@
+set -x
+#### Get highres coastline data for ncl
+./get_ncl_highres_files
+#### nc4 file to plot
+ln -sf ../008_run2/16JAN.1.12B18.001.nc
+#### Initilizing variables for ncl
+path_ncl=`which ncl`
+if [ "$path_ncl" == "" ]
+then
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!   ERROR: NCL is not installed or the path to   !"
+echo "!     ncl binary is not set correctly            !"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+exit
+fi
+export NCARG_ROOT=${path_ncl%%/bin/ncl}
+export PATH=$NCARG_ROOT/bin:$PATH
+export NCARG_RANGS=.
+#### Running  ncl scripts 
+ncl mnh_BasicMap.ncl
+ncl mnh_ModelLevels.ncl
+ncl mnh_Cloud.ncl
+ncl mnh_CrossSection.ncl
+ncl mnh_CrossSection_bis.ncl
+ncl mnh_PressureLevel.ncl

@@ -1,0 +1,44 @@
+Description of namelist variables used for prep_pgd
+####################################################
+
+This namelist is used to create a hysiographic data file
+For more details see the Externalized Surface Users's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+
+
+&NAM_PGDFILE 
+CPGDFILE	='16JAN98_36km' 	; name of the output physiographic data file
+
+&NAM_CONF_PROJ (projection definition)
+XLAT0		=50. 			; reference latitude for conformal projection
+XLON0		=-2.8 			; reference longitude for conformal projection
+XRPK		=0.58			; one factor for the projection
+					( XRPK=1: polar stereographic projection from south pole
+					  1>XRPK>0: Lambert projection from south pole
+					  XRPK=0: Mercator projection from earth center 
+					  XRPK=-1: polar stereographic projection from north pole)
+XBETA		=0. 			; rotation angle of the simulation domain around the reference longitude
+
+&NAM_CONF_PROJ_GRID (horizontal domain definition)
+XLATCEN		=48.	 		; latitude of the center of the domain
+XLONCEN		=-1.	 		; longitude of the center of the domain
+NIMAX		=30 			; number of grid points along x
+NJMAX		=30			; number of grid points along y
+XDX		=10000.			; gridsize in x-direction (in meter)
+XDY		=10000.			; gridsize in y_direction (in meter)
+
+&NAM_COVER      (surface cover fractions)
+YCOVER		='ecoclimats_v2' 	; ecoclimap data file name (used only if XUNIF_COVER is not set)
+YFILETYPE	='DIRECT' 		; type of YCOVER file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV').
+
+&NAM_ZS        (orography)
+YZS		='gtopo30'    		; topography file name (used only if XUNIF_ZS is not set)
+YFILETYPE	='DIRECT' 		; type of YZS file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')
+
+&NAM_ISBA     
+YCLAY		='clay_fao' 		; clay fraction file name
+YCLAYFILETYPE	='DIRECT' 		; type of YCLAY file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')
+YSAND		='sand_fao' 		; sand fraction file name
+YSANDFILETYPE	='DIRECT' 		; ype of YSAND file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')
+
+&NAM_SEABATHY  (bathymetry)
+XUNIF_SEABATHY	= 300.0 		; uniform value of bathymetry (in meter)

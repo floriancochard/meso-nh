@@ -1,0 +1,67 @@
+! directives de presentation
+LINVWB=T NIGRNC=10 nhi=0 lminmax=t xsizel=0.015
+! fenetre graphique
+visu
+! plages de couleur, pas d isolignes
+LCOLAREA=T LISO=F               
+! gestion des vecteurs (1 vecteur sur 4)
+NISKIP=4 XVRL=0.15                                                              
+! 1er fichier a ouvrir
+_file1_'KWRAI.1.SEGCH.004dg'                                                    
+!visu                     
+! couleur de fond pour le 1er intervalle
+LCOLZERO=T NCOLZERO=1                                                           
+! precipitations explicites instantanees
+INPRR                                                                           
+! precipitations explicites cumulees
+ACPRR                                                                           
+! trace de tous les vecteurs
+NISKIP=1                                                                        
+! superposition de la pression et des vecteurs de vent au niveau K=2
+PABST_K_2_ON_UTVT_K_2                                                           
+! superposition du rapport d eau nuageuse et des vecteurs vent a 3000m
+RCT_Z_3000_ON_UTVT_Z_3000                                                       
+! superposition du rapport d eau nuageuse et des vecteurs vent a 5000m
+RCT_Z_5000_ON_UTVT_Z_5000                                                       
+! concentration CO  et ozone à 3000m
+COT_Z_3000
+O3T_Z_3000
+! concentration CO et ozone à 5000m
+COT_Z_5000
+O3T_Z_5000
+! definition d une coupe verticale
+NIDEBCOU=5 NJDEBCOU=2 NLANGLE=47 NLMAX=21                                       
+! trace de la coupe verticale dans le plan horizontal
+LTRACECV=T                                                                      
+! rapport de vapeur et vecteurs vent dans la coupe verticale
+RVT_CV__ON_ULTWT_CV_                                                            
+! plus de trace de la coupe verticale
+LTRACECV=F                                                                      
+! rapport de melange d eau nuageuse et rapport d eau de pluie
+RCT_CV__ON_RRT_CV_                                                              
+! difference pour la temperature potentielle avec le champ initial
+THT_CV__MINUS_LSTHM_CV_                                                         
+! vitesse verticale en coupe verticale
+WT_CV_                                                                          
+! concentration CO en coupe verticale
+COT_CV_
+! concentration HCHO en coupe verticale
+HCHOT_CV_
+WC_HCHOT_CV__ON_RCT_CV_ 
+WR_HCHOT_CV__ON_RRT_CV_
+IC_HCHOT_CV__ON_RST_PLUS_RGT_CV_
+! concentration SO2 en coupe verticale
+SO2T_CV_
+WC_SO2T_CV__ON_RCT_CV_
+WR_SO2T_CV__ON_RRT_CV_
+IC_SO2T_CV__ON_RST_PLUS_RGT_CV_
+! concentration HNO3 en coupe verticale
+HNO3T_CV_
+WC_HNO3T_CV__ON_RCT_CV_
+WR_HNO3T_CV__ON_RRT_CV_
+IC_HNO3T_CV__ON_RST_PLUS_RGT_CV_ 
+! PH nuage et pluie en coupe verticale
+PHC_CV_ 
+PHR_CV_
+quit
+                                                      

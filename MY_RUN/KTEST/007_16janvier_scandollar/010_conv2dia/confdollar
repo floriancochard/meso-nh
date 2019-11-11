@@ -1,0 +1,30 @@
+###############################################################
+#  Import Global Variables                                    #
+###############################################################
+. ../confdollar_${CONFEXP}
+
+###############################################################
+# Run Parameters                                              #
+###############################################################
+
+## job parameters
+export TIME=3600
+export MEM="2gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="# "
+export NEXTDIR="\${SUBDIR}/../../011_diaprog"
+export NEXTRUN="run_diaprog"
+
+###############################################################
+# Input  Files/Parameters                                     #
+###############################################################
+
+export INP_YINIFILE="${YINIFILE2}${YSUFFIX}"
+
+###############################################################
+# Output Files                                                #
+###############################################################
+
+export CRT_CVYSUFFIX="${CVYSUFFIX}"
+export OUT_CVFILE="${YINIFILE2}${CRT_CVYSUFFIX}"

@@ -1,0 +1,2 @@
+rm -f ARM* pipe_name 
+rm -f eurocs* OUT*

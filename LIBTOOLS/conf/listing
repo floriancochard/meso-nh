@@ -1,0 +1,8 @@
+>lst.conf
+for i in config.* ; do
+echo $i >>lst.conf
+echo '---------------' >> lst.conf
+cat $i >>lst.conf
+echo '======================================='>> lst.conf
+done
+

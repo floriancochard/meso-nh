@@ -1,0 +1,5 @@
+CFLAGS   += -Ae
+F90FLAGS += -O3
+CPPFLAGS += -DNO_UNDERSCORE -DBIG_endian
+
+OBJS=ieee_is_nan.o comppar.o compress.o decompress.o nearestpow2.o searchgrp.o bitbuff.o

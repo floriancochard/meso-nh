@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#MSUB -n ${NBP}       # Nombre de processeur a allouer
+#MSUB -T ${TIME_MNH}  # Limite de temps elapsed du job en secondes ici 360 s
+#MSUB -M 32000Mo      # Limite memoire a 32Go
+#MSUB -q ${QUEUE_MNH}       # Limite de temps elapsed du job en secondes ici 360 s
+#MSUB -r mesonhO2_${CONFMNH}   # Nom du job
+#MSUB -e mesonhO2_${CONFMNH}_${NBP}proc.%I   # Nom du job
+#MSUB -o mesonhO2_${CONFMNH}_${NBP}proc.%I   # Nom du job
+
+set -x
+
+. $SRC_MESONH/conf/profile_mesonh${XYZ}
+
+cd $QSUBWORKDIR
+
+ulimit -c 0
+export MPIRUN="${MPIRUN}"
+run_mesonh_xyz

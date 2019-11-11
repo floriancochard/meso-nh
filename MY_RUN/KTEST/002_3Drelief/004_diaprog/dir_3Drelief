@@ -1,0 +1,13 @@
+visu
+_file1_'REL3D.1.EXP01.002dg'
+print groups
+UT_k_2_file1_
+liso=f
+lcolarea=t
+UT_k_2_file1_
+quit
+_file2_'REL3D_autre_run'
+UT_k_2_file2_
+UT_k_2_file1__minus_UT_k_2_file2_
+quit
+

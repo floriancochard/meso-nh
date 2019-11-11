@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal/eurocs_noground.* .
+ln -fs ../001_prep_ideal/eurocs_noground_pgd.* .
+rm -f ARM* OUT*
+time ${MONORUN} MESONH${XYZ}

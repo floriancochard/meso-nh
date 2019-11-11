@@ -1,0 +1,4 @@
+#!/bin/bash
+
+${SRC_MESONH}/exe/LFI2CDF${XYZ} --runmode cdf2cdf $*
+

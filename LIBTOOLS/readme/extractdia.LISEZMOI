@@ -1,0 +1,57 @@
+#
+#extractdia
+#==========
+#outil qui permet:
+#   1)d'extraire des champs 2D/3D d'un fichier diachronique (sortie conv2dia)
+#   2)d'extraire un zoom i,j,k,t,traj,process du champ
+#   3)de calculer dd(direction 0-360),ff(intensité)
+#   3)d'ecrire ce zoom extrait au format:
+#       'DIAC'= nouveau fichier diachronique visualisable par  diaprog
+#       'LLHV'= fichier ascii lon,lat,altitude_niveaux_modèle,valeur
+#       'llhv'= fichier ascii lat,lon,altitude_niveaux_modèle,valeur
+#       'LLZV'= fichier ascii lon,lat,altitude_niveaux_Z=cst,valeur
+#       'llzv'= fichier ascii lat,lon,altitude_niveaux_Z=cst,valeur
+#       'LLPV'= fichier ascii lon,lat,altitude_niveaux_P=cst,valeur
+#       'llpv'= fichier ascii lat,lon,altitude_niveaux_P=cst,valeur
+#       'FREE'= format libre à fixer au programme
+#       'KCDL' ou 'ZCDL' ou 'PCDL'= format CDL ( passage au format netcdf via
+#        le script Unix tonetcdf appelé par le programme)
+#             KCDL = fichier cdl avec les niveaux verticaux du modèle
+#             ZCDL = fichier cdl avec des interpolations sur des 
+#                    niveaux Z=constante donnés en input à extractdia 
+#             PCDL = fichier cdl avec des interpolations sur des 
+#                    niveaux P=constante donnés en input à extractdia 
+#  pour le format *CDL,*Z*,*P* 2 types de grilles horizontales sont
+#  possibles 'CONF' grille régulière sur le plan conforme
+#            'LALO' grille régulière en lat-lon
+#             dans ce cas les composantes du vent seront transformées
+#             en composantes zonales et méridiennes.
+#
+# initialiser (facultatif si le fichier est dans le repertoire courant)
+export DIRLFI=directory_fichier_diachro
+# (les liens crees seront supprimes a la fin du programme par l appel a rmlink
+#  present dans bin)
+# *executer (procedure de $MESONH)
+extractdia   #  et répondre aux questions
+             # Un fichier "dirextract" consignera toutes vos réponses 
+             # rentrées au clavier
+#    ou
+extractdia < dirextract_créé_execution_précédente
+#
+# pour acceder directement au binaire:
+# *initialiser et exporter la variable ARCH
+#(LXpgf90 ou LXNAGf95 sur PC Linux, HPf90 sur HP)
+export ARCH=LXpgf90
+# *initialiser et exporter la variable MNH_LIBTOOLS
+export MNH_LIBTOOLS=$MESONH/MAKE
+# *executer
+${MNH_LIBTOOLS}/tools/diachro/$ARCH/extractdia
+#
+#Scripts utilisés donc accessibles depuis votre environnement
+#===========================================================
+#rmlink, tonetcdf
+#(presents dans ${MNH_LIBTOOLS}/bin)
+#
+#
+#  Mise à jour le 30/01/2004
+#  Mise à jour le 01/03/2005

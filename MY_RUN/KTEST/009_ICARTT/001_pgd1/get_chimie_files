@@ -1,0 +1,32 @@
+#
+#     Modif
+#     J.Escobar 11/04/2014 get CHIMIE files from 'dir_open' directory ( without psswd )
+#     J.Escobar 25/04/2013 get LICENCE files
+#
+CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"} ; export CHIMIE_FILES
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!!            WARNING                  !!!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo 
+echo you need 800MO to download this files in
+echo 
+echo CHIMIE_FILES=${CHIMIE_FILES}
+echo 
+echo if OK press ENTER  else CTRL-C
+read RIEN
+set -x
+mkdir -p ${CHIMIE_FILES}
+cd ${CHIMIE_FILES}
+CHIMIE_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_CHIMIE"
+WGET="wget"
+export CHIMIE_URL
+for dir in EMISSIONS tuv531
+do
+[ -d $dir ] || ( ${WGET} -c -nd $CHIMIE_URL/$dir.tar.gz ; tar xvfz $dir.tar.gz ; rm -f $dir.tar.gz  ) 
+done
+for file in Licence_TUV5.txt Licence_EMISSIONS_POET.pdf \
+            ecmwf.OD.20040810.18-V2 mocage.GLOB22.20040810.18
+do
+[ -f $file ] || ( ${WGET} -c -nd $CHIMIE_URL/$file.gz ; gunzip  $file.gz  ) 
+done
+

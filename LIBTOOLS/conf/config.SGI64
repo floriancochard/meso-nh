@@ -1,0 +1,11 @@
+CPP = /usr/lib/cpp -P -C
+AR  = ar
+F90 = f90
+F77 = f90
+
+F90FLAGS = -64 -w
+F77FLAGS = -64 -w
+CFLAGS   = -64
+CPPFLAGS =
+LDFLAGS  = -64
+

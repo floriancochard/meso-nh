@@ -1,0 +1,4 @@
+F90FLAGS += -g -O2
+CPPFLAGS += -DNAGf95
+
+

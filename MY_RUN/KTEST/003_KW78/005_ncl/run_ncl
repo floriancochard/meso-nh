@@ -1,0 +1,25 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+
+ln -sf ../002_mesonh/KWRAI.1.SEG01.004.nc .
+
+rm -f visu_KW78.*.png
+
+ncl  plot_KW78.ncl
+display visu_KW78.000001.png
+display visu_KW78.000002.png
+display visu_KW78.000003.png
+display visu_KW78.000004.png
+display visu_KW78.000005.png
+display visu_KW78.000006.png
+display visu_KW78.000007.png
+display visu_KW78.000008.png
+display visu_KW78.000009.png
+display visu_KW78.000010.png
+display visu_KW78.000011.png
+display visu_KW78.000012.png
+display visu_KW78.000013.png
+exit 0

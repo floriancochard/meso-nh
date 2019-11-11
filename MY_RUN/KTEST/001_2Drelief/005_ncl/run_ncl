@@ -1,0 +1,29 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+
+ln -sf ../002_mesonh/EXPER.1.HYD2D.002.nc .
+ln -sf ../002_mesonh/EXPER.1.HYD2D.003.nc .
+
+rm -f visu_2Drelief.*.png
+
+ncl  plot_2Drelief.ncl
+display visu_2Drelief.000001.png
+display visu_2Drelief.000002.png
+display visu_2Drelief.000003.png
+display visu_2Drelief.000004.png
+display visu_2Drelief.000005.png
+display visu_2Drelief.000006.png
+display visu_2Drelief.000007.png
+display visu_2Drelief.000008.png
+display visu_2Drelief.000009.png
+display visu_2Drelief.000010.png
+display visu_2Drelief.000011.png
+display visu_2Drelief.000012.png
+display visu_2Drelief.000013.png
+display visu_2Drelief.000014.png
+display visu_2Drelief.000015.png
+display visu_2Drelief.000016.png
+exit 0

@@ -1,0 +1,19 @@
+set -x
+
+rm -f visu_16j*.png
+
+ln -sf ../008_run2/16JAN.1.12B18.001.nc .
+ln -sf ../008_run2/16JAN.2.12B18.001.nc .
+ncl plot_16j.ncl
+
+display  visu_16j.000001.png 
+display  visu_16j.000002.png 
+display  visu_16j.000003.png 
+display  visu_16j.000004.png 
+
+ncl plot_16j_2.ncl
+display  visu_16j_2.000001.png 
+display  visu_16j_2.000002.png 
+display  visu_16j_2.000003.png 
+exit 0
+

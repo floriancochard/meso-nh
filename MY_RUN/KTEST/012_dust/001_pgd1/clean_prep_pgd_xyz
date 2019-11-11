@@ -1,0 +1,5 @@
+set -x
+
+rm -f *.dir *.hdr file_for_xtransfer
+rm -f pgd_dust* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+

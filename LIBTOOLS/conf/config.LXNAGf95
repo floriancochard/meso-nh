@@ -1,0 +1,12 @@
+CPP = cpp -P -traditional -Wcomment
+AR = ar
+CC = cc
+F77 = f95
+F90 = f95
+
+CPPFLAGS = -DNAGf95
+#F90FLAGS = -kind=byte -w -C=all -gline
+F90FLAGS = -kind=byte -w -mismatch_all -gline
+F77FLAGS = -kind=byte -w -mismatch_all -dusty
+LDFLAGS = -unsharedf95 
+

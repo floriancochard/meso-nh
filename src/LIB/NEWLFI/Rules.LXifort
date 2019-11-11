@@ -1,0 +1,5 @@
+F77FLAGS += -O3 -assume byterecl
+CFLAGS   += -O2
+CPPFLAGS += -DLINUX -DSWAPIO
+
+OBJS = NEWLFI_ALL.o poub.o fswap8buff.o

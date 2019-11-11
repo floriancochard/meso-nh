@@ -1,0 +1,134 @@
+${JOBMONO}
+#!/bin/sh
+###############################################################
+# Script                                                      #
+###############################################################
+
+set -x
+#set -e
+
+true   '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true   '!!              Input/Output parameters                                      !!'
+true   '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+export PROFILE_MESONH="$SRC_MESONH/conf/profile_mesonh${XYZ}"
+export EXECDIR="${EXECDIR}"
+export SUBDIR="${SUBDIR}"
+export INDIR_HATMFILE="${INDIR_HATMFILE}"
+export INP_HATMFILE="${INP_HATMFILE}" SUF="${SUF}"
+export INP_HPGDFILE="${INP_HPGDFILE}"
+export INP_CFILE="${INP_CFILE}"
+export LISTGET="${LISTGET}"
+export OUT_CINIFILE="${OUT_CINIFILE}"
+export RMINDIR="${RMINDIR}"
+export MONORUN="${MONORUN}"
+export PREP_REAL_CASE="${SRC_MESONH}/exe/PREP_REAL_CASE${XYZ}"
+export OUTDIR="${OUTDIR}"
+export RMOUTDIR="${RMOUTDIR}"
+export NEXTDIR="${NEXTDIR}"
+export NEXTRUN="${NEXTRUN}"
+
+#################################################################
+#################################################################
+#                                                               #
+# Don't touch after this line (or know what your ar doing !!! ) #
+#                                                               #
+#################################################################
+#################################################################
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Init Mesonh environnment                                     !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+. \${PROFILE_MESONH}
+
+set -e
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              goto execdir                                                 !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+mkdir -p \${EXECDIR}
+cd \${EXECDIR}
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Clean before run                                             !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+# clean input
+rm -f \${INP_HATMFILE} 
+for file in \${LISTGET} ; do
+ rm -f \${file}.???
+done
+
+# clean output
+rm -f \${OUT_CINIFILE}.??? OUTPUT_LISTING* pipe* *.tex
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Get files                                                    !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+#${GETFILES} \${INDIR_HATMFILE}/\${INP_HATMFILE}\${SUF} .
+ln -s \${INDIR_HATMFILE}/\${INP_HATMFILE}\${SUF} .
+
+for file in \${LISTGET} ; do
+ ${GETFILES} \${RMINDIR}/\${file}.??? .
+done
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!              Definition of NAMELIST = RUN PARAMETERS                      !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+
+# inhibe problem with 'cp' if execution in curent directory
+cp \${SUBDIR}/PRE_REAL1.nam . || true
+cat <<EOF > PRE_REAL1.nam
+&NAM_FILE_NAMES HATMFILE='\${INP_HATMFILE}' , HATMFILETYPE='GRIBEX',
+                HPGDFILE='\${INP_HPGDFILE}' , 
+                CINIFILE='\${OUT_CINIFILE}' /
+&NAM_VER_GRID NKMAX=50, YZGRID_TYPE='FUNCTN',
+       ZDZGRD=60., ZDZTOP=700.,
+       ZZMAX_STRGRD=2500., ZSTRGRD=9., ZSTRTOP=7. /
+
+EOF
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!               End NAMELIST = RUN PARAMETERS                               !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!               RUN PREP_REAL_CASE                                          !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+
+
+time \${MPIRUN} \${PREP_REAL_CASE}
+#ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_REAL_CASE
+
+${CAT} OUTPUT_LISTING0
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                Save Files                                                 !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${RMMKDIR}  \${OUTDIR}
+${PUTFILES} \${OUT_CINIFILE}.??? \${RMOUTDIR}
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!               Next job                                                    !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${RMSHELL} "cd \${NEXTDIR}/${CONFEXP}; ${QSUB} \${NEXTRUN} "
+

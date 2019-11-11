@@ -1,0 +1,10 @@
+CPP = /usr/lib/cpp -P -C
+AR = ar
+CC = cc
+F77 = f95
+F90 = f95
+
+F90FLAGS = -f77 -kind=byte -w -mismatch_all
+F77FLAGS = -f77 -kind=byte -w -mismatch_all -dusty
+LDFLAGS  = -unsharedf95
+

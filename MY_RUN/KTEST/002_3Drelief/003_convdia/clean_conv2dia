@@ -1,0 +1,4 @@
+set -x
+rm -f REL3D.1.EXP01.002.{des,lfi,nc} 
+rm -f REL3D.1.EXP01.002dg.{des,lfi,nc}
+rm -f dirconv FICJD LISTING_DIA OUT_DIA pipe_name

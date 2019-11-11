@@ -1,0 +1,21 @@
+# @ job_name = mesonh_${OPTLEVEL}_${CONFMNH} 
+# @ job_type = BLUEGENE
+# Fichier sortie standard du travail
+# @ output = \$(job_name)_${NCN}CN_${NBP}procs_${MODE}.$\(jobid)
+# Fichier erreur standard du travail
+# @ error = \$(output)
+# Temps elapsed maximum demande
+# @ wall_clock_limit = ${TIME_MNH}
+# Taille partition d'execution
+# @ bg_size = ${NCN}
+# @ queue
+
+set -x
+
+. $SRC_MESONH/conf/profile_mesonh${XYZ}
+
+export MPIRUN=" mpirun -mode ${MODE} -np ${NBP} -mapfile TXYZ -exe  "
+
+time run_mesonh_xyz
+
+

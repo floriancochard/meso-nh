@@ -1,0 +1,1 @@
+rm -f HYD2D.* OUTPUT_LISTING* pipe* *.tex file_for_xtransfer

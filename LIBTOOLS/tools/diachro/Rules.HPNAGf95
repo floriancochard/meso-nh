@@ -1,0 +1,12 @@
+LIBEXT = -lX11 -lm -lcl 
+
+#############################################################################
+
+CPPFLAGS += -DLINUX -DNAGf95
+F77FLAGS += -g -O0
+F90FLAGS += -g -O0
+ifeq ($(B),64)
+F90FLAGS += -r8 
+endif
+OBJS2=
+

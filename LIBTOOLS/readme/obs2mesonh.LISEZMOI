@@ -1,0 +1,80 @@
+#
+# obs2mesonh
+#
+# Intégration des observations 1D,2D,3D dans la grille Mesonh et écriture d'un fichier
+# diachronique pouvant être utilisé via diaprog ou extractdia (readvar/writevar)
+#
+#  1) préparer un(des) fichier(s) ascii contenant toutes les observations
+#  au format suivant: une obs par ligne, la valeur indéfinie prévue étant 999.0
+#       lon lat altitude_en_mètres valeur   
+#    ou lat lon altitude_en_mètres valeur   
+#
+#  2) disposer d un fichier diachronique (fic_diachro_avec_zs): les observations seront integrees sur la grille definie dans ce fichier
+#
+#  3) initialiser (facultatif si les fichiers sont dans le repertoire courant)
+    export DIROBS=directory_fichiers_obs
+    export DIRLFI=directory_fichier_grille_mesonh
+#     puis executer
+    obs2mesonh #et répondre aux questions en interactif
+               # Un fichier "dirobs2mnh" consignera toutes vos réponses 
+               # rentrées au clavier
+#    ou
+    obs2mesonh < dirobs2mnh_execution_precedente
+#    ou
+    obs2mesonh << eof
+fic_diachro_avec_zs     # pour initialiser la grille Mesonh et les dates/heures
+0/1/2/3                 # + ou - de prints de contrôle
+LL                      # format du fichier d obs (LL=lon lat alt valeur, 
+                        #                          ll=lat lon alt valeur)
+fichier1_obs            # format lon lat altitude valeur (indef=999.0)
+nom_nouveau_champ       # nom des obs du fichier1 suivant la logique diaprog
+unité_nouveau_champ     # chaine de caractères libre
+1D/2D/3D                # champ créé de type 1D ou 3D ou 2D 
+                        # pour le cas 2D, seul K=1 sera initialisé
+LL                      # format du fichier d obs (LL=lon lat alt valeur, ll= lat lon alt valeur)
+fichier2_obs
+nom_nouveau_champ2
+unité_nouveau_champ2
+1D/2D/3D
+END                     # fin donc fermeture du fichier diachro résultat
+eof
+#
+#  4) le fichier résultat est nommé fic_diachro_avec_zs+'obs':
+#    sa grille et ses dates/heures sont celles de fic_diachro_avec_zs,
+#    le champ ZS est celui de fic_diachro_avec_zs
+#    il contient autant de champs que de fichiers d'obs traités lors de 
+#   l'exécution de obs2mesonh.
+#   + un champ ALT_nom_champ si le type=2D : altitude des obs
+#   + un champ N_nom_champ                 : nombre d obs par point de grille
+#
+#     diaprog ou extractdia ou ... sont utilisables
+#
+#     Pour les tracés, utiliser la version postérieure à diaprog_LX_020204
+#                      activer l'option LSPOT=T pour obtenir le tracé de
+#     toutes les valeurs même si celles-ci sont trés peu denses.
+#
+# 
+#Méthode utilisée:
+#=================
+#
+#  pour chaque obs lue, 
+#   - recherche du point de grille Mesonh  I,J contenant cette obs.
+#   - puis recherche du niveau vertical en tenant compte de la 
+#     grille verticale au point I,J ( grille verticale W si le nom du champ
+#     commence par la lettre W, grille de masse pour tous les autres noms
+#   - stockage de l'obs au point de grille (I,J,K)
+#
+# Pour les composantes du vent, on suppose que les observations sont
+# lues en Uzonal et Vméridien et on transforme ces composantes pour les
+# utiliser dans la grille Mesonh.
+#
+#   Moyenne arithmétique des obs contenues dans la même maille du modèle
+#   Valeur indefinie si aucune obs.
+#   Pour les obs dont l unité est "dBz" : passage dbZe à Ze pour effectuer
+# la moyenne puis retour à dbZe pour l'écriture
+#   Les observations dont l'altitude est inférieure à l'altitude du premier
+# niveau de modèle sont stockées au niveau k=1 et un message est affiché lors de
+# l'exécution.
+#  
+#  Mise à jour le 02/04/2004
+#  Mise à jour le 01/03/2005

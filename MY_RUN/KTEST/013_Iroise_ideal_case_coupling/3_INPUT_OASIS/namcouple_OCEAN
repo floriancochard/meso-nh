@@ -1,0 +1,137 @@
+# This is a typical input file for OASIS3-MCT.
+# Keywords used in previous versions of OASIS3 
+# but now obsolete are marked "Not used"
+# Don't hesitate to ask precisions or make suggestions (oasishelp@cerfacs.fr). 
+#
+# Any line beginning with # is ignored. Blank lines are not allowed.
+#
+#########################################################################
+ $NFIELDS
+# The number of fields described in the second part of the namcouple.
+#
+            10
+ $END
+#########################################################################
+ $NBMODEL
+# The number of models in this experiment + their names (6 characters)
+#
+   2  mesonh   toyexe
+ $END
+###########################################################################
+ $RUNTIME
+# The total simulated time for this run in seconds
+#
+  360
+ $END
+###########################################################################
+ $NLOGPRT
+# Amount of information written to OASIS3-MCT log files (see User Guide)
+# Premier nombre: quantite d'information pour debugger
+# Second nombre: statistics des processeurs
+  30 3
+ $END
+###########################################################################
+ $STRINGS
+#
+# The above variables are the general parameters for the experiment.
+# Everything below has to do with the fields being exchanged.
+#
+#                     -----------------------------------------
+#                        MESONH (mesonh) ==> TOY (toyexe)
+#                     -----------------------------------------
+#
+#~~~~~~~~~~~
+# Field 1 : 
+#~~~~~~~~~~~
+MNH_FMSU VARRCV01 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 2 : 
+#~~~~~~~~~~~
+MNH_FMSV VARRCV02 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 3 : 
+#~~~~~~~~~~~
+MNH_HEAT VARRCV03 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 4 : 
+#~~~~~~~~~~~
+MNH_SNET VARRCV04 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 5 : 
+#~~~~~~~~~~~
+MNH_EVAP VARRCV05 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 6 : 
+#~~~~~~~~~~~
+MNH_RAIN VARRCV06 1 60 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 7 : 
+#~~~~~~~~~~~
+MNH_PRES VARRCV07 1 180 1 rst_A.nc EXPOUT
+20 20 66 75 ssea toyt LAG=+10
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#                     ------------------------------------------
+#                        TOY (toyexe) ==> MESONH (mesonh)
+#                     ------------------------------------------
+#
+#~~~~~~~~~~~
+# Field 8 : 
+#~~~~~~~~~~~
+VARCNSTE MNH__SST 1 60 1 rst_T.nc EXPOUT
+66 75 20 20 toyt ssea LAG=+60
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 9 : 
+#~~~~~~~~~~~
+VARSIN01 MNH__UCU 1 60 1 rst_T.nc EXPOUT
+66 75 20 20 toyt ssea LAG=+60
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+#~~~~~~~~~~~
+# Field 10 : 
+#~~~~~~~~~~~
+VARSIN02 MNH__VCU 1 60 1 rst_T.nc EXPOUT
+66 75 20 20 toyt ssea LAG=+60
+R  0  R  0
+SCRIPR
+DISTWGT LR SCALAR LATLON 1 4
+#
+ $END

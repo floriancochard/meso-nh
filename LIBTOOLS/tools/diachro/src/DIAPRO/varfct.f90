@@ -1,0 +1,4328 @@
+!     ######spl
+      MODULE MODI_VARFCT
+!     ##################
+!
+INTERFACE
+!
+SUBROUTINE VARFCT(PWORKT,PWORK1D,K)
+REAL,DIMENSION(:) :: PWORKT,PWORK1D
+INTEGER           :: K
+END SUBROUTINE VARFCT
+!
+END INTERFACE
+END MODULE MODI_VARFCT
+!     ######spl
+      SUBROUTINE VARFCT(PWORKT,PWORK1D,K)
+!     ###################################
+!
+!!****  *VARFCT* - 
+!!
+!!    PURPOSE
+!!    -------
+!      
+!
+!!**  METHOD
+!!    ------
+!!     
+!!     N.A.
+!!
+!!    EXTERNAL
+!!    --------
+!!      None
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module
+!!
+!!      Module
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       24/11/95
+!!      Updated   PM   02/12/94
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+#ifdef NAGf95
+USE F90_UNIX  ! for FLUSH and GETENV
+#endif
+USE MODD_RESOLVCAR
+USE MODD_TYPE_AND_LH
+USE MODD_ALLOC_FORDIACHRO
+USE MODN_NCAR
+USE MODN_PARA
+USE MODD_TIT
+USE MODD_DEFCV
+USE MODD_TITLE
+USE MODD_CTL_AXES_AND_STYL
+USE MODI_READMNMX_FT_PVKT
+USE MODI_READCOL_FT_PVKT
+USE MODI_LOADMNMX_FT_PVKT
+!
+USE MODI_WRITEDIR
+
+IMPLICIT NONE
+!
+!*       0.1   Dummy arguments
+!              ---------------
+
+REAL,DIMENSION(:) :: PWORKT
+REAL,DIMENSION(:) :: PWORK1D
+INTEGER           :: K
+!
+!*       0.1   Local variables
+!              ---------------
+
+INTEGER          :: J,JJ, JI, JD, JF, JE, JJE, J2
+INTEGER          :: JA, JAF,IDA, JH
+INTEGER          :: JGP, JGPA
+INTEGER          :: JB, JC, ISUIT, ISUI
+INTEGER          :: IC, ID, ILR
+INTEGER          :: INDISTM, ISTOK, ILN
+INTEGER,SAVE     :: INDN, ITOT, IND, INB
+INTEGER          :: INUM, IPAGE, IREST, ICOMPT=0
+INTEGER          :: IER, ITYP, ILGRP, ILYGRP, ICOL
+INTEGER,SAVE     :: ICOL1, ICOL2
+INTEGER,SAVE     :: ISUPERDIA
+INTEGER,SAVE     :: IINUM, IRESP
+INTEGER          :: IBPM, ISLN, ISLNFT1=0, ISLNFT2=0
+INTEGER,DIMENSION(:),ALLOCATABLE,SAVE  :: ICOMPTSZ, ITEM, IST, ISTM
+INTEGER,DIMENSION(:),ALLOCATABLE,SAVE  :: IBRECOUV
+INTEGER,DIMENSION(:,:),ALLOCATABLE,SAVE  :: IRECOUV
+INTEGER,DIMENSION(:,:),ALLOCATABLE,SAVE  :: IWORK
+INTEGER,SAVE     :: IBC, IBCP, INCR !3 courbes par diagramme (bornes identiques)
+#ifdef RHODES
+INTEGER          :: ISTAF
+#endif
+
+REAL,SAVE        :: ZBOT, ZTOP, ZDEBY, ZDEBYB, ZDEBYT,ZBOTB
+REAL             :: ZMIN, ZMAX
+REAL,SAVE        :: ZVL, ZVR, ZVB, ZVT
+REAL,SAVE        :: ZWL, ZWR, ZWB, ZWT
+REAL,SAVE        :: ZWLL, ZWRR, ZWBB, ZWTT
+REAL             :: ZX, ZY, ZINT, ZWIDTH
+REAL             :: ZW1, ZW2, ZW3, ZW4
+REAL,SAVE        :: EPAIS
+REAL,SAVE        :: ZE36 
+REAL             :: ZLW
+REAL             :: ZXPOSTITT3, ZXYPOSTITT3
+REAL             :: ZXPOSTITT2, ZXYPOSTITT2
+REAL             :: ZXPOSTITT1, ZXYPOSTITT1
+REAL             :: ZXPOSTITB3, ZXYPOSTITB3
+REAL             :: ZXPOSTITB2, ZXYPOSTITB2
+REAL             :: ZXPOSTITB1, ZXYPOSTITB1
+REAL             :: ZCONSTIM
+REAL,DIMENSION(2):: ZX2, ZY2
+REAL,DIMENSION(:,:),ALLOCATABLE,SAVE :: ZWORK1D, ZWORKT
+REAL,DIMENSION(:,:),ALLOCATABLE,SAVE :: ZWORK, ZPVMNMX
+REAL,DIMENSION(:),ALLOCATABLE,SAVE   :: ZWT1, ZWT2
+
+CHARACTER(LEN=10) :: FORMAX, FORMAY
+CHARACTER(LEN=8)      :: YCAR8
+CHARACTER(LEN=30),DIMENSION(:),ALLOCATABLE,SAVE :: YGROUP, YGTEM
+CHARACTER(LEN=68) :: YCARCOU, YTEM, YCAR
+CHARACTER(LEN=20),SAVE :: YCAR20
+CHARACTER(LEN=80) :: YCAR80
+CHARACTER(LEN=30) :: YCAR30
+CHARACTER(LEN=100),SAVE :: YDIFF=' '
+!CHARACTER(LEN=3),SAVE  :: YREP, YREPO
+CHARACTER(LEN=5)       :: YC5
+CHARACTER(LEN=2),DIMENSION(:),ALLOCATABLE,SAVE :: YK, YKTEM
+CHARACTER(LEN=30)      :: YGP
+
+!
+!------------------------------------------------------------------------------
+ZE36=1.E36
+YCARCOU(1:LEN(YCARCOU))=' '
+YCAR(1:LEN(YCAR))=' '
+
+IF(LPBREAD)THEN
+  IF(ALLOCATED(ZWORK1D))THEN
+    DEALLOCATE(ZWORK1D)
+  ENDIF
+  IF(ALLOCATED(ZWORKT))THEN
+    DEALLOCATE(ZWORKT)
+  ENDIF
+  IF(ALLOCATED(YGROUP))THEN
+    DEALLOCATE(YGROUP)
+  ENDIF
+  IF(ALLOCATED(ICOMPTSZ))THEN
+    DEALLOCATE(ICOMPTSZ)
+  ENDIF
+  IF(ALLOCATED(IST))THEN
+    DEALLOCATE(IST)
+  ENDIF
+  IF(ALLOCATED(IBRECOUV))THEN
+    DEALLOCATE(IBRECOUV)
+  ENDIF
+  IF(ALLOCATED(IRECOUV))THEN
+    DEALLOCATE(IRECOUV)
+  ENDIF
+  ICOMPT=0
+  RETURN
+ENDIF
+IF(LCOLINE)CALL TABCOL_FORDIACHRO
+
+
+IF(LPRINT)THEN
+  CALL FMLOOK('FICVAL','FICVAL',IINUM,IRESP)
+  IF(IRESP /= 0)THEN
+    CALL FMATTR('FICVAL','FICVAL',IINUM,IRESP)
+    OPEN(UNIT=IINUM,FILE='FICVAL',FORM='FORMATTED')
+    PRINT '('' LPRINT=T --> Les valeurs seront mises dans le fichier FICVAL '')'
+  ENDIF
+    YC5='     '
+    IF(LFT1)THEN
+      YC5=' FT1 '
+    ELSE IF(LFT)THEN
+      YC5=' FT  '
+    ELSE IF(LPVKT)THEN
+      YC5='PVKT '
+    ELSE IF(LPVKT1)THEN
+      YC5='PVKT1'
+    ENDIF
+    IF(LFT .OR. LFT1)THEN
+      WRITE(IINUM,'(''VARFCT '',A5,'' G:'',A16,'' P:'',A30,'' NBVAL:'',I7&
+&     )')YC5,CGROUP,CTITGAL(1:30),SIZE(PWORK1D)
+    ELSE
+      WRITE(IINUM,'(''VARFCT '',A5,'' G:'',A16,'' P:'',A30,'' K:'',I4&
+&     )')YC5,CGROUP,CTITGAL(1:30),K
+    ENDIF
+  IF(LPLUS .OR.LMINUS)THEN
+    IF(LFT .OR. LFT1)THEN
+      WRITE(IINUM,'(A60,A4)')CTITB3(1:60),CTYPE
+    ELSE
+      WRITE(IINUM,'(A60,A4,''  NBVAL:'',I7)')CTITB3(1:60),CTYPE,SIZE(PWORK1D)
+    ENDIF
+  ELSE
+    IF(LFT .OR. LFT1)THEN
+      WRITE(IINUM,'(A40,A4)')CTITGAL,CTYPE
+    ELSE
+      WRITE(IINUM,'(A40,A4,''  NBVAL:'',I7)')CTITGAL,CTYPE,SIZE(PWORK1D)
+    ENDIF
+  ENDIF
+  IF(CTYPE == 'CART' .AND. .NOT.L1DT .AND. .NOT.LFT .AND. .NOT.LFT1)THEN
+    WRITE(IINUM,'(''nidebcou'',i4,'' njdebcou'',i4,'' nlmax'',i5,'' nlangle'',i4,&
+&   '' profile'',i4)')NIDEBCOU,NJDEBCOU,NLMAX,NLANGLE,NPROFILE
+  ENDIF
+! JUin 2001 Ecriture des dates (Demande G.Jaubert ) si LPRDAT=T
+  IF(LPRDAT)THEN
+    IF(.NOT.ALLOCATED(XPRDAT))THEN
+      print *,'**VARFCT XPRDAT NON ALLOUE.Dates non ecrites ds FICVAL .Prevenir J.Duron'
+    ELSE
+      WRITE(IINUM,'(1X,75(1H*))')
+      WRITE(IINUM,'(1X,''    Dates courante   *     modele      *   experience    *      segment'')')
+      WRITE(IINUM,'(1X,'' J   An  M  J  Sec.  * An  M  J  Sec.  * An  M  J  Sec.  * An  M  J  Sec.'')')
+      WRITE(IINUM,'(1X,75(1H*))')
+      DO J=1,SIZE(XPRDAT,2)
+        WRITE(IINUM,'(1X,I3,1X,3(I4,I3,I3,I6,'' *''),I4,I3,I3,I6)')J,iNT(XPRDAT(:,J))
+      ENDDO
+    ENDIF
+  ENDIF
+! JUin 2001 Ecriture des dates 
+  WRITE(IINUM,'(1X,45(1H*))')
+  WRITE(IINUM,'(''    '',10X,''TIME'',18X,''VAL'')')
+  WRITE(IINUM,'(1X,45(1H*))')
+  DO J=1,SIZE(PWORK1D)
+    WRITE(IINUM,'(I5,4X,E15.8,4X,E15.8)')J,PWORKT(J),PWORK1D(J)
+  ENDDO
+  WRITE(IINUM,'(1X,45(1H*))')
+ENDIF
+
+!*****************************************************************************
+!****************** Debut LFT1 ***********************************************
+!*****************************************************************************
+
+IF(LFT1)THEN
+
+  ICOMPT=ICOMPT+1
+  IF(ICOMPT == 1)THEN
+! On suppose meme longueur temps
+!24052000
+!   IF(LMINUS .OR. LPLUS)THEN
+!24052000
+!!!!!!!!!!!!!!!!!!!!!020398!!!!!!!!!!!!!!!!!!!!!
+      IBPM=0
+      DO J=1,NBPM
+        IF(NUMPM(J) == 1 .OR. NUMPM(J) == 2)THEN
+          IBPM=IBPM+1
+        ENDIF
+      ENDDO
+!24052000
+    IF(IBPM /= 0)THEN
+!24052000
+      ISUPERDIA=NSUPERDIA-(IBPM)
+!     ISUPERDIA=NSUPERDIA-(NBPM-1)
+!!!!!!!!!!!!!!!!!!!!!020398!!!!!!!!!!!!!!!!!!!!!
+!     ISUPERDIA=NSUPERDIA-1
+    ELSE
+      ISUPERDIA=NSUPERDIA
+    ENDIF
+    ALLOCATE(ZWORK1D(SIZE(PWORK1D),ISUPERDIA))
+    ALLOCATE(ZWORKT(SIZE(PWORKT),ISUPERDIA))
+    ALLOCATE(YGROUP(ISUPERDIA))
+    ALLOCATE(ICOMPTSZ(ISUPERDIA))
+    ALLOCATE(IST(ISUPERDIA))
+    ALLOCATE(IBRECOUV(ISUPERDIA))
+    ALLOCATE(IRECOUV(NBRECOUV*2,ISUPERDIA))
+    ICOMPTSZ(ICOMPT)=SIZE(PWORKT)
+    IST(ICOMPT)=NLOOPN
+    IBRECOUV(ICOMPT)=NBRECOUV
+    DO J=1,NBRECOUV
+      IRECOUV(J*2-1,ICOMPT)=NRECOUV(J*2-1)
+      IRECOUV(J*2,ICOMPT)=NRECOUV(J*2)
+    ENDDO
+    ZWORKT(:,ICOMPT)=PWORKT(:)
+    ZWORK1D(:,ICOMPT)=PWORK1D(:)
+    YGROUP(ICOMPT)=CTITGAL
+    IF(LMINUS .OR. LPLUS)THEN
+      print *,' ** varfct LMINUS or LPLUS=T , CTITGAL , CTITB3 ',CTITGAL(1:LEN_TRIM(CTITGAL))
+      print *,CTITB3(1:LEN_TRIM(CTITB3))
+      print *,' Le titre est mis a DIFF '
+      YGROUP(ICOMPT)=' '
+      YGROUP(ICOMPT)='DIFF '
+      YDIFF(1:LEN(YDIFF))=' '
+      IF(CTITB3 /= ' ')THEN
+        YDIFF=ADJUSTL(CTITB3(1:LEN_TRIM(CTITB3)))
+        YDIFF=ADJUSTL(YDIFF)
+      ENDIF
+      print *,'YDIFF ** ',YDIFF
+    ENDIF
+    IF(LDATFILE)CALL DATFILE_FORDIACHRO
+  ELSE
+
+    IBRECOUV(ICOMPT)=NBRECOUV
+    ILR=NBRECOUV*2
+    IF(ILR <= MAXVAL(IBRECOUV(1:ICOMPT-1))*2)THEN
+      DO J=1,ILR
+        IRECOUV(J,ICOMPT)=NRECOUV(J)
+      ENDDO
+    ELSE
+      ALLOCATE(IWORK(ILR,ISUPERDIA))
+      DO J=1,ICOMPT-1
+        IWORK(1:IBRECOUV(J)*2,J)=IRECOUV(1:IBRECOUV(J)*2,J)
+      ENDDO
+      IWORK(1:ILR,ICOMPT)=NRECOUV(1:ILR)
+      DEALLOCATE(IRECOUV)
+      ALLOCATE(IRECOUV(ILR,ISUPERDIA))
+      IRECOUV(:,:)=IWORK(:,:)
+      DEALLOCATE(IWORK)
+    ENDIF
+    ICOMPTSZ(ICOMPT)=SIZE(PWORKT)
+    IST(ICOMPT)=NLOOPN
+    IC=ICOMPTSZ(ICOMPT)
+    if(nverbia > 0)then
+      print *,' varfct ICOMPT,IC,ICOMPTSZ(ICOMPT) ',ICOMPT,IC,ICOMPTSZ(ICOMPT)
+    endif
+    IF(IC <= MAXVAL(ICOMPTSZ(1:ICOMPT-1)))THEN
+      ZWORK1D(1:IC,ICOMPT)=PWORK1D(:)
+      ZWORKT(1:IC,ICOMPT)=PWORKT(:)
+    ELSE
+      ALLOCATE(ZWORK(IC,ISUPERDIA))
+      DO J=1,ICOMPT-1
+	ZWORK(1:ICOMPTSZ(J),J)=ZWORK1D(1:ICOMPTSZ(J),J)
+      ENDDO
+      ZWORK(1:IC,ICOMPT)=PWORK1D(:)
+      DEALLOCATE(ZWORK1D)
+      ALLOCATE(ZWORK1D(IC,ISUPERDIA))
+      ZWORK1D(:,:)=ZWORK(:,:)
+      DO J=1,ICOMPT-1
+        ZWORK(1:ICOMPTSZ(J),J)=ZWORKT(1:ICOMPTSZ(J),J)
+      ENDDO
+      ZWORK(1:IC,ICOMPT)=PWORKT(:)
+      DEALLOCATE(ZWORKT)
+      ALLOCATE(ZWORKT(IC,ISUPERDIA))
+      ZWORKT(:,:)=ZWORK(:,:)
+      DEALLOCATE(ZWORK)
+    ENDIF
+    YGROUP(ICOMPT)=CTITGAL
+    IF(LMINUS .OR. LPLUS)THEN
+      print *,' ** varfct LMINUS or LPLUS=T , CTITGAL , CTITB3 ',CTITGAL(1:LEN_TRIM(CTITGAL))
+      print *,CTITB3(1:LEN_TRIM(CTITB3))
+      print *,' Le titre est mis a DIFF '
+      YGROUP(ICOMPT)=' '
+      YGROUP(ICOMPT)='DIFF '
+      YDIFF(1:LEN(YDIFF))=' '
+      IF(CTITB3 /= ' ')THEN
+        YDIFF=ADJUSTL(CTITB3(1:LEN_TRIM(CTITB3)))
+        YDIFF=ADJUSTL(YDIFF)
+      ENDIF
+      print *,'YDIFF ** ',YDIFF
+    ENDIF
+! YGROUP(ICOMPT)=CGROUP
+  ENDIF
+  !
+  IF(ICOMPT < ISUPERDIA)THEN
+    RETURN
+  ELSE
+
+    ITOT=0
+    DO J=1,ICOMPT
+      ITOT=ITOT+ICOMPTSZ(J)
+    ENDDO
+    ALLOCATE(ZWT1(ITOT))
+    ID=0
+    DO J=1,ICOMPT
+      IC=ICOMPTSZ(J)
+      ZWT1(ID+1:ID+IC)=ZWORK1D(1:IC,J)
+      ID=IC+ID
+    ENDDO
+!   mai 2000
+    IF(LSPVALT)THEN
+      WHERE(ZWT1 == XSPVALT)
+        ZWT1=ZE36
+      ENDWHERE
+    ENDIF
+! mai 2000
+
+! Mai 2000
+    IF(LSPVALT)THEN
+      DO JH=1,SIZE(ZWT1)
+        IF(ZWT1(JH) /= ZE36)THEN
+          ZMIN=ZWT1(JH)
+          ZMAX=ZWT1(JH)
+          EXIT
+        ENDIF
+      ENDDO
+      DO JH=1,SIZE(ZWT1)
+        IF(ZWT1(JH) /= ZE36)THEN
+          ZMIN=MIN(ZMIN,ZWT1(JH))
+          ZMAX=MAX(ZMAX,ZWT1(JH))
+        ENDIF
+      ENDDO
+    ELSE
+! Mai 2000
+  
+      ZMIN=MINVAL(ZWT1)
+      ZMAX=MAXVAL(ZWT1)
+! Mai 2000
+     ENDIF
+! Mai 2000
+  print *,' FT1 ZMIN,ZMAX TROUVES : ',ZMIN,ZMAX
+! ZMIN=MINVAL(ZWORK1D)
+! ZMAX=MAXVAL(ZWORK1D)
+  IF(LMNMXUSER)THEN
+    IF(ISUPERDIA == 1)THEN
+      CALL READMNMX_FT_PVKT(CTITGAL(1:LEN_TRIM(CTITGAL)),ZMIN,ZMAX)
+      IF(LOK)THEN
+	LOK=.FALSE.
+      ELSE
+! Mai 2000
+        IF(LSPVALT)THEN
+          DO JH=1,SIZE(ZWT1)
+            IF(ZWT1(JH) /= ZE36)THEN
+              ZMIN=ZWT1(JH)
+              ZMAX=ZWT1(JH)
+              EXIT
+            ENDIF
+          ENDDO
+          DO JH=1,SIZE(ZWT1)
+            IF(ZWT1(JH) /= ZE36)THEN
+              ZMIN=MIN(ZMIN,ZWT1(JH))
+              ZMAX=MAX(ZMAX,ZWT1(JH))
+            ENDIF
+          ENDDO
+        ELSE
+! Mai 2000
+          ZMIN=MINVAL(ZWT1)
+          ZMAX=MAXVAL(ZWT1)
+! Mai 2000
+        ENDIF
+! Mai 2000
+        IF(.NOT.LFT1BAUTO)THEN
+          CALL VALMNMX(ZMIN,ZMAX)
+          IF(ABS(ZMAX-ZMIN) <= 1.E-3)THEN
+            ZMIN=ZMIN-1.
+            ZMAX=ZMAX+1.
+          ENDIF
+        ELSE
+          IF(ABS(ZMAX-ZMIN) == 0.)THEN
+            ZMIN=ZMIN-2.5*TINY(1.)
+            ZMAX=ZMAX+2.5*TINY(1.)
+          ENDIF
+        ENDIF
+      ENDIF
+ 
+    ELSE
+      IF(XFT1MAX - XFT1MIN /= 0.)THEN
+	ZMIN=XFT1MIN; ZMAX=XFT1MAX
+      ELSE
+        IF(.NOT.LFT1BAUTO)THEN
+	CALL VALMNMX(ZMIN,ZMAX)
+	IF(ABS(ZMAX-ZMIN) <= 1.E-3)THEN
+	  ZMIN=ZMIN-1.
+	  ZMAX=ZMAX+1.
+	ENDIF
+        ELSE
+          IF(ABS(ZMAX-ZMIN) == 0.)THEN
+            ZMIN=ZMIN-2.5*TINY(1.)
+            ZMAX=ZMAX+2.5*TINY(1.)
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ELSE
+    IF(.NOT.LFT1BAUTO)THEN
+      CALL VALMNMX(ZMIN,ZMAX)
+      IF(ABS(ZMAX-ZMIN) <= 1.E-3)THEN
+        ZMIN=ZMIN-1.
+        ZMAX=ZMAX+1.
+      ENDIF
+    ELSE
+      IF(ABS(ZMAX-ZMIN) == 0.)THEN
+          ZMIN=ZMIN-2.5*TINY(1.)
+          ZMAX=ZMAX+2.5*TINY(1.)
+      ENDIF
+    ENDIF
+
+  ENDIF
+  print *,' FT1 BORNES EFFECTIVEMENT UTILISEES ',ZMIN,ZMAX
+  
+  ZVL=.13
+  ZVR=.9
+  ZVB=.1
+  ZVT=.9
+!!!!!!!!!!!!!!!
+  IF(LVPTFT1USER)THEN
+    ZVL=XVPTFT1L
+    ZVR=XVPTFT1R
+    ZVB=XVPTFT1B
+    ZVT=XVPTFT1T
+  ENDIF
+!!!!!!!!!!!!!!!
+  ZWT1(:)=0.
+  ID=0
+  DO J=1,ICOMPT
+    ZCONSTIM=0
+    IF(MOD(J,8) == 1)THEN
+      ZCONSTIM=XFT_ADTIM1
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.1 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM1 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 2)THEN
+      ZCONSTIM=XFT_ADTIM2
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.2 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM2 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 3)THEN
+      ZCONSTIM=XFT_ADTIM3
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.3 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM3 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 4)THEN
+      ZCONSTIM=XFT_ADTIM4
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.4 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM4 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 5)THEN
+      ZCONSTIM=XFT_ADTIM5
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.5 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM5 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 6)THEN
+      ZCONSTIM=XFT_ADTIM6
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.6 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM6 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 7)THEN
+      ZCONSTIM=XFT_ADTIM7
+      IF(ZCONSTIM /= 0.)THEN
+        print *,' ****ATTENTION Ajout pour la courbe N.7 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM7 a zero'
+      ENDIF
+    ELSEIF(MOD(J,8) == 0)THEN
+      ZCONSTIM=XFT_ADTIM8
+      IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.8 d''une constante de temps de : ',&
+        ZCONSTIM,'sec.'
+        print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM8 a zero'
+      ENDIF
+    ENDIF
+  
+    IC=ICOMPTSZ(J)
+    ZWORKT(1:IC,J)=ZWORKT(1:IC,J)+ZCONSTIM
+    ZWT1(ID+1:ID+IC)=ZWORKT(1:IC,J)
+    ID=IC+ID
+  ENDDO
+  ZWL=MINVAL(ZWT1)
+  ZWR=MAXVAL(ZWT1)
+! Mai 2000
+  IF(LTIMEUSER)THEN
+    ZWL=XTIMEMIN
+    ZWR=XTIMEMAX
+  ENDIF
+! Mai 2000
+  DEALLOCATE(ZWT1)
+! ZWL=PWORKT(1)
+! ZWR=PWORKT(SIZE(PWORKT))
+  ZWB=ZMIN
+  ZWT=ZMAX
+  
+! print *,' PWORKT PWORK1D ',PWORKT,PWORK1D
+! ******************************************************************
+  
+  CALL FORMATXY(ZWL,ZWR,ZWB,ZWT)
+
+  CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+  
+  CALL AGSETF('SET.',4.)
+  CALL AGSETF('BAC.',4.)
+  CALL AGSETF('FRA.',2.)
+
+  ZX=ZWR+(ZWR-ZWL)/50.
+  ZX2(1)=ZX
+  ZX2(2)=ZX+(ZWR-ZWL)/16.
+  ZINT=(ZWT-ZWB)/ISUPERDIA
+!+++++++++++++++++++++++++++++++++++++++++++
+  DO J=1,ISUPERDIA
+!    print *,' 1 J ISUPERDIA YGROUP(J) ',J,ISUPERDIA,YGROUP(J)
+    IF(LCOLINE)THEN
+!
+!!!!!!
+      CALL GSLN(1)
+      ITYP=1
+      IF(LFT1LUSER)THEN
+!!!!!!
+        IF(J == 1)THEN
+          CALL GSLN(NFT1STY1)
+          ITYP=NFT1STY1
+          CALL GSLWSC(XFT1LW1)
+          IF(NFT1COL1 /= 0)THEN
+            CALL GSPLCI(NFT1COL1)
+            CALL GSTXCI(NFT1COL1)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 2)THEN
+          CALL GSLN(NFT1STY2)
+          ITYP=NFT1STY2
+          CALL GSLWSC(XFT1LW2)
+          IF(NFT1COL2 /= 0)THEN
+            CALL GSPLCI(NFT1COL2)
+            CALL GSTXCI(NFT1COL2)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 3)THEN
+          CALL GSLN(NFT1STY3)
+          ITYP=NFT1STY3
+          CALL GSLWSC(XFT1LW3)
+          IF(NFT1COL3 /= 0)THEN
+            CALL GSPLCI(NFT1COL3)
+            CALL GSTXCI(NFT1COL3)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 4)THEN
+          CALL GSLN(NFT1STY4)
+          ITYP=NFT1STY4
+          CALL GSLWSC(XFT1LW4)
+          IF(NFT1COL4 /= 0)THEN
+            CALL GSPLCI(NFT1COL4)
+            CALL GSTXCI(NFT1COL4)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 5)THEN
+          CALL GSLN(NFT1STY5)
+          ITYP=NFT1STY5
+          CALL GSLWSC(XFT1LW5)
+          IF(NFT1COL5 /= 0)THEN
+            CALL GSPLCI(NFT1COL5)
+            CALL GSTXCI(NFT1COL5)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 6)THEN
+          CALL GSLN(NFT1STY6)
+          ITYP=NFT1STY6
+          CALL GSLWSC(XFT1LW6)
+          IF(NFT1COL6 /= 0)THEN
+            CALL GSPLCI(NFT1COL6)
+            CALL GSTXCI(NFT1COL6)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 7)THEN
+          CALL GSLN(NFT1STY7)
+          ITYP=NFT1STY7
+          CALL GSLWSC(XFT1LW7)
+          IF(NFT1COL7 /= 0)THEN
+            CALL GSPLCI(NFT1COL7)
+            CALL GSTXCI(NFT1COL7)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 8)THEN
+          CALL GSLN(NFT1STY8)
+          ITYP=NFT1STY8
+          CALL GSLWSC(XFT1LW8)
+          IF(NFT1COL8 /= 0)THEN
+            CALL GSPLCI(NFT1COL8)
+            CALL GSTXCI(NFT1COL8)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 9)THEN
+          CALL GSLN(NFT1STY9)
+          ITYP=NFT1STY9
+          CALL GSLWSC(XFT1LW9)
+          IF(NFT1COL9 /= 0)THEN
+            CALL GSPLCI(NFT1COL9)
+            CALL GSTXCI(NFT1COL9)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 10)THEN
+          CALL GSLN(NFT1STY10)
+          ITYP=NFT1STY10
+          CALL GSLWSC(XFT1LW10)
+          IF(NFT1COL10 /= 0)THEN
+            CALL GSPLCI(NFT1COL10)
+            CALL GSTXCI(NFT1COL10)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 11)THEN
+          CALL GSLN(NFT1STY11)
+          ITYP=NFT1STY11
+          CALL GSLWSC(XFT1LW11)
+          IF(NFT1COL11 /= 0)THEN
+            CALL GSPLCI(NFT1COL11)
+            CALL GSTXCI(NFT1COL11)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 12)THEN
+          CALL GSLN(NFT1STY12)
+          ITYP=NFT1STY12
+          CALL GSLWSC(XFT1LW12)
+          IF(NFT1COL12 /= 0)THEN
+            CALL GSPLCI(NFT1COL12)
+            CALL GSTXCI(NFT1COL12)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 13)THEN
+          CALL GSLN(NFT1STY13)
+          ITYP=NFT1STY13
+          CALL GSLWSC(XFT1LW13)
+          IF(NFT1COL13 /= 0)THEN
+            CALL GSPLCI(NFT1COL13)
+            CALL GSTXCI(NFT1COL13)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 14)THEN
+          CALL GSLN(NFT1STY14)
+          ITYP=NFT1STY14
+          CALL GSLWSC(XFT1LW14)
+          IF(NFT1COL14 /= 0)THEN
+            CALL GSPLCI(NFT1COL14)
+            CALL GSTXCI(NFT1COL14)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ELSEIF(J == 15)THEN
+          CALL GSLN(NFT1STY15)
+          ITYP=NFT1STY15
+          CALL GSLWSC(XFT1LW15)
+          IF(NFT1COL15 /= 0)THEN
+            CALL GSPLCI(NFT1COL15)
+            CALL GSTXCI(NFT1COL15)
+          ELSE
+            CALL GSPLCI(J+1)
+            CALL GSTXCI(J+1)
+          ENDIF
+        ENDIF
+        IF(ITYP == 1)CALL AGSETR('DAS/PA/1.',65535.)
+        IF(ITYP == 2)CALL AGSETR('DAS/PA/1.',30583.)
+        IF(ITYP == 3)CALL AGSETR('DAS/PA/1.',21845.)
+        IF(ITYP == 4)CALL AGSETR('DAS/PA/1.',10023.)
+        CALL GSLN(ITYP)
+!!!!!!
+      ELSE
+!!!!!!
+        IF(LCOLUSER)THEN
+          YGP(1:LEN(YGP))=' '
+          DO JGP=1,LEN_TRIM(YGROUP(J))
+            IF(YGROUP(J)(JGP:JGP) == ' ')THEN
+              YGP=YGROUP(J)(1:JGP-1)
+              YGP=ADJUSTL(YGP)
+              EXIT
+            ENDIF
+          ENDDO
+          IF(YGP(1:LEN(YGP)) == ' ')THEN
+            YGP=YGROUP(J)
+            YGP=ADJUSTL(YGP)
+          ENDIF
+            if(nverbia >0)then
+            print *,' YGP ',YGP,' YGROUP ',YGROUP(J)
+	  endif
+          ICOL=0
+          CALL READCOL_FT_PVKT(YGP(1:LEN_TRIM(YGP)),ICOL)
+	  if(nverbia >0)then
+            print *,' ICOL ',ICOL
+	  endif
+          IF(ICOL == 0)THEN
+	print *,' INDICE DE COULEUR POUR ',ADJUSTL(YGROUP(J)(1:LEN_TRIM &
+	(YGROUP(J)))),' ? '
+	READ(5,*,END=12)ICOL
+          GO TO 22
+	12 CONTINUE
+	CLOSE(5)
+	CALL GETENV("VARTTY",YCAR20)
+          YCAR20=ADJUSTL(YCAR20)
+	OPEN(5,FILE=YCAR20)
+	READ(5,*)ICOL
+	22 CONTINUE
+	!WRITE(YCAR80,*)ICOL
+	!YCAR80=ADJUSTL(YCAR80)
+          !WRITE(NDIR,'(A80)')YCAR80
+          CALL WRITEDIR(NDIR,ICOL)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+          CALL LOADMNMX_FT_PVKT('XPVKTCOL_'//YGP(1:LEN_TRIM(YGP))//'=',1,FLOAT(ICOL),7)
+          ENDIF
+        CALL GSPLCI(ICOL)
+        CALL GSTXCI(ICOL)
+      ELSE
+        CALL GSPLCI(J+1)
+        CALL GSTXCI(J+1)
+      ENDIF
+!!!!!!
+    ENDIF
+!!!!!!
+  ELSE               !!!!!!!!!!!!!!!!!!!! Noir et blanc
+    CALL GSPLCI(1)
+    CALL GSTXCI(1)
+    SELECT CASE(J)
+      CASE(:4)
+	CALL GSLWSC(1.)
+      CASE(5:8)
+	CALL GSLWSC(2.)
+      CASE(9:12)
+	CALL GSLWSC(3.)
+      CASE(13:16)
+	CALL GSLWSC(4.)
+      CASE DEFAULT
+	CALL GSLWSC(1.)
+    END SELECT
+    !
+    IF(LFT1STYLUSER)THEN
+      print *,' Rentrez le type de trait voulu :'
+      print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+      read(5,*,END=10)ISLN
+      GO TO 20
+      10 CONTINUE
+      CLOSE(5)
+      CALL GETENV("VARTTY",YCAR20)
+      YCAR20=ADJUSTL(YCAR20)
+      OPEN(5,FILE=YCAR20)
+      read(5,*)ISLN
+      20 CONTINUE
+      !WRITE(YCAR80,*)ISLN
+      !YCAR80=ADJUSTL(YCAR80)
+      !WRITE(NDIR,'(A80)')YCAR80
+      CALL WRITEDIR(NDIR,ISLN)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+      print *,' Epaisseur des traits ? (valeur de base 1) '
+      read(5,*,END=11)EPAIS
+      GO TO 21
+      11 CONTINUE
+      CLOSE(5)
+      CALL GETENV("VARTTY",YCAR20)
+      YCAR20=ADJUSTL(YCAR20)
+      OPEN(5,FILE=YCAR20)
+      read(5,*)EPAIS
+      21 CONTINUE
+      !WRITE(YCAR80,*)EPAIS
+      !YCAR80=ADJUSTL(YCAR80)
+      !WRITE(NDIR,'(A80)')YCAR80
+      CALL WRITEDIR(NDIR,EPAIS)
+      CALL GSLWSC(EPAIS)
+!Mai 2000
+!     CALL GSLN(ISLN)
+      CALL GSLN(1)
+      IF(ISLN == 1)CALL AGSETR('DAS/PA/1.',65535.)
+      IF(ISLN == 2)CALL AGSETR('DAS/PA/1.',30583.)
+      IF(ISLN == 3)CALL AGSETR('DAS/PA/1.',21845.)
+      IF(ISLN == 4)CALL AGSETR('DAS/PA/1.',10023.)
+      ITYP=ISLN
+    ELSE
+      ITYP=MOD(J,4)
+      IF(ITYP == 0)ITYP=4
+!   CALL GSLN(MOD(J,4))
+!   IF(MOD(J,4) == 0)CALL GSLN(4)
+      CALL GSLN(1)
+      IF(ITYP == 1)CALL AGSETR('DAS/PA/1.',65535.)
+      IF(ITYP == 2)CALL AGSETR('DAS/PA/1.',30583.)
+      IF(ITYP == 3)CALL AGSETR('DAS/PA/1.',21845.)
+      IF(ITYP == 4)CALL AGSETR('DAS/PA/1.',10023.)
+    ENDIF
+  ENDIF                           !!!!!!!!!!!!!!!!!!!! Noir et blanc
+  ZY=ZWB+ZINT*(J-1)
+  ZY2(1)=ZY; ZY2(2)=ZY
+  CALL GSCLIP(0)
+! print *,' ZX ZY ',ZX2,ZY2
+  CALL GSLN(ITYP)
+  ! trace du trait sous le proc
+!!!!!!!
+  IF(.NOT.LCOLINE)THEN
+!!!!!!!
+  IF(.NOT.LBLFT1SUP)THEN
+  CALL GPL(2,ZX2,ZY2)
+  ENDIF
+!!!!!!!
+  ENDIF
+!!!!!!!
+  ZY=ZY+(ZWT-ZWB)/60.
+  CALL GQLWSC(IER,ZWIDTH)
+! CALL GQLN(IER,ITYP)
+  CALL GSLN(1)
+  CALL GSLWSC(1.)
+  YCAR30(1:LEN(YCAR30))=' '
+!!!!!!!
+    print *,' LFT1LUSER ****',LFT1LUSER,J
+  IF(LFT1LUSER)THEN
+    print *,' LFT1LUSER ****',LFT1LUSER,J
+    IF(J == 1)THEN
+      YCAR30=ADJUSTL(CFT1TIT1)
+    print*,'YCAR30=',YCAR30
+    print*,'CFT1TIT1 ',CFT1TIT1
+    ELSEIF(J == 2)THEN
+      YCAR30=ADJUSTL(CFT1TIT2)
+    print*,'YCAR30=',YCAR30
+    ELSEIF(J == 3)THEN
+      YCAR30=ADJUSTL(CFT1TIT3)
+    ELSEIF(J == 4)THEN
+      YCAR30=ADJUSTL(CFT1TIT4)
+    ELSEIF(J == 5)THEN
+      YCAR30=ADJUSTL(CFT1TIT5)
+    ELSEIF(J == 6)THEN
+      YCAR30=ADJUSTL(CFT1TIT6)
+    ELSEIF(J == 7)THEN
+      YCAR30=ADJUSTL(CFT1TIT7)
+    ELSEIF(J == 8)THEN
+      YCAR30=ADJUSTL(CFT1TIT8)
+    ELSEIF(J == 9)THEN
+      YCAR30=ADJUSTL(CFT1TIT9)
+    ELSEIF(J == 10)THEN
+      YCAR30=ADJUSTL(CFT1TIT10)
+    ELSEIF(J == 11)THEN
+      YCAR30=ADJUSTL(CFT1TIT11)
+    ELSEIF(J == 11)THEN
+      YCAR30=ADJUSTL(CFT1TIT12)
+    ELSEIF(J == 13)THEN
+      YCAR30=ADJUSTL(CFT1TIT13)
+    ELSEIF(J == 14)THEN
+      YCAR30=ADJUSTL(CFT1TIT14)
+    ELSEIF(J == 15)THEN
+      YCAR30=ADJUSTL(CFT1TIT15)
+    ENDIF
+    YCAR30=ADJUSTL(YCAR30)
+    IF(YCAR30 == 'white' .OR. YCAR30 == 'WHITE')THEN
+      YCAR30(1:LEN(YCAR30))=' '
+    ELSEIF(YCAR30 == ' ')THEN
+      YCAR30=ADJUSTL(YGROUP(J)(1:LEN_TRIM(YGROUP(J))))
+    ENDIF
+  ELSE
+!!!!!!!
+    YCAR30=ADJUSTL(YGROUP(J)(1:LEN_TRIM(YGROUP(J))))
+!!!!!!!
+  ENDIF
+!!!!!!!
+    print*,'YCAR30=',YCAR30
+  ! ecriture du nom du proc 
+  IF(.NOT.LBLFT1SUP)THEN
+  CALL PLCHHQ(ZX,ZY,YCAR30,.010,0.,-1.)
+  ENDIF
+!JDCALL PLCHHQ(ZX,ZY,YCAR30,.011,0.,-1.)
+! CALL PLCHHQ(ZX,ZY,ADJUSTL(YGROUP(J)(1:LEN_TRIM(YGROUP(J)))),.011,0.,-1.)
+  CALL GSCLIP(1)
+! CALL GSLN(ITYP)
+  IF(ITYP == 1)CALL AGSETR('DAS/PA/1.',65535.)
+  IF(ITYP == 2)CALL AGSETR('DAS/PA/1.',30583.)
+  IF(ITYP == 3)CALL AGSETR('DAS/PA/1.',21845.)
+  IF(ITYP == 4)CALL AGSETR('DAS/PA/1.',10023.)
+  CALL GSLWSC(ZWIDTH)
+
+  IC=ICOMPTSZ(J)
+  ALLOCATE(ZWT1(IC),ZWT2(IC))
+  ZWT1(:)=ZWORKT(1:IC,J)
+  ZWT2(:)=ZWORK1D(:,J)
+  IF(LSPVALT)THEN
+    WHERE(ZWT2 == XSPVALT)
+      ZWT2=ZE36
+    ENDWHERE
+  ENDIF
+  DO JI=1,IBRECOUV(J)
+    JD=IRECOUV(JI*2-1,J)
+    JF=IRECOUV(JI*2,J)
+!             print *,' JD JF AVANT ',JD,JF
+! 270896 !!!!!!!!!!!!!!!
+            SELECT CASE(CTYPE)
+	      CASE('DRST','RSPL','RAPL')
+!               J2=NLOOPN
+                J2=IST(J)
+	      CASE DEFAULT
+		J2=1
+	    END SELECT
+            IF(.NOT. LTINCRDIA(J,J2))THEN
+	      DO JE=1,NBTIMEDIA(J,J2)
+		IF(NTIMEDIA(JE,J,J2) >= JD)THEN
+		  JD=JE
+		  EXIT
+		ENDIF
+	      ENDDO
+	      DO JE=1,NBTIMEDIA(J,J2)
+		IF(NTIMEDIA(JE,J,J2) == JF)THEN
+		  JF=JE
+		  EXIT
+                ELSE IF(NTIMEDIA(JE,J,J2) > JF)THEN
+		  JF=JE-1
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JF=MIN(JF,NBTIMEDIA(J,J2))
+!             print *,' JD JF APRES ',JD,JF
+!             print *,' ZWT2 ',ZWT2(JD:JF)
+
+            ELSE
+
+	      JJE=0
+	      DO JE=NTIMEDIA(1,J,J2),NTIMEDIA(2,J,J2),NTIMEDIA(3,J,J2)
+		JJE=JJE+1
+		IF(JE >= JD)THEN
+		  JD=JJE
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JJE=0
+	      DO JE=NTIMEDIA(1,J,J2),NTIMEDIA(2,J,J2),NTIMEDIA(3,J,J2)
+		JJE=JJE+1
+		IF(JE == JF)THEN
+		  JF=JJE
+		  EXIT
+                ELSE IF(JE > JF)THEN
+		  JF=MIN(JF,JJE-1)
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JJE=0
+	      DO JE=NTIMEDIA(1,J,J2),NTIMEDIA(2,J,J2),NTIMEDIA(3,J,J2)
+		JJE=JJE+1
+              ENDDO
+!             JF=MIN(JF,NTIMEDIA(2,J,J2))
+	      JF=MIN(JF,JJE)
+             print *,' JD JF APRES ',JD,JF
+!             print *,' ZWT2 ',ZWT2(JD:JF)
+            ENDIF
+! 270896 !!!!!!!!!!!!!!!
+! CALL EZXY(PWORKT,ZWORK1D(:,J),SIZE(PWORKT),0)
+!  PROVISOIRE  ***************
+! IF(JI > 1)THEN
+!   CALL GSPLCI(JI*5)
+!   CALL GSTXCI(JI*5)
+! ENDIF
+  IF(JF >= JD)THEN
+    ! trace de la courbe 
+    CALL GSLN(ITYP)
+    CALL AGSETR('DAS/SE.',1.)
+    CALL EZXY(ZWT1(JD:JF),ZWT2(JD:JF),JF-JD+1,0)
+    CALL SFLUSH
+    CALL AGSETR('DAS/PA/1.',65535.)
+  ELSE
+    if(nverbia >0)then
+            print *,' ** varfct 1 JD,JF JD > JF .Suppression appel EZXY',&
+            JD,JF
+          endif
+  ENDIF
+
+! CALL EZXY(PWORKT(JD:JF),ZWORK1D(JD:JF,J),JF-JD+1,0)
+  ENDDO
+  DEALLOCATE(ZWT1,ZWT2)
+  ENDDO
+  
+! print *,' FORMAX,FORMAY ',FORMAX,'  ',FORMAY
+  !CALL GASETI('LTY',1)
+  CALL GSPLCI(1)
+  CALL GSTXCI(1)
+  CALL GSLN(1)
+  CALL GSLWSC(1.)
+! CALL GRIDAL(5,1,5,1,1,1,5,0,0)
+!Avril 2002
+  IF(LNOLABELX .AND. LNOLABELY)THEN
+    CALL GRIDAL(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,0,0,5,0.,0.)
+  ELSEIF(LNOLABELX .AND. .NOT.LNOLABELY)THEN
+    CALL GRIDAL(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,0,1,5,0.,0.)
+  ELSEIF(.NOT.LNOLABELX .AND. LNOLABELY)THEN
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,1,0,5,0.,0.)
+    ELSE
+      CALL MYHEURX(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,1,0,5,0.,0.)
+    ENDIF
+    ELSE
+      CALL GRIDAL(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,1,0,5,0.,0.)
+    ENDIF
+  ELSE
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,1,1,5,0.,0.)
+    ELSE
+      CALL MYHEURX(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,1,1,5,0.,0.)
+    ENDIF
+    ELSE
+      CALL GRIDAL(NFT1ITVXMJ,NFT1ITVXMN,NFT1ITVYMJ,NFT1ITVYMN,1,1,5,0.,0.)
+    ENDIF
+  ENDIF
+!Avril 2002
+  CALL SET(0.,1.,0.,1.,0.,1.,0.,1.,1)
+  IF(LFACTIMP)THEN
+    CALL FACTIMP
+  ENDIF
+! Titres en X
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITXL',YTEM)
+  IF(YTEM /= ' ' .AND. YTEM /= 'DEFAULT')THEN
+    CALL RESOLV_TIT('CTITXL',YTEM)
+    IF(LFT .OR. LPVKT)THEN
+      CALL PLCHHQ(ZVL,ZVB-MIN(ZVB/3.,.05),YTEM,.008,0.,-1.)
+!     CALL PLCHHQ(ZVL,ZVB/3.,YTEM,.008,0.,-1.)
+    ELSE
+      CALL PLCHHQ(ZVL,ZVB-MIN(ZVB/2.,.05),YTEM,.008,0.,-1.)
+!     CALL PLCHHQ(ZVL,ZVB/2.,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITXM',YTEM)
+  IF(YTEM /= ' ' .AND. YTEM /= 'DEFAULT')THEN
+    CALL RESOLV_TIT('CTITXM',YTEM)
+    IF(LFT .OR. LPVKT)THEN
+      CALL PLCHHQ((ZVL+ZVR)/2.,ZVB-MIN(ZVB/3.,.05),YTEM(1:LEN_TRIM(YTEM)),.008,0.,0.)
+!     CALL PLCHHQ((ZVL+ZVR)/2.,ZVB/3.,YTEM(1:LEN_TRIM(YTEM)),.008,0.,0.)
+!     CALL PLCHHQ((ZVL+ZVR)/2.-ZVB/2.,ZVB/3.,YTEM,.008,0.,-1.)
+    ELSE
+      CALL PLCHHQ((ZVL+ZVR)/2.,ZVB-MIN(ZVB/2.,.05),YTEM(1:LEN_TRIM(YTEM)),.008,0.,0.)
+!     CALL PLCHHQ((ZVL+ZVR)/2.,ZVB/2.,YTEM(1:LEN_TRIM(YTEM)),.008,0.,0.)
+!     CALL PLCHHQ((ZVL+ZVR)/2.-ZVB/2.,ZVB/2.,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  IF(LHEURX)THEN
+    YTEM='(H.)'
+  ELSE
+    YTEM='(Sec.)'
+  ENDIF
+  CALL RESOLV_TIT('CTITXR',YTEM)
+  IF(YTEM /= ' ' .AND. YTEM /= 'DEFAULT')THEN
+    CALL RESOLV_TIT('CTITXR',YTEM)
+    IF(LFT .OR. LPVKT)THEN
+      if(nverbia > 0)then
+      print *,' **Passage LFT LPVKT 1'
+      endif
+      CALL PLCHHQ(ZVR+.03 ,ZVB-MIN(ZVB/3.,.05),YTEM(1:LEN_TRIM(YTEM)),.008,0.,-1.)
+!     CALL PLCHHQ(ZVR-ZVB/2.,ZVB-MIN(ZVB/3.,.05),YTEM,.008,0.,-1.)
+!     CALL PLCHHQ(ZVR-ZVB/2.,ZVB/3.,YTEM,.008,0.,-1.)
+    ELSE
+      if(nverbia > 0)then
+      print *,' **Passage PAS LFT LPVKT 1'
+      endif
+      CALL PLCHHQ((ZVR+.03),ZVB-MIN(ZVB/2.,.05),YTEM(1:LEN_TRIM(YTEM)),.008,0.,-1.)
+!     CALL PLCHHQ(ZVR-ZVB/2.,ZVB/2.,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+! Titres en Y
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TITY('CTITYT',ZVL,ZVR,ZVB,ZVT,YTEM)
+  YTEM(1:LEN(YTEM))=' '
+  IF(LCNSUM)THEN
+    YTEM='SUM(.TRUE.=1)'
+  ENDIF
+  CALL RESOLV_TITY('CTITYM',ZVL,ZVR,ZVB,ZVT,YTEM)
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TITY('CTITYB',ZVL,ZVR,ZVB,ZVT,YTEM)
+! Titres  TOP
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITT3',YTEM)
+  ZXPOSTITT3=.002
+  ZXYPOSTITT3=.93
+  IF(XPOSTITT3 /= 0.)THEN
+    ZXPOSTITT3=XPOSTITT3
+  ENDIF
+  IF(XYPOSTITT3 /= 0.)THEN
+    ZXYPOSTITT3=XYPOSTITT3
+  ENDIF
+  IF(CTITT3 /= ' ')THEN
+    IF(XSZTITT3 /= 0.)THEN
+      CALL PLCHHQ(0.002,0.93,YTEM,XSZTITT3,0.,-1.)
+    ELSE
+      CALL PLCHHQ(0.002,0.93,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITT2',YTEM)
+  ZXPOSTITT2=.002
+  ZXYPOSTITT2=.95
+  IF(XPOSTITT2 /= 0.)THEN
+    ZXPOSTITT2=XPOSTITT2
+  ENDIF
+  IF(XYPOSTITT2 /= 0.)THEN
+    ZXYPOSTITT2=XYPOSTITT2
+  ENDIF
+  IF(CTITT2 /= ' ')THEN
+    IF(XSZTITT2 /= 0.)THEN
+      CALL PLCHHQ(0.002,0.95,YTEM,XSZTITT2,0.,-1.)
+    ELSE
+      CALL PLCHHQ(0.002,0.95,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITT1',YTEM)
+  ZXPOSTITT1=.002
+  ZXYPOSTITT1=.98
+  IF(XPOSTITT1 /= 0.)THEN
+    ZXPOSTITT1=XPOSTITT1
+  ENDIF
+  IF(XYPOSTITT1 /= 0.)THEN
+    ZXYPOSTITT1=XYPOSTITT1
+  ENDIF
+  IF(CTITT1 /= ' ')THEN
+    IF(XSZTITT1 /= 0.)THEN
+      CALL PLCHHQ(0.002,0.98,YTEM,XSZTITT1,0.,-1.)
+    ELSE
+      CALL PLCHHQ(0.002,0.98,YTEM,.012,0.,-1.)
+    ENDIF
+  ENDIF
+! Titres  BOTTOM
+  ZXPOSTITB1=.002
+  ZXYPOSTITB1=.005
+  IF(XPOSTITB1 /= 0.)THEN
+    ZXPOSTITB1=XPOSTITB1
+  ENDIF
+  IF(XYPOSTITB1 /= 0.)THEN
+    ZXYPOSTITB1=XYPOSTITB1
+  ENDIF
+
+  ZXPOSTITB2=.002
+  ZXYPOSTITB2=.025
+  IF(XPOSTITB2 /= 0.)THEN
+    ZXPOSTITB2=XPOSTITB2
+  ENDIF
+  IF(XYPOSTITB2 /= 0.)THEN
+    ZXYPOSTITB2=XYPOSTITB2
+  ENDIF
+
+  ZXPOSTITB3=.002
+  ZXYPOSTITB3=.05
+  IF(XPOSTITB3 /= 0.)THEN
+    ZXPOSTITB3=XPOSTITB3
+  ENDIF
+  IF(XYPOSTITB3 /= 0.)THEN
+    ZXYPOSTITB3=XYPOSTITB3
+  ENDIF
+IF(LCNSUM)THEN
+! Titre N1 BOTTOM
+  CALL RESOLV_TIT('CTITB1',CLEGEND)
+  IF(XSZTITB1 /= 0.)THEN
+    CALL PLCHHQ(ZXPOSTITB1,ZXYPOSTITB1,CLEGEND,XSZTITB1,0.,-1.)
+!   CALL PLCHHQ(0.002,0.005,CLEGEND,XSZTITB1,0.,-1.)
+  ELSE
+    CALL PLCHHQ(ZXPOSTITB1,ZXYPOSTITB1,CLEGEND,.007,0.,-1.)
+!   CALL PLCHHQ(0.002,0.005,CLEGEND,.007,0.,-1.)
+  ENDIF
+! Titre N3 BOTTOM
+  CALL RESOLV_TIT('CTITB3',CTIMECS)
+  IF(XSZTITB3 /= 0.)THEN
+    CALL PLCHHQ(ZXPOSTITB3,ZXYPOSTITB3,CTIMECS,XSZTITB3,0.,-1.)
+!   CALL PLCHHQ(0.002,0.050,CTIMECS,XSZTITB3,0.,-1.)
+  ELSE
+    CALL PLCHHQ(ZXPOSTITB3,ZXYPOSTITB3,CTIMECS,.009,0.,-1.)
+!   CALL PLCHHQ(0.002,0.050,CTIMECS,.009,0.,-1.)
+  ENDIF
+! Titre N2 BOTTOM
+  CALL RESOLV_TIT('CTITB2',CLEGEND2)
+  IF(CLEGEND2 /= ' ')THEN
+    IF(XSZTITB2 /= 0.)THEN
+      CALL PLCHHQ(ZXPOSTITB2,ZXYPOSTITB2,CLEGEND2,XSZTITB2,0.,-1.)
+!     CALL PLCHHQ(0.002,0.025,CLEGEND2,XSZTITB2,0.,-1.)
+    ELSE
+      CALL PLCHHQ(ZXPOSTITB2,ZXYPOSTITB2,CLEGEND2,.007,0.,-1.)
+!     CALL PLCHHQ(0.002,0.025,CLEGEND2,.007,0.,-1.)
+    ENDIF
+  ENDIF
+ELSE
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITB3',YTEM)
+  IF(CTITB3 /= ' ')THEN
+    IF(XSZTITB3 /= 0.)THEN
+      CALL PLCHHQ(ZXPOSTITB3,ZXYPOSTITB3,YTEM,XSZTITB3,0.,-1.)
+!     CALL PLCHHQ(0.002,0.05,YTEM,XSZTITB3,0.,-1.)
+    ELSE
+      CALL PLCHHQ(ZXPOSTITB3,ZXYPOSTITB3,YTEM,.008,0.,-1.)
+!     CALL PLCHHQ(0.002,0.05,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITB2',YTEM)
+  IF(CTITB2 /= ' ')THEN
+    IF(XSZTITB2 /= 0.)THEN
+      CALL PLCHHQ(ZXPOSTITB2,ZXYPOSTITB2,YTEM,XSZTITB2,0.,-1.)
+!     CALL PLCHHQ(0.002,0.025,YTEM,XSZTITB2,0.,-1.)
+    ELSE
+      CALL PLCHHQ(ZXPOSTITB2,ZXYPOSTITB2,YTEM,.007,0.,-1.)
+!     CALL PLCHHQ(0.002,0.025,YTEM,.007,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITB1',YTEM)
+  IF(CTITB1 /= ' ')THEN
+    IF(XSZTITB1 /= 0.)THEN
+      CALL PLCHHQ(ZXPOSTITB1,ZXYPOSTITB1,YTEM,XSZTITB1,0.,-1.)
+!     CALL PLCHHQ(0.002,0.005,YTEM,XSZTITB1,0.,-1.)
+    ELSE
+      CALL PLCHHQ(ZXPOSTITB1,ZXYPOSTITB1,YTEM,.007,0.,-1.)
+!     CALL PLCHHQ(0.002,0.005,YTEM,.007,0.,-1.)
+    ENDIF
+  ENDIF
+ENDIF
+    DEALLOCATE(ZWORK1D)
+    DEALLOCATE(ZWORKT)
+    DEALLOCATE(YGROUP)
+    DEALLOCATE(ICOMPTSZ)
+    DEALLOCATE(IST)
+    DEALLOCATE(IBRECOUV)
+    DEALLOCATE(IRECOUV)
+    ICOMPT=0
+
+  ENDIF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIN IF(ICOMPT < ISUPERDIA) ?
+ENDIF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIN LFT1
+
+!*****************************************************************************
+!******* Fin LFT1  Debut LFT  LPVKT  LPVKT1 **********************************
+!*****************************************************************************
+
+IF(LFT .OR. LPVKT .OR. LPVKT1)THEN
+
+  ICOMPT=ICOMPT+1
+  IF(ICOMPT == 1)THEN
+! On suppose meme longueur temps
+! Non pas necessairement
+
+    SELECT CASE(CTYPE)
+      CASE('CART','MASK','SPXY')
+	INDN=1
+      CASE DEFAULT
+	INDN=NLOOPN
+    END SELECT
+
+!24052000
+!   IF(LMINUS .OR. LPLUS)THEN
+!24052000
+!!!!!!!!!!!!!!!!!!!!!020398!!!!!!!!!!!!!!!!!!!!!
+      IBPM=0
+      DO J=1,NBPM
+        IF(NUMPM(J) == 1 .OR. NUMPM(J) == 2)THEN
+          IBPM=IBPM+1
+        ENDIF
+      ENDDO
+!24052000
+    IF(IBPM /= 0)THEN
+!24052000
+      ISUPERDIA=NSUPERDIA-(IBPM)
+      if(nverbia > 0)then
+      print *,' isuperdia ',isuperdia
+      endif
+!     ISUPERDIA=NSUPERDIA-(NBPM-1)
+!!!!!!!!!!!!!!!!!!!!!020398!!!!!!!!!!!!!!!!!!!!!
+!     ISUPERDIA=NSUPERDIA-1
+    ELSE
+      IF(.NOT.LPVKT1)THEN
+        ISUPERDIA=NSUPERDIA
+      ELSE IF(LPVKT1)THEN
+!!! MARS 2001 modif NON en definitive
+        ISUPERDIA=NBLVLKDIA(NLOOPSUPER,INDN)
+!!! MARS 2001 modif
+	ALLOCATE(ZPVMNMX(ISUPERDIA,2))
+	ALLOCATE(YK(ISUPERDIA))
+	ZPVMNMX(ICOMPT,1)=XPVMIN
+	ZPVMNMX(ICOMPT,2)=XPVMAX
+	YK(ICOMPT)='  '
+	WRITE(YK(ICOMPT),'(I2)')K
+      ENDIF
+    ENDIF
+    if(nverbia > 0)then
+      print *,' ** VARFCT ICOMPT ISUPERDIA LMINUS LPLUS NBPM ',ICOMPT,ISUPERDIA,LMINUS,LPLUS,NBPM
+    endif
+
+    ALLOCATE(ZWORK1D(SIZE(PWORK1D),ISUPERDIA))
+    ALLOCATE(ZWORKT(SIZE(PWORKT),ISUPERDIA))
+    ALLOCATE(YGROUP(ISUPERDIA))
+    ALLOCATE(ICOMPTSZ(ISUPERDIA))
+    ALLOCATE(IST(ISUPERDIA))
+    ALLOCATE(IBRECOUV(ISUPERDIA))
+    ALLOCATE(IRECOUV(NBRECOUV*2,ISUPERDIA))
+
+    ICOMPTSZ(ICOMPT)=SIZE(PWORKT)
+    IST(ICOMPT)=NLOOPN
+
+    IBRECOUV(ICOMPT)=NBRECOUV
+    DO J=1,NBRECOUV
+      IRECOUV(J*2-1,ICOMPT)=NRECOUV(J*2-1)
+      IRECOUV(J*2,ICOMPT)=NRECOUV(J*2)
+    ENDDO
+
+    ZWORKT(:,ICOMPT)=PWORKT(:)
+    ZWORK1D(:,ICOMPT)=PWORK1D(:)
+
+    CTITGAL=ADJUSTL(CTITGAL)
+    YGROUP(ICOMPT)=CTITGAL
+    IF(LMINUS .OR. LPLUS)THEN
+      print *,' ** varfct LMINUS or LPLUS=T , CTITGAL , CTITB3 ',CTITGAL(1:LEN_TRIM(CTITGAL))
+      print *,CTITB3(1:LEN_TRIM(CTITB3))
+      print *,' Le titre est mis a DIFF '
+      YGROUP(ICOMPT)=' '
+      YGROUP(ICOMPT)='DIFF '
+!     LTITDEF=.FALSE.
+!     CALL RESOLV_TIT('CTITB3',CTITB3)
+      YDIFF(1:LEN(YDIFF))=' '
+      IF(CTITB3 /= ' ')THEN
+        YDIFF='DIFF = '//ADJUSTL(CTITB3(1:LEN_TRIM(CTITB3)))
+        YDIFF=ADJUSTL(YDIFF)
+      ENDIF
+      print *,'YDIFF 1** ',YDIFF
+    ENDIF
+
+  ELSE
+
+    IF(ICOMPT > ISUPERDIA .AND. LPVKT1)THEN
+
+      if(nverbia > 0)then
+      print *,' ISUPERDIA AV NLOOPSUPER NSUPERDIA NBLVLKDIA(NLOOPSUPER,INDN) ',&
+      ISUPERDIA,NLOOPSUPER,NSUPERDIA,NBLVLKDIA(NLOOPSUPER,INDN)
+      print *,' NLOOPN NBLVLKDIA(NLOOPSUPER,NLOOPN) ',NLOOPN,NBLVLKDIA(NLOOPSUPER,NLOOPN)
+      endif
+!!! MARS 2001 
+      ISUPERDIA=ISUPERDIA+NBLVLKDIA(NLOOPSUPER,INDN)
+!     ISUPERDIA=ISUPERDIA+NBLVLKDIA(NLOOPSUPER,NLOOPN)
+!!! MARS 2001 
+      if(nverbia > 0)then
+        print *,' ISUPERDIA AP ICOMPT ',ISUPERDIA,ICOMPT
+      endif
+
+      ALLOCATE(ZWORK(SIZE(ZWORK1D,1),SIZE(ZWORK1D,2)))
+      ZWORK(:,:)=ZWORK1D(:,:)
+      DEALLOCATE(ZWORK1D)
+      ALLOCATE(ZWORK1D(SIZE(ZWORK,1),ISUPERDIA))
+      ZWORK1D(:,1:ICOMPT-1)=ZWORK(:,:)
+      DEALLOCATE(ZWORK)
+
+      ALLOCATE(ZWORK(SIZE(ZWORKT,1),SIZE(ZWORKT,2)))
+      ZWORK(:,:)=ZWORKT(:,:)
+      DEALLOCATE(ZWORKT)
+      ALLOCATE(ZWORKT(SIZE(ZWORK,1),ISUPERDIA))
+      ZWORKT(:,1:ICOMPT-1)=ZWORK(:,:)
+      DEALLOCATE(ZWORK)
+
+      ALLOCATE(ZWORK(SIZE(ZPVMNMX,1),SIZE(ZPVMNMX,2)))
+      ZWORK(:,:)=ZPVMNMX(:,:)
+      DEALLOCATE(ZPVMNMX)
+      ALLOCATE(ZPVMNMX(ISUPERDIA,SIZE(ZWORK,1)))
+      ZPVMNMX(1:ICOMPT-1,:)=ZWORK(:,:)
+      DEALLOCATE(ZWORK)
+
+      ALLOCATE(IWORK(SIZE(IRECOUV,1),SIZE(IRECOUV,2)))
+      IWORK(:,:)=IRECOUV(:,:)
+      DEALLOCATE(IRECOUV)
+      ALLOCATE(IRECOUV(SIZE(IWORK,1),ISUPERDIA))
+      IRECOUV(:,1:ICOMPT-1)=IWORK(:,:)
+      DEALLOCATE(IWORK)
+
+      ALLOCATE(ITEM(SIZE(IBRECOUV)))
+      ITEM(:)=IBRECOUV(:)
+      DEALLOCATE(IBRECOUV)
+      ALLOCATE(IBRECOUV(ISUPERDIA))
+      IBRECOUV(1:ICOMPT-1)=ITEM(:)
+      DEALLOCATE(ITEM)
+
+      ALLOCATE(ITEM(SIZE(ICOMPTSZ)))
+      ITEM(:)=ICOMPTSZ(:)
+      DEALLOCATE(ICOMPTSZ)
+      ALLOCATE(ICOMPTSZ(ISUPERDIA))
+      ICOMPTSZ(1:ICOMPT-1)=ITEM(:)
+      DEALLOCATE(ITEM)
+
+      ALLOCATE(ITEM(SIZE(IST)))
+      ITEM(:)=IST(:)
+      DEALLOCATE(IST)
+      ALLOCATE(IST(ISUPERDIA))
+      IST(1:ICOMPT-1)=ITEM(:)
+      DEALLOCATE(ITEM)
+
+      ALLOCATE(YGTEM(SIZE(YGROUP)))
+      YGTEM(:)=YGROUP(:)
+      DEALLOCATE(YGROUP)
+      ALLOCATE(YGROUP(ISUPERDIA))
+      YGROUP(1:ICOMPT-1)=YGTEM(:)
+      DEALLOCATE(YGTEM)
+
+      ALLOCATE(YKTEM(SIZE(YK)))
+      YKTEM(:)=YK(:)
+      DEALLOCATE(YK)
+      ALLOCATE(YK(ISUPERDIA))
+      YK(1:ICOMPT-1)=YKTEM(:)
+      DEALLOCATE(YKTEM)
+    ENDIF !!!!!!!!!!!!!!!!!!!!!!!! FIN IF(ICOMPT > ISUPERDIA .AND. LPVKT1)
+
+    IF(LPVKT1)THEN
+      ZPVMNMX(ICOMPT,1)=XPVMIN
+      ZPVMNMX(ICOMPT,2)=XPVMAX
+      YK(ICOMPT)='  '
+      WRITE(YK(ICOMPT),'(I2)')K
+!     print *,' XPVMIN,XPVMAX ',XPVMIN,XPVMAX
+    ENDIF
+
+    IBRECOUV(ICOMPT)=NBRECOUV
+    ILR=NBRECOUV*2
+    IF(ILR <= MAXVAL(IBRECOUV(1:ICOMPT-1))*2)THEN
+      DO J=1,ILR
+        IRECOUV(J,ICOMPT)=NRECOUV(J)
+      ENDDO
+    ELSE
+      ALLOCATE(IWORK(ILR,ISUPERDIA))
+      DO J=1,ICOMPT-1
+        IWORK(1:IBRECOUV(J)*2,J)=IRECOUV(1:IBRECOUV(J)*2,J)
+      ENDDO
+      IWORK(1:ILR,ICOMPT)=NRECOUV(1:ILR)
+      DEALLOCATE(IRECOUV)
+      ALLOCATE(IRECOUV(ILR,ISUPERDIA))
+      IRECOUV(:,:)=IWORK(:,:)
+      DEALLOCATE(IWORK)
+    ENDIF
+
+    CTITGAL=ADJUSTL(CTITGAL)
+    YGROUP(ICOMPT)=CTITGAL
+    
+    IF(LMINUS .OR. LPLUS)THEN
+      print *,' ** varfct LMINUS or LPLUS=T , CTITGAL , CTITB3 ',CTITGAL(1:LEN_TRIM(CTITGAL))
+      print *,CTITB3(1:LEN_TRIM(CTITB3))
+      print *,' Le titre est mis a DIFF '
+      YGROUP(ICOMPT)=' '
+      YGROUP(ICOMPT)='DIFF '
+!     LTITDEF=.FALSE.
+!     CALL RESOLV_TIT('CTITB3',CTITB3)
+      YDIFF(1:LEN(YDIFF))=' '
+      IF(CTITB3 /= ' ')THEN
+      YDIFF=' DIFF '//(CTITB3(1:LEN_TRIM(CTITB3)))
+      YDIFF=ADJUSTL(YDIFF)
+      ENDIF
+      print *,'YDIFF ** ',YDIFF
+    ENDIF
+
+    ICOMPTSZ(ICOMPT)=SIZE(PWORKT)
+    IST(ICOMPT)=NLOOPN
+    if(nverbia > 0)then
+    print *,' ICOMPT,IST(ICOMPT) ',ICOMPT,IST(ICOMPT)
+    endif
+
+    IC=ICOMPTSZ(ICOMPT)
+    IF(IC <= MAXVAL(ICOMPTSZ(1:ICOMPT-1)))THEN
+      ZWORK1D(1:IC,ICOMPT)=PWORK1D(:)
+      ZWORKT(1:IC,ICOMPT)=PWORKT(:)
+    ELSE
+      ALLOCATE(ZWORK(IC,ISUPERDIA))
+      ZWORK=0.
+      DO J=1,ICOMPT-1
+	ZWORK(1:ICOMPTSZ(J),J)=ZWORK1D(1:ICOMPTSZ(J),J)
+      ENDDO
+      ZWORK(1:IC,ICOMPT)=PWORK1D(:)
+      DEALLOCATE(ZWORK1D)
+      ALLOCATE(ZWORK1D(IC,ISUPERDIA))
+      ZWORK1D(:,:)=ZWORK(:,:)
+      ZWORK=0.
+      DO J=1,ICOMPT-1
+        ZWORK(1:ICOMPTSZ(J),J)=ZWORKT(1:ICOMPTSZ(J),J)
+      ENDDO
+      ZWORK(1:IC,ICOMPT)=PWORKT(:)
+      DEALLOCATE(ZWORKT)
+      ALLOCATE(ZWORKT(IC,ISUPERDIA))
+      ZWORKT(:,:)=ZWORK(:,:)
+      DEALLOCATE(ZWORK)
+    ENDIF
+  ENDIF  !!!!!!!!!!!!!!!!!!!!!! FIN IF(ICOMPT == 1)
+
+  CGROUP=ADJUSTL(CGROUP)
+! YGROUP(ICOMPT)=CGROUP
+  IF(LPVKT)THEN
+    ILYGRP=LEN(YGROUP)
+    ILGRP=LEN_TRIM(CTITGAL)
+!   ILGRP=LEN_TRIM(CGROUP)
+    WRITE(YGROUP(ICOMPT)(ILGRP+2:ILYGRP),'(''K='',I2)')K
+  ENDIF
+! print *,' ICOMPT ZWORK1D ',ICOMPT,ZWORK1D
+
+  IF(ICOMPT < ISUPERDIA)THEN
+!   print *,' ICOMPT,ISUPERDIA ',ICOMPT,ISUPERDIA
+    RETURN
+
+  ELSE
+!!!!!!!!!!!! A REVOIR  ... REVU MAIS ... a VERIFIER!!!!!!!!!!!!!!!!!!
+    IF(LPVKT1)THEN
+      ITOT=0
+!     print *,' NSUPERDIA ',NSUPERDIA
+      IF(NLOOPSUPER < NSUPERDIA)THEN
+        RETURN
+      ENDIF
+      DO JA=1,NSUPERDIA
+	ITOT=ITOT+ NBLVLKDIA(JA,NNDIA(1,JA))
+       if(nverbia > 0)then
+       print *,'JA NBLVLKDIA(JA,NNDIA(1,JA)) ITOT ',JA,NBLVLKDIA(JA,NNDIA(1,JA)),ITOT
+       endif
+      ENDDO
+!     IF(ISUPERDIA < ITOT)THEN
+      IF(ICOMPT < ITOT)THEN
+	RETURN
+      ENDIF
+    ENDIF
+    if(nverbia >0)then
+    print *,' ITOT ',ITOT
+    endif
+!!!!!!!!!!!! A REVOIR ... REVU MAIS ... A VERIFIER !!!!!!!!!!!!!!!!!!
+
+    INUM=0
+    INB=0
+    IND=1
+
+    ZVL=.12; ZVR=.88
+    CALL AGSETR('SET.',4.)
+    CALL AGSETR('BAC.',4.)
+    CALL AGSETR('FRA.',2.)
+
+    IF(LPVKT1)THEN
+      IPAGE=1
+    ELSE                     
+      ! 3 courbes par diagramme !!!!
+      IBC=2
+      IF(LFT3C)THEN
+      IBC=3
+      ELSEIF(LFT4C)THEN
+      IBC=4
+      ENDIF
+      IBCP=IBC*4
+      IPAGE=0
+      !IPAGE=ISUPERDIA/8
+      IPAGE=ISUPERDIA/IBCP
+      !IREST=MOD(ISUPERDIA,8)
+      IREST=MOD(ISUPERDIA,IBCP)
+      IF(IREST /=0)THEN
+        IPAGE=IPAGE+1
+      ENDIF
+    ENDIF
+
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+! Determination du min et du max du temps
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+    ITOT=0
+    DO J=1,ICOMPT
+      ITOT=ITOT+ICOMPTSZ(J)
+    ENDDO
+    if(nverbia >0)then
+    print *,' ITOT AP Determin.. ICOMPT ',ITOT,ICOMPT
+    endif
+    ALLOCATE(ZWT1(ITOT))
+    ID=0
+    DO J=1,ICOMPT
+      ZCONSTIM=0
+      IF(MOD(J,8) == 1)THEN
+        ZCONSTIM=XFT_ADTIM1
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.1 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM1 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 2)THEN
+        ZCONSTIM=XFT_ADTIM2
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.2 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM2 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 3)THEN
+        ZCONSTIM=XFT_ADTIM3
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.3 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM3 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 4)THEN
+        ZCONSTIM=XFT_ADTIM4
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.3 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM4 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 5)THEN
+        ZCONSTIM=XFT_ADTIM5
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.4 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM5 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 6)THEN
+        ZCONSTIM=XFT_ADTIM6
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.5 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM6 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 7)THEN
+        ZCONSTIM=XFT_ADTIM7
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.6 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM7 a zero'
+        ENDIF
+      ELSEIF(MOD(J,8) == 0)THEN
+        ZCONSTIM=XFT_ADTIM8
+        IF(ZCONSTIM /= 0.)THEN
+          print *,' ****ATTENTION Ajout pour la courbe N.7 d''une constante de temps de : ',&
+          ZCONSTIM,'sec.'
+          print *,' S''il s''agit d''une erreur, remettez XFT_ADTIM8 a zero'
+        ENDIF
+      ENDIF
+      IC=ICOMPTSZ(J)
+      IF(LSPVALT)THEN ! Cas ou le temps est mis a une valeur speciale (Ex avion)
+        DO JH=1,IC
+          IF(ZWORKT(JH,J) /= XSPVALT)THEN
+            ZWORKT(JH,J)=ZWORKT(JH,J)+ZCONSTIM
+          ENDIF
+        ENDDO
+      ELSE
+        ZWORKT(1:IC,J)=ZWORKT(1:IC,J)+ZCONSTIM
+      ENDIF
+      ZWT1(ID+1:ID+IC)=ZWORKT(1:IC,J)
+      ID=IC+ID
+    ENDDO
+    IF(LSPVALT)THEN !  Cas ou le temps est mis a une valeur speciale (Ex avion)
+      WHERE(ZWT1 == XSPVALT)
+        ZWT1=ZE36
+      ENDWHERE
+      DO JH=1,SIZE(ZWT1)
+        IF(ZWT1(JH) /= ZE36)THEN
+          ZMIN=ZWT1(JH)
+          ZMAX=ZWT1(JH)
+          EXIT
+        ENDIF
+      ENDDO
+      DO JH=1,SIZE(ZWT1)
+        IF(ZWT1(JH) /= ZE36)THEN
+          ZMIN=MIN(ZMIN,ZWT1(JH))
+          ZMAX=MAX(ZMAX,ZWT1(JH))
+        ENDIF
+      ENDDO
+      ZWL=ZMIN
+      ZWR=ZMAX
+    ELSE
+      ZWL=MINVAL(ZWT1)
+      ZWR=MAXVAL(ZWT1)
+    ENDIF
+! Mai 2000
+    IF(LTIMEUSER)THEN
+      ZWL=XTIMEMIN
+      ZWR=XTIMEMAX
+    ENDIF
+! Mai 2000
+    DEALLOCATE(ZWT1)
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+! Fin Determination du min et du max du temps
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+!
+!
+!************ Debut Boucle DO J=1,IPAGE *************************************
+!
+!
+    DO J=1,IPAGE
+    if(nverbia >0)then
+    print *,' IPAGE  ',IPAGE
+    endif
+      
+      IF(LPVKT1)THEN
+	JAF=NSUPERDIA 
+      ELSE
+	JAF=1
+      ENDIF
+    if(nverbia >0)then
+    print *,' IPAGE JAF  ',IPAGE,JAF
+    endif
+
+      DO JA=1,JAF
+  
+        IF(LPVKT1)THEN
+  
+    if(nverbia >0)then
+         print *,' IND INB JA AV LPVKT1 NBLVLKDIA(JA,IST(IND) ',IND,INB,JA ,LPVKT1,NBLVLKDIA(JA,IST(IND))
+    endif
+          IF(JA /= 1)THEN
+            IND=IND+NBLVLKDIA(JA-1,NNDIA(1,JA-1))
+          ENDIF
+	  INB=INB+NBLVLKDIA(JA,IST(IND))
+	 if(nverbia > 0)then
+         print *,' IND INB AP JA IST(IND) NBLVLKDIA(JA,IST(IND)) ',IND,INB, &
+         JA,IST(IND),NBLVLKDIA(JA,IST(IND))
+	 endif
+!         INB=NBLVLKDIA(JA,IST(IND))
+
+  
+        ELSE
+  
+          IF(J == IPAGE)THEN
+            IF(IREST == 0)THEN
+  	      INB=IBCP   ! 3 courbes par diagramme !!!!
+  	      !INB=8
+  	    ELSE
+  	      INB=IREST
+  	    ENDIF
+          ELSE
+  	    INB=IBCP   ! 3 courbes par diagramme !!!!
+  	    !INB=8
+          ENDIF
+  
+        ENDIF
+!
+!************ Debut Boucle DO JJ=1,INB **************************************
+!
+      if(nverbia > 0)then
+      print *,' LPVT LPVKT LPVKT1 NSUPERDIA IND INB ',LPVT,LPVKT,LPVKT1, &
+      NSUPERDIA,IND,INB
+      endif
+      DO JJ=IND,INB
+!     DO JJ=1,INB
+	INUM=INUM+1
+	IC=ICOMPTSZ(INUM)
+	ALLOCATE(ZWT1(IC),ZWT2(IC))
+	ZWT1(:)=ZWORK1D(1:IC,INUM)
+	ZWT2(:)=ZWORKT(1:IC,INUM)
+! mai 2000
+	IF(LSPVALT)THEN
+	WHERE(ZWT1 == XSPVALT)
+	  ZWT1=ZE36
+        ENDWHERE
+        ENDIF
+
+	IF(.NOT.LPVKT1)THEN
+          ZBOT=.1; ZTOP=.85
+!         ZWL=PWORKT(1); ZWR=PWORKT(SIZE(PWORKT,1))
+!
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+! Determination des viewports
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+!
+	  IF(JJ == 1)THEN
+            ! 3 courbes par diagramme !!!!
+	    !ZDEBY=((ZTOP-ZBOT) - (.15*((INB+1)/2) + .05*((INB+1)/2-1)))/2 +ZBOT
+	    ZDEBY=((ZTOP-ZBOT) - (.15*((INB+1)/IBC) + .05*((INB+1)/2-1)))/2 +ZBOT
+	    ZDEBYB=ZDEBY-.03
+            ZBOTB=ZDEBY
+          ENDIF
+
+          !IF(MOD(JJ,2) /=0)THEN
+          IF(MOD(JJ,IBC) /=0)THEN
+            INCR=IBC-MOD(JJ,IBC)
+	    !ZDEBY=ZBOTB+(.15+.05)*((JJ+1)/2-1)
+	    ZDEBY=ZBOTB+(.15+.05)*((JJ+INCR)/2-1)
+          ENDIF
+
+!         print *,' JJ ZDEBY ',JJ,ZDEBY
+
+	  IF(JJ == INB)THEN
+	    ZDEBYT=ZDEBY+.15+.05
+          ENDIF
+	  
+          ZVB=ZDEBY; ZVT=ZVB+.15
+
+	ELSE
+
+	  IF(JA == 1)THEN
+	    ZVB=.1; ZVT=.9
+	    ZVL=.1; ZVR=.9
+	  ELSE
+	    CALL GETSET(ZVL,ZVR,ZVB,ZVT,ZW1,ZW2,ZW3,ZW4,IDA)
+	    XCURVPTL=ZVL;XCURVPTR=ZVR;XCURVPTB=ZVB;XCURVPTT=ZVT
+	  ENDIF
+
+	ENDIF
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+! Fin Determination des viewports
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+!
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+! Determination des min et des max des variables
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+!
+	IF(LPVKT1 .AND. .NOT.LZT)THEN
+!         IF(JJ == 1)THEN
+          IF(JJ == IND)THEN
+
+  	    IF(LMNMXUSER)THEN
+
+  	      CALL READMNMX_FT_PVKT(YGROUP(INUM),ZMIN,ZMAX)
+  	      IF(LOK)THEN
+  	        LOK=.FALSE.
+  	      ELSE
+  	        ZMIN=ZPVMNMX(INUM,1); ZMAX=ZPVMNMX(INUM,2)
+! 	        ZMIN=XPVMIN; ZMAX=XPVMAX
+  	      ENDIF
+            ELSE
+  	      ZMIN=ZPVMNMX(INUM,1); ZMAX=ZPVMNMX(INUM,2)
+! 	      ZMIN=XPVMIN; ZMAX=XPVMAX
+
+  	    ENDIF
+
+  	  ENDIF
+
+	ELSE IF(LZT)THEN
+	  
+	  IF(JA == 1)THEN
+	    IF(LMNMXUSER)THEN
+	      IF(XZTMAX > XZTMIN)THEN
+		ZMIN=XZTMIN
+		ZMAX=XZTMAX
+	      ELSE
+		print *,' Vous pouvez fournir les bornes en Z dans XZTMIN et XZTMAX et LMNMXUSER=T '
+	        ZMIN=MINVAL(ZPVMNMX(:,1))
+	        ZMAX=MAXVAL(ZPVMNMX(:,2))
+	      ENDIF
+	    ELSE
+	      ZMIN=MINVAL(ZPVMNMX(:,1))
+	      ZMAX=MAXVAL(ZPVMNMX(:,2))
+	    ENDIF
+	     
+	  ENDIF
+
+	ELSE
+
+    	  IF(LMNMXUSER)THEN
+
+    	    CALL READMNMX_FT_PVKT(YGROUP(INUM),ZMIN,ZMAX)
+
+    	    IF(LOK)THEN
+    	      LOK=.FALSE.
+    	    ELSE
+
+      	      IF(.NOT.LPVKT .OR. (LPVKT .AND.L1K))THEN
+! Mai 2000
+		IF(LSPVALT)THEN
+		  DO JH=1,SIZE(ZWT1)
+		    IF(ZWT1(JH) /= ZE36)THEN
+		      ZMIN=ZWT1(JH)
+		      ZMAX=ZWT1(JH)
+		      EXIT
+		    ENDIF
+		  ENDDO
+		  DO JH=1,SIZE(ZWT1)
+		    IF(ZWT1(JH) /= ZE36)THEN
+		      ZMIN=MIN(ZMIN,ZWT1(JH))
+		      ZMAX=MAX(ZMAX,ZWT1(JH))
+		    ENDIF
+		  ENDDO
+		ELSE
+      	        ZMIN=MINVAL(ZWT1)
+      	        ZMAX=MAXVAL(ZWT1)
+		ENDIF
+                print *,' TROUVES :ZMIN,ZMAX,LSPVALT ',ZMIN,ZMAX,LSPVALT
+      	        IF(.NOT.LFTBAUTO)THEN
+                  CALL VALMNMX(ZMIN,ZMAX)
+                  IF(ABS(ZMAX-ZMIN) <= 1.E-3)THEN
+                    ZMIN=ZMIN-1.
+                    ZMAX=ZMAX+1.
+                  ENDIF
+                ELSE
+                  IF(ABS(ZMAX-ZMIN) == 0.)THEN
+                      ZMIN=ZMIN-2.5*TINY(1.)
+                      ZMAX=ZMAX+2.5*TINY(1.)
+                  ENDIF
+                ENDIF
+                print *,' RETENUS :ZMIN,ZMAX,LSPVALT ',ZMIN,ZMAX,LSPVALT
+      	      ELSE
+      	        ZMIN=XPVMIN; ZMAX=XPVMAX
+      	      ENDIF
+
+    	    ENDIF
+
+    	  ELSE
+
+      	    IF(.NOT.LPVKT .OR. (LPVKT .AND.L1K))THEN
+! Mai 2000
+	      IF(LSPVALT)THEN
+		  DO JH=1,SIZE(ZWT1)
+		    IF(ZWT1(JH) /= ZE36)THEN
+		      ZMIN=ZWT1(JH)
+		      ZMAX=ZWT1(JH)
+		      EXIT
+		    ENDIF
+		  ENDDO
+		  DO JH=1,SIZE(ZWT1)
+		    IF(ZWT1(JH) /= ZE36)THEN
+		      ZMIN=MIN(ZMIN,ZWT1(JH))
+		      ZMAX=MAX(ZMAX,ZWT1(JH))
+		    ENDIF
+		  ENDDO
+	      ELSE
+      	      ZMIN=MINVAL(ZWT1)
+      	      ZMAX=MAXVAL(ZWT1)
+	      ENDIF
+                print *,' TROUVES :ZMIN,ZMAX,LSPVALT ',ZMIN,ZMAX,LSPVALT
+              IF(.NOT.LFTBAUTO)THEN
+      	        CALL VALMNMX(ZMIN,ZMAX)
+                IF(ABS(ZMAX-ZMIN) <= 1.E-3)THEN
+                  ZMIN=ZMIN-1.
+                  ZMAX=ZMAX+1.
+                ENDIF
+              ELSE
+                IF(ABS(ZMAX-ZMIN) == 0.)THEN
+                  ZMIN=ZMIN-2.5*TINY(1.)
+                  ZMAX=ZMAX+2.5*TINY(1.)
+                ENDIF
+              ENDIF
+              print *,' RETENUS :ZMIN,ZMAX,LSPVALT ',ZMIN,ZMAX,LSPVALT
+      	    ELSE
+      	      ZMIN=XPVMIN; ZMAX=XPVMAX
+      	    ENDIF
+
+    	  ENDIF
+
+	ENDIF
+        print *,' ZMIN,ZMAX ',ZMIN,ZMAX
+	ZWB=ZMIN; ZWT=ZMAX
+
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+! Fin Determination des min et des max des variables
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+!
+! -----------------------------------------------------------------------
+!                 Debut Format Labels axes
+! -----------------------------------------------------------------------
+        IF(.NOT.LPVKT1 .OR. (LPVKT1 .AND. JJ == IND))THEN
+!       IF(.NOT.LPVKT1 .OR. (LPVKT1 .AND. JJ == 1))THEN
+
+	IF(ZWR /= 0.)THEN                ! test sur ZWR   
+        IF(LOG10(ABS(ZWR)) >= 6. .OR. LOG10(ABS(ZWR)) <= -1.)THEN !***********
+	  FORMAX='          '
+	  IF(LFMTAXEX)THEN
+	    FORMAX="("//CFMTAXEX(1:LEN_TRIM(CFMTAXEX))//")"
+	  ELSE
+	    FORMAX='(E8.2)'
+	  ENDIF
+        
+! -----------------------------------------------------------------------
+! ZWT /= 0.
+          IF(ZWT /= 0.)THEN
+          IF(LOG10(ABS(ZWT)) >= 6. .OR. LOG10(ABS(ZWT)) <= -1.)THEN
+	    FORMAY='          '
+	    IF(LFMTAXEY)THEN
+	      FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	    ELSE
+	      FORMAY='(E8.2)'
+	    ENDIF
+
+            IF(MOD(JJ,2) /=0)THEN
+              CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!             CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!             CALL LABMOD('(E8.2)','(E8.2)',0,0,10,10,0,0,0)
+            ELSE
+              CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!             CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!             CALL LABMOD('(E8.2)','(E8.2)',0,0,10,10,1,0,0)
+            ENDIF
+          ELSE
+            IF(ABS(ZWT-ZWB) < 1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.2)'
+	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(F8.2)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(F8.2)',0,0,10,10,1,0,0)
+              ENDIF
+            ELSE
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.1)'
+	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(F8.1)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(F8.1)',0,0,10,10,1,0,0)
+              ENDIF
+            ENDIF
+          ENDIF
+	  ELSE
+! ZWT == 0.
+          IF(LOG10(ABS(ZWB)) >= 6. .OR. LOG10(ABS(ZWB)) <= -1.)THEN
+	    FORMAY='          '
+	    IF(LFMTAXEY)THEN
+	      FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	    ELSE
+	      FORMAY='(E8.2)'
+	    ENDIF
+            IF(MOD(JJ,2) /=0)THEN
+              CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!             CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!             CALL LABMOD('(E8.2)','(E8.2)',0,0,10,10,0,0,0)
+            ELSE
+              CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!             CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!             CALL LABMOD('(E8.2)','(E8.2)',0,0,10,10,1,0,0)
+            ENDIF
+          ELSE
+            IF(ABS(ZWT-ZWB) < 1.)THEN
+	    FORMAY='          '
+	    IF(LFMTAXEY)THEN
+	      FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	    ELSE
+	      FORMAY='(F8.2)'
+	    ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(F8.2)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(F8.2)',0,0,10,10,1,0,0)
+              ENDIF
+            ELSE
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.1)'
+	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(F8.1)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(F8.1)',0,0,10,10,1,0,0)
+              ENDIF
+            ENDIF
+          ENDIF
+	  ENDIF
+        
+! -----------------------------------------------------------------------
+        ELSE                    !************
+        
+          IF(ABS(ZWR-ZWL) < 1.)THEN  !++++++++++++
+  	      FORMAX='          '
+  	      IF(LFMTAXEX)THEN
+  	        FORMAX="("//CFMTAXEX(1:LEN_TRIM(CFMTAXEX))//")"
+  	      ELSE
+ 	        FORMAX='(F8.2)'
+  	      ENDIF
+! -----------------------------------------------------------------------
+! ZWT /= 0.
+            IF(ZWT /= 0.)THEN
+            IF(LOG10(ABS(ZWT)) >= 6. .OR. LOG10(ABS(ZWT)) <= -1.)THEN
+  	      FORMAY='          '
+  	      IF(LFMTAXEY)THEN
+  	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+  	      ELSE
+  	        FORMAY='(E8.2)'
+  	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.2)','(E8.2)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.2)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+            ELSE
+              IF(ABS(ZWT-ZWB) < 1.)THEN
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.2)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.2)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.2)',0,0,10,10,1,0,0)
+                ENDIF
+              ELSE
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.1)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.1)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.1)',0,0,10,10,1,0,0)
+                ENDIF
+              ENDIF
+            ENDIF
+	    ELSE
+! ZWT == 0.
+            IF(LOG10(ABS(ZWB)) >= 6. .OR. LOG10(ABS(ZWB)) <= -1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(E8.2)'
+	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.2)','(E8.2)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.2)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+            ELSE
+              IF(ABS(ZWT-ZWB) < 1.)THEN
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.2)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.2)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.2)',0,0,10,10,1,0,0)
+                ENDIF
+              ELSE
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.1)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.1)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.2)','(F8.1)',0,0,10,10,1,0,0)
+                ENDIF
+              ENDIF
+            ENDIF
+	    ENDIF
+! -----------------------------------------------------------------------
+        
+          ELSE                  !++++++++++++
+	      FORMAX='          '
+	      IF(LFMTAXEX)THEN
+	        FORMAX="("//CFMTAXEX(1:LEN_TRIM(CFMTAXEX))//")"
+	      ELSE
+	        FORMAX='(F8.1)'
+	      ENDIF
+        
+!! INTRODUIRE INSTRUCTIONS DE GESTION ZWT=0. ou ZWT <0
+! -----------------------------------------------------------------------
+! ZWT /= 0.
+	    IF(ZWT /= 0.)THEN
+            IF(LOG10(ABS(ZWT)) >= 6. .OR. LOG10(ABS(ZWT)) <= -1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(E8.2)'
+	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.1)','(E8.2)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.1)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+            ELSE
+              IF(ABS(ZWT-ZWB) < 1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.2)'
+	      ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.2)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.2)',0,0,10,10,1,0,0)
+                ENDIF
+              ELSE
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.1)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.1)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.1)',0,0,10,10,1,0,0)
+                ENDIF
+              ENDIF
+            ENDIF
+	    ELSE
+! ZWT == 0.
+            IF(LOG10(ABS(ZWB)) >= 6. .OR. LOG10(ABS(ZWB)) <= -1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(E8.2)'
+	      ENDIF
+              IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.1)','(E8.2)',0,0,10,10,0,0,0)
+              ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.1)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+            ELSE
+              IF(ABS(ZWT-ZWB) < 1.)THEN
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.2)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.2)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.2)',0,0,10,10,1,0,0)
+                ENDIF
+              ELSE
+	        FORMAY='          '
+	        IF(LFMTAXEY)THEN
+	          FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	        ELSE
+	          FORMAY='(F8.1)'
+	        ENDIF
+                IF(MOD(JJ,2) /=0)THEN
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.1)',0,0,10,10,0,0,0)
+                ELSE
+                  CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!                 CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!                 CALL LABMOD('(F8.1)','(F8.1)',0,0,10,10,1,0,0)
+                ENDIF
+              ENDIF
+            ENDIF
+	    ENDIF
+! -----------------------------------------------------------------------
+        
+          ENDIF                 !++++++++++++
+        
+        ENDIF                   !************
+
+        ELSE                             ! test sur ZWR
+
+! ZWR = 0
+          IF(LOG10(ABS(ZWR-ZWL)) >= 6. .OR. LOG10(ABS(ZWR-ZWL)) <= -1.)THEN
+
+	    FORMAX='          '
+	    IF(LFMTAXEX)THEN
+	      FORMAX="("//CFMTAXEX(1:LEN_TRIM(CFMTAXEX))//")"
+	    ELSE
+	      FORMAX='(E8.2)'
+	    ENDIF
+	    IF(LOG10(ABS(ZWT-ZWB)) >= 6. .OR. LOG10(ABS(ZWT-ZWB)) <= -1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(E8.2)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(E8.2)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+	    ELSE IF(ABS(ZWT-ZWB) <1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.2)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(F8.2)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(F8.2)',0,0,10,10,1,0,0)
+              ENDIF
+	    ELSE
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.1)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(E8.2)','(F8.1)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(E8.2)','(F8.1)',0,0,10,10,1,0,0)
+              ENDIF
+	    ENDIF
+
+	  ELSE IF(ABS(ZWR-ZWL) < 1.)THEN
+
+	      FORMAX='          '
+	      IF(LFMTAXEX)THEN
+	        FORMAX="("//CFMTAXEX(1:LEN_TRIM(CFMTAXEX))//")"
+	      ELSE
+	        FORMAX='(F8.2)'
+	      ENDIF
+	    IF(LOG10(ABS(ZWT-ZWB)) >= 6. .OR. LOG10(ABS(ZWT-ZWB)) <= -1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(E8.2)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.2)','(E8.2)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.2)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+	    ELSE IF(ABS(ZWT-ZWB) <1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.2)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.2)','(F8.2)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.2)','(F8.2)',0,0,10,10,1,0,0)
+              ENDIF
+	    ELSE
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.1)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.2)','(F8.1)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.2)','(F8.1)',0,0,10,10,1,0,0)
+              ENDIF
+	    ENDIF
+
+	  ELSE
+
+	    FORMAX='          '
+	    IF(LFMTAXEX)THEN
+	      FORMAX="("//CFMTAXEX(1:LEN_TRIM(CFMTAXEX))//")"
+	    ELSE
+	      FORMAX='(F8.1)'
+	    ENDIF
+	    IF(LOG10(ABS(ZWT-ZWB)) >= 6. .OR. LOG10(ABS(ZWT-ZWB)) <= -1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(E8.2)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.1)','(E8.2)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.1)','(E8.2)',0,0,10,10,1,0,0)
+              ENDIF
+	    ELSE IF(ABS(ZWT-ZWB) <1.)THEN
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+                FORMAY='(F8.2)'
+              ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.1)','(F8.2)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.1)','(F8.2)',0,0,10,10,1,0,0)
+              ENDIF
+	    ELSE
+	      FORMAY='          '
+	      IF(LFMTAXEY)THEN
+	        FORMAY="("//CFMTAXEY(1:LEN_TRIM(CFMTAXEY))//")"
+	      ELSE
+	        FORMAY='(F8.1)'
+	      ENDIF
+	      IF(MOD(JJ,2) /=0)THEN
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,0,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,0,0,0)
+!               CALL LABMOD('(F8.1)','(F8.1)',0,0,10,10,0,0,0)
+	      ELSE
+                CALL LABMOD(FORMAX,FORMAY,0,0,NSZLBX,NSZLBY,1,0,0)
+!               CALL LABMOD(FORMAX,FORMAY,0,0,10,10,1,0,0)
+!               CALL LABMOD('(F8.1)','(F8.1)',0,0,10,10,1,0,0)
+              ENDIF
+	    ENDIF
+
+	  ENDIF
+
+	ENDIF                        ! Fin test sur ZWR
+
+	ENDIF
+
+! -----------------------------------------------------------------------
+!                 Fin Format Labels axes
+! -----------------------------------------------------------------------
+
+	CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+!      print *,' ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT ',ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT
+	IF(LPVKT1)THEN
+	IF(MOD(JA,2) == 0)THEN
+	  ZY=ZWT+(ZWT-ZWB)/18.
+	ELSE
+	  ZY=ZWT+(ZWT-ZWB)/35  
+	ENDIF
+	ELSE
+	  ZY=ZWT-(ZWT-ZWB)/10.
+        ENDIF
+!
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+! Determination de la couleur
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+!
+
+! Mai 2000
+	CALL GSLWSC(XLWFTALL)
+	IF(LCOLINE)THEN          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!=====================================
+! Couleur  Cas LFT ou (LPVKT .AND.L1K)
+!=====================================
+!
+	  IF(.NOT.LPVKT  .AND..NOT.LPVKT1 .OR. (LPVKT .AND.L1K))THEN    !*********************
+
+	    IF(LCOLUSER)THEN  !+++++++++++++++++++++++++++++++++++++++++++
+
+              YGP(1:LEN(YGP))=' '
+              DO JGP=1,LEN_TRIM(YGROUP(INUM))
+                IF(YGROUP(INUM)(JGP:JGP) == ' ')THEN
+                  YGP=YGROUP(INUM)(1:JGP-1)
+                  YGP=ADJUSTL(YGP)
+                  EXIT
+                ENDIF
+              ENDDO
+! Septembre 2001
+              IF(YGP(1:4) == 'MASK')THEN
+                YGP(1:LEN(YGP))=' '
+                YGP=YGROUP(INUM)(JGP:LEN_TRIM(YGROUP(INUM)))
+                YGP=ADJUSTL(YGP)
+                JGPA=MIN(INDEX(YGP,' '),LEN_TRIM(YGROUP(INUM)))
+                IF (JGPA < LEN_TRIM(YGROUP(INUM)))THEN
+                  YGP(JGPA:LEN_TRIM(YGROUP(INUM)))=' '
+                ENDIF
+              ENDIF
+! Septembre 2001
+	      if(nverbia >0)then
+                print *,' ** VARFCT YGP 1a ',YGP
+	      endif
+              IF(YGP(1:LEN(YGP)) == ' ')THEN
+                YGP=YGROUP(INUM)
+                YGP=ADJUSTL(YGP)
+              ENDIF
+	      if(nverbia >0)then
+                print *,' ** VARFCT YGP 1b ',YGP
+	      endif
+              ICOL=0
+              CALL READCOL_FT_PVKT(YGP(1:LEN_TRIM(YGP)),ICOL)
+	      if(nverbia >0)then
+                print *,' ** VARFCT ICOL ',ICOL
+	      endif
+
+              IF(ICOL == 0)THEN
+      	        print *,' INDICE DE COULEUR POUR ',ADJUSTL(YGROUP(INUM)(1:LEN_TRIM &
+      	        (YGROUP(INUM)))),' ? '
+      	        READ(5,*,END=15)ICOL
+                GO TO 25
+      	        15 CONTINUE
+      	        CLOSE(5)
+      	        CALL GETENV("VARTTY",YCAR20)
+	        YCAR20=ADJUSTL(YCAR20)
+      	        OPEN(5,FILE=YCAR20)
+      	        READ(5,*)ICOL
+      	        25 CONTINUE
+      	        !WRITE(YCAR80,*)ICOL
+      	        !YCAR80=ADJUSTL(YCAR80)
+                !WRITE(NDIR,'(A80)')YCAR80
+                CALL WRITEDIR(NDIR,ICOL)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+                CALL LOADMNMX_FT_PVKT('XPVKTCOL_'//YGP(1:LEN_TRIM(YGP))//'=',1,FLOAT(ICOL),7)
+              ENDIF
+
+!     	      CALL GSLN(1)
+!******************************************************************************
+!******************************************************************************
+	      IF(MOD(JJ,2) == 1)THEN      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                IF(LFTSTYLUSER )THEN
+                  print *,' Rentrez le type de trait voulu :'
+                  print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+                  read(5,*,END=80)ISLNFT1
+                  GO TO 70
+                  80 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)ISLNFT1
+                  70 CONTINUE
+                  !WRITE(YCAR80,*)ISLNFT1
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,ISLNFT1)
+  
+  		  print *,' Epaisseur des traits ? (valeur de base 1) '
+                  read(5,*,END=82)EPAIS
+                  GO TO 72
+                  82 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)EPAIS
+                  72 CONTINUE
+                  !WRITE(YCAR80,*)EPAIS
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,EPAIS)
+  		  CALL GSLWSC(EPAIS)
+!                 CALL GSLN(ISLNFT1)
+		  CALL GSLN(1)
+		IF(ISLNFT1 == 1)CALL AGSETR('DAS/PA/1.',65535.)
+		IF(ISLNFT1 == 2)CALL AGSETR('DAS/PA/1.',30583.)
+		IF(ISLNFT1 == 3)CALL AGSETR('DAS/PA/1.',21845.)
+		IF(ISLNFT1 == 4)CALL AGSETR('DAS/PA/1.',10023.)
+                ELSE
+  	  	  CALL GSLN(1)
+  	        ENDIF
+
+	      ELSE IF(MOD(JJ,2) == 0)THEN     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Modif pour JMartial
+
+                IF(LFTSTYLUSER )THEN
+                  print *,' Rentrez le type de trait voulu :'
+                  print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+                  read(5,*,END=81)ISLNFT2
+                  GO TO 71
+                  81 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)ISLNFT2
+                  71 CONTINUE
+                  !WRITE(YCAR80,*)ISLNFT2
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,ISLNFT2)
+!                 CALL GSLN(ISLNFT2)
+                CALL GSLN(1)
+		IF(ISLNFT2 == 1)CALL AGSETR('DAS/PA/1.',65535.)
+		IF(ISLNFT2 == 2)CALL AGSETR('DAS/PA/1.',30583.)
+		IF(ISLNFT2 == 3)CALL AGSETR('DAS/PA/1.',21845.)
+		IF(ISLNFT2 == 4)CALL AGSETR('DAS/PA/1.',10023.)
+  		  print *,' Epaisseur des traits ? (valeur de base 1) '
+                  read(5,*,END=83)EPAIS
+                  GO TO 73
+                  83 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)EPAIS
+                  73 CONTINUE
+                  !WRITE(YCAR80,*)EPAIS
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,EPAIS)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+  		  CALL GSLWSC(EPAIS)
+                ELSE
+  	          CALL GSLN(1)
+                ENDIF
+
+              ENDIF                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!******************************************************************************
+!******************************************************************************
+      	      CALL GSPLCI(ICOL)
+      	      CALL GSTXCI(ICOL)
+
+	    ELSE              !+++++++++++++++++++++++++++++++++++++++++++
+
+!******************************************************************************
+!******************************************************************************
+
+	      IF(MOD(JJ,2) == 1)THEN      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                IF(LFTSTYLUSER )THEN
+                  print *,' Rentrez le type de trait voulu :'
+                  print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+                  read(5,*,END=84)ISLNFT1
+                  GO TO 74
+                  84 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)ISLNFT1
+                  74 CONTINUE
+                  !WRITE(YCAR80,*)ISLNFT1
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,ISLNFT1)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+
+		  print *,' Epaisseur des traits ? (valeur de base 1) '
+                  read(5,*,END=86)EPAIS
+                  GO TO 76
+                  86 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)EPAIS
+                  76 CONTINUE
+                  !WRITE(YCAR80,*)EPAIS
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,EPAIS)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+		  CALL GSLWSC(EPAIS)
+!                 CALL GSLN(ISLNFT1)
+                CALL GSLN(1)
+		IF(ISLNFT1 == 1)CALL AGSETR('DAS/PA/1.',65535.)
+		IF(ISLNFT1 == 2)CALL AGSETR('DAS/PA/1.',30583.)
+		IF(ISLNFT1 == 3)CALL AGSETR('DAS/PA/1.',21845.)
+		IF(ISLNFT1 == 4)CALL AGSETR('DAS/PA/1.',10023.)
+                ELSE
+		  CALL GSLN(1)
+	        ENDIF
+
+	      ELSE IF(MOD(JJ,2) == 0)THEN     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Modif pour JMartial
+                IF(LFTSTYLUSER )THEN
+                  print *,' Rentrez le type de trait voulu :'
+                  print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+                  read(5,*,END=85)ISLNFT2
+                  GO TO 75
+                  85 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)ISLNFT2
+                  75 CONTINUE
+                  !WRITE(YCAR80,*)ISLNFT2
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,ISLNFT2)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+!                 CALL GSLN(ISLNFT2)
+                CALL GSLN(1)
+		IF(ISLNFT2 == 1)CALL AGSETR('DAS/PA/1.',65535.)
+		IF(ISLNFT2 == 2)CALL AGSETR('DAS/PA/1.',30583.)
+		IF(ISLNFT2 == 3)CALL AGSETR('DAS/PA/1.',21845.)
+		IF(ISLNFT2 == 4)CALL AGSETR('DAS/PA/1.',10023.)
+  		  print *,' Epaisseur des traits ? (valeur de base 1) '
+                  read(5,*,END=87)EPAIS
+                  GO TO 77
+                  87 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)EPAIS
+                  77 CONTINUE
+                  !WRITE(YCAR80,*)EPAIS
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,EPAIS)
+  		  CALL GSLWSC(EPAIS)
+                ELSE
+  	          CALL GSLN(1)
+                ENDIF
+
+              ENDIF                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!******************************************************************************
+!******************************************************************************
+	      CALL GSTXCI(JJ+1)
+	      CALL GSPLCI(JJ+1)
+	    ENDIF             !+++++++++++++++++++++++++++++++++++++++++++
+
+!
+!====================================
+! Couleur dans le cas LPVKT et LPVKT1
+!====================================
+!
+
+          ELSE                                         !*********************
+
+	    IF(LCOLUSER)THEN    !==============================
+
+	      IF(INUM == 1 .OR. ( LPVKT1 .AND. JJ == IND))THEN
+		IF(LPVKT1  .AND. JJ == IND)THEN
+		  print *,' INDICE DE COULEUR ', &
+		  ' POUR ',ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM)))), &
+                  ' (1 entier) ? '
+	          READ(5,*,END=17)ICOL1
+		ELSE
+		  print *,' INDICES DE COULEUR ', &
+		  ' POUR LES NIVEAUX DEMANDES DE RANG IMPAIR PUIS DE RANG', &
+                  ' PAIR (2 entiers separes par un blanc) ? '
+	          READ(5,*,END=17)ICOL1,ICOL2
+		ENDIF
+		GO TO 27
+		17 CONTINUE
+		CLOSE(5)
+		CALL GETENV("VARTTY",YCAR20)
+		YCAR20=ADJUSTL(YCAR20)
+		OPEN(5,FILE=YCAR20)
+		IF(LPVKT1  .AND. JJ == IND)THEN
+		  READ(5,*)ICOL1
+		ELSE
+		  READ(5,*)ICOL1,ICOL2
+		ENDIF
+		27 CONTINUE
+		IF(LPVKT1  .AND. JJ == IND)THEN
+		  !WRITE(YCAR80,*)ICOL1
+                  CALL WRITEDIR(NDIR,ICOL1)
+		ELSE
+	          !WRITE(YCAR80,*)ICOL1,ICOL2
+                  CALL WRITEDIR(NDIR,(/ICOL1,ICOL2/))
+		ENDIF
+		!YCAR80=ADJUSTL(YCAR80)
+                !WRITE(NDIR,'(A80)')YCAR80
+                !CALL WRITEDIR(NDIR,YCAR80)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+		CALL GSLN(1)
+		IF(LPVKT1  .AND. JJ == IND)THEN
+    	          CALL GSPLCI(ICOL1)
+    	          CALL GSTXCI(ICOL1)
+		ELSE
+    	          SELECT CASE(MOD(JJ,2))
+    	            CASE(0)
+    	              CALL GSPLCI(ICOL2)
+    	              CALL GSTXCI(ICOL2)
+    	            CASE DEFAULT
+    	              CALL GSPLCI(ICOL1)
+    	              CALL GSTXCI(ICOL1)
+    	          END SELECT
+		ENDIF
+
+	      ELSE              ! INUM > 1
+
+                CALL GSLN(1)
+                IF(LPVKT1)THEN
+    	          CALL GSPLCI(ICOL1)
+    	          CALL GSTXCI(ICOL1)
+                ELSE
+    	          SELECT CASE(MOD(JJ,2))
+    	            CASE(0)
+    	              CALL GSPLCI(ICOL2)
+    	              CALL GSTXCI(ICOL2)
+    	            CASE DEFAULT
+    	              CALL GSPLCI(ICOL1)
+    	              CALL GSTXCI(ICOL1)
+    	          END SELECT
+	        ENDIF
+
+	      ENDIF
+
+	    ELSE                !==============================(.NOT.LCOLUSER)
+
+              CALL GSLN(1)
+              IF(LPVKT1)THEN
+    	        CALL GSPLCI(JA+1)
+    	        CALL GSTXCI(JA+1)
+              ELSE
+	        SELECT CASE(MOD(JJ,2))
+		  CASE(0)
+	            CALL GSPLCI(2)
+	            CALL GSTXCI(2)
+	          CASE DEFAULT
+	            CALL GSPLCI(3)
+	            CALL GSTXCI(3)
+	        END SELECT
+	      ENDIF      
+
+	    ENDIF                !===============================
+
+
+!
+!============
+! Fin couleur
+!============
+
+	  ENDIF                                        !*********************
+!
+! Noir et blanc
+!
+        ELSE                     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	  CALL GSTXCI(1)
+	  CALL GSPLCI(1)
+        ENDIF                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+! Fin Determination de la couleur
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+!
+!
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+! Ecriture titres sur chaque courbe
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬슬
+!
+        SELECT CASE(CTYPE)
+	  CASE('SSOL','DRST','RSPL','RAPL')
+	    YGROUP(INUM)(1+5:LEN_TRIM(YGROUP(INUM))+5)=YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM)))
+	    YGROUP(INUM)(1:5)=' '
+	    WRITE(YGROUP(INUM)(1:4),'(I4)')IST(INUM)
+	    YGROUP(INUM)=ADJUSTL(ADJUSTR(YGROUP(INUM)))
+	END SELECT
+
+        IF(LPVKT1  .AND. JJ == IND)THEN
+!**************** A FAIRE *****************************************
+
+	  IF(.NOT.LZT)THEN
+	    CALL GSCLIP(0)
+            ZX=ZWL-(ZWR-ZWL)/70.+(JA-1)*(ZWR-ZWL)/5.
+	    YCAR30(1:LEN(YCAR30))=' '
+	    YCAR30=ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM))))
+	    CALL PLCHHQ(ZX,ZY,YCAR30,.011,0.,-1.)
+!           CALL PLCHHQ(ZX,ZY,ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM)))),.011,0.,-1.)
+	    CALL GSCLIP(1)
+	  ENDIF
+
+        ELSE IF(.NOT.LPVKT1)THEN
+
+	  CALL GQLWSC(IER,ZLW)
+	  CALL GQLN(IER,ILN)
+	  CALL GSLWSC(1.)
+	  CALL GSLN(1)
+
+	  IF(MOD(JJ,2) /= 0)THEN
+	    ZX=ZWL+(ZWR-ZWL)/100.
+
+	    IF(LTITFTUSER)THEN
+	      YCAR30(1:LEN(YCAR30))=' '
+	      print *,' Titre courant : ',ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM))))
+	      print *,' Rentrez le nouveau titre (30 car. Max et entre quotes)'
+	      read(5,*,END=54)YCAR30
+              GO TO 64
+              54 CONTINUE
+              CLOSE(5)
+              CALL GETENV("VARTTY",YCAR20)
+              YCAR20=ADJUSTL(YCAR20)
+              OPEN(5,FILE=YCAR20)
+              read(5,*)YCAR30
+              64 CONTINUE
+	      YCAR30=ADJUSTL(YCAR30)
+	      YCAR80(1:1)="'"
+	      YCAR80(LEN_TRIM(YCAR30)+2:LEN_TRIM(YCAR30)+2)="'"
+              YCAR80(2:LEN_TRIM(YCAR30)+1)=YCAR30(1:LEN_TRIM(YCAR30))
+!             WRITE(YCAR80,*)YCAR30
+              YCAR80=ADJUSTL(YCAR80)
+              !WRITE(NDIR,'(A80)')YCAR80
+              CALL WRITEDIR(NDIR,YCAR80)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+	      CALL PLCHHQ(ZX,ZY,YCAR30,.011,0.,-1.)
+
+	    ELSE
+
+	      YCAR30(1:LEN(YCAR30))=' '
+	      YCAR30=ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM))))
+	      CALL PLCHHQ(ZX,ZY,YCAR30,.011,0.,-1.)
+!             CALL PLCHHQ(ZX,ZY,ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM)))),.011,0.,-1.)
+	    ENDIF
+
+	  ELSE
+
+	    ZX=ZWR-(ZWR-ZWL)/100.
+
+	    IF(LTITFTUSER)THEN
+	      YCAR30(1:LEN(YCAR30))=' '
+	      print *,' Titre courant : ',ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM))))
+	      print *,' Rentrez le nouveau titre (30 car. Max et entre quotes)'
+	      read(5,*,END=55)YCAR30
+              GO TO 65
+              55 CONTINUE
+              CLOSE(5)
+              CALL GETENV("VARTTY",YCAR20)
+              YCAR20=ADJUSTL(YCAR20)
+              OPEN(5,FILE=YCAR20)
+              read(5,*)YCAR30
+              65 CONTINUE
+	      YCAR30=ADJUSTL(YCAR30)
+	      YCAR80(1:1)="'"
+	      YCAR80(LEN_TRIM(YCAR30)+2:LEN_TRIM(YCAR30)+2)="'"
+              YCAR80(2:LEN_TRIM(YCAR30)+1)=YCAR30(1:LEN_TRIM(YCAR30))
+!             WRITE(YCAR80,*)YCAR30
+              YCAR80=ADJUSTL(YCAR80)
+              !WRITE(NDIR,'(A80)')YCAR80
+              CALL WRITEDIR(NDIR,YCAR80)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+	      YCAR30=ADJUSTR(YCAR30)
+	      CALL PLCHHQ(ZX,ZY,YCAR30,.011,0.,1.)
+	    ELSE
+	      YCAR30(1:LEN(YCAR30))=' '
+	      YCAR30=ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM))))
+	      YCAR30=ADJUSTR(YCAR30)
+	      CALL PLCHHQ(ZX,ZY,YCAR30,.011,0.,+1.)
+!             CALL PLCHHQ(ZX,ZY,ADJUSTL(YGROUP(INUM)(1:LEN_TRIM(YGROUP(INUM)))),.011,0.,1.)
+	    ENDIF
+
+	  ENDIF
+
+	  CALL GSLN(ILN)
+	  CALL GSLWSC(ZLW)
+
+	ENDIF
+!**************** A FAIRE *****************************************
+!
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+! Trace des courbes en couleur
+!슬슬슬슬슬슬슬슬슬슬슬슬슬슬�
+!
+	IF(LCOLINE)THEN
+
+	  DO JI=1,IBRECOUV(INUM)
+
+	    JD=IRECOUV(JI*2-1,INUM)
+	    JF=IRECOUV(JI*2,INUM)
+!           print *,' JD JF AVANT ',JD,JF
+! 270896 !!!!!!!!!!!!!!!
+            SELECT CASE(CTYPE)
+	      CASE('DRST','RSPL','RAPL')
+	        J2=IST(INUM)
+!               J2=NLOOPN
+	      CASE DEFAULT
+	        J2=1
+	    END SELECT
+
+            IF(LFT .OR. (LPVKT .AND. L1K))THEN
+
+              IF(.NOT. LTINCRDIA(INUM,J2))THEN   !.......
+
+	        DO JE=1,NBTIMEDIA(INUM,J2)
+		  IF(NTIMEDIA(JE,INUM,J2) >= JD)THEN
+		    JD=JE
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        DO JE=1,NBTIMEDIA(INUM,J2)
+		  IF(NTIMEDIA(JE,INUM,J2) == JF)THEN
+		    JF=JE
+		    EXIT
+                  ELSE IF(NTIMEDIA(JE,INUM,J2) > JF)THEN
+		    JF=JE-1
+		    EXIT
+		  ENDIF
+	        ENDDO
+	        JF=MIN(JF,NBTIMEDIA(INUM,J2))
+
+              ELSE                               !.......
+
+	        JJE=0
+
+	        DO JE=NTIMEDIA(1,INUM,J2),NTIMEDIA(2,INUM,J2),NTIMEDIA(3,INUM,J2)
+		  JJE=JJE+1
+		  IF(JE >= JD)THEN
+		    JD=JJE
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        JJE=0
+
+	        DO JE=NTIMEDIA(1,INUM,J2),NTIMEDIA(2,INUM,J2),NTIMEDIA(3,INUM,J2)
+		  JJE=JJE+1
+		  IF(JE == JF)THEN
+		    JF=JJE
+		    EXIT
+                  ELSE IF(JE > JF)THEN
+		    JF=MIN(JF,JJE-1)
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        JJE=0
+
+	        DO JE=NTIMEDIA(1,INUM,J2),NTIMEDIA(2,INUM,J2),NTIMEDIA(3,INUM,J2)
+		  JJE=JJE+1
+                ENDDO
+
+!               JF=MIN(JF,NTIMEDIA(2,INUM,J2))
+	        JF=MIN(JF,JJE)
+
+              ENDIF                              !.......
+
+            ELSE IF((LPVKT .AND. .NOT.L1K) .OR. LPVKT1)THEN
+
+              IF(.NOT. LTINCRDIA(JA,J2))THEN     !.......
+
+	        DO JE=1,NBTIMEDIA(JA,J2)
+		  IF(NTIMEDIA(JE,JA,J2) >= JD)THEN
+		    JD=JE
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        DO JE=1,NBTIMEDIA(JA,J2)
+		  IF(NTIMEDIA(JE,JA,J2) == JF)THEN
+		    JF=JE
+		    EXIT
+                  ELSE IF(NTIMEDIA(JE,JA,J2) > JF)THEN
+		    JF=JE-1
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        JF=MIN(JF,NBTIMEDIA(JA,J2))
+!               print *,' JD JF APRES ',JD,JF
+!               print *,' ZWT2 ',ZWT2(JD:JF)
+
+              ELSE                               !.......
+
+	        JJE=0
+
+	        DO JE=NTIMEDIA(1,JA,J2),NTIMEDIA(2,JA,J2),NTIMEDIA(3,JA,J2)
+		  JJE=JJE+1
+		  IF(JE >= JD)THEN
+		    JD=JJE
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        JJE=0
+
+	        DO JE=NTIMEDIA(1,JA,J2),NTIMEDIA(2,JA,J2),NTIMEDIA(3,JA,J2)
+		  JJE=JJE+1
+		  IF(JE == JF)THEN
+		    JF=JJE
+		    EXIT
+                  ELSE IF(JE > JF)THEN
+		    JF=MIN(JF,JJE-1)
+		    EXIT
+		  ENDIF
+	        ENDDO
+
+	        JJE=0
+
+	        DO JE=NTIMEDIA(1,JA,J2),NTIMEDIA(2,JA,J2),NTIMEDIA(3,JA,J2)
+		  JJE=JJE+1
+                ENDDO
+
+	        JF=MIN(JF,JJE)
+!               JF=MIN(JF,NTIMEDIA(2,JA,J2))
+!             print *,' JD JF APRES ',JD,JF
+!             print *,' ZWT2 ',ZWT2(JD:JF)
+
+            ENDIF                                !.......
+
+          ENDIF
+
+! 270896 !!!!!!!!!!!!!!!
+! PROVISOIRE *****************
+!         IF(JI == 1)THEN
+!           CALL GQTXCI(IER,ICOL)
+!         ELSE
+!           CALL GSPLCI(ICOL+JI*5)
+!           CALL GSTXCI(ICOL+JI*5)
+!         ENDIF
+! *****************************
+
+          CALL GSLN(1)
+          IF( JF >= JD)THEN
+            CALL AGSETR('DAS/SE.',1.)
+            WHERE(ZWT1(JD:JF) /= XSPVAL)
+              WHERE(ZWT1(JD:JF) == ZWB)
+              ZWT1(JD:JF)=ZWT1(JD:JF)+(ZWT-ZWB)/100.
+              ENDWHERE
+              WHERE(ZWT1(JD:JF) == ZWT)
+              ZWT1(JD:JF)=ZWT1(JD:JF)-(ZWT-ZWB)/100.
+              ENDWHERE
+            ENDWHERE
+	    CALL EZXY(ZWT2(JD:JF),ZWT1(JD:JF),JF-JD+1,0)
+	    CALL SFLUSH
+            CALL AGSETR('DAS/PA/1.',65535.)
+          ELSE
+            if(nverbia >0)then
+              print *,' ** varfct 2 JD,JF JD > JF .Suppression appel EZXY',&
+                 JD,JF
+            endif
+          ENDIF
+
+	  ENDDO
+	  CALL GSPLCI(1)
+	  CALL GQTXCI(IER,ICOL)
+!**************************************************************************
+!**************************************************************************
+	  CALL GSLWSC(1.)
+	  CALL GSLN(1)
+!**************************************************************************
+!**************************************************************************
+
+	  IF(LPVKT1)THEN
+!***************** A FAIRE *****************************************
+! Distinguer le cas JA=1 et INUM=1 des cas JA>1 et JJ=1  
+            IF(JA == 1 .AND. INUM == 1)THEN
+              CALL GACOLR(1,1,1,1)
+!Avril 2002
+  IF(LNOLABELX .AND. LNOLABELY)THEN
+	      CALL GRIDAL(5,2,4,0,0,0,5,0.,0.)
+  ELSEIF(LNOLABELX .AND. .NOT.LNOLABELY)THEN
+	      CALL GRIDAL(5,2,4,0,0,1,5,0.,0.)
+  ELSEIF(.NOT.LNOLABELX .AND. LNOLABELY)THEN
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(5,2,4,0,1,0,5,0.,0.)
+    ELSE
+	      CALL MYHEURX(5,2,4,0,1,0,5,0.,0.)
+    ENDIF
+    ELSE
+	      CALL GRIDAL(5,2,4,0,1,0,5,0.,0.)
+    ENDIF
+  ELSE
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(5,2,4,0,1,1,5,0.,0.)
+    ELSE
+	      CALL MYHEURX(5,2,4,0,1,1,5,0.,0.)
+    ENDIF
+    ELSE
+	      CALL GRIDAL(5,2,4,0,1,1,5,0.,0.)
+    ENDIF
+  ENDIF
+!Avril 2002
+	    ELSE IF(JA > 1 .AND. JJ == IND .AND. .NOT.LZT)THEN
+!           ELSE IF(JA > 1 .AND. JJ == 1)THEN
+	      WRITE(YCAR8,FORMAY)ZWT
+	      CALL PLCHHQ(ZWL+(ZWR-ZWL)/100.+(JA-1)*(ZWR-ZWL)/5., &
+	      ZWT-(ZWT-ZWB)/50.,YCAR8,.009,0.,-1.)
+	      WRITE(YCAR8,FORMAY)ZWB
+	      CALL PLCHHQ(ZWL+(ZWR-ZWL)/100.+(JA-1)*(ZWR-ZWL)/5., &
+	      ZWB+(ZWT-ZWB)/50.,YCAR8,.009,0.,-1.)
+	    ENDIF
+            
+	  ELSE
+            CALL GACOLR(1,ICOL,1,1)
+!           CALL GRIDAL(5,2,4,2,-1,1,9,0.,0.)
+!Avril 2002
+  IF(LNOLABELX .AND. LNOLABELY)THEN
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+  ELSEIF(LNOLABELX .AND. .NOT.LNOLABELY)THEN
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+  ELSEIF(.NOT.LNOLABELX .AND. LNOLABELY)THEN
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+    ELSE
+            CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+    ENDIF
+    ELSE
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+    ENDIF
+  ELSE
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+    ELSE
+            CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+    ENDIF
+    ELSE
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+    ENDIF
+  ENDIF
+!Avril 2002
+	  ENDIF
+
+	  CALL GACOLR(1,1,1,1)
+	  CALL GSTXCI(1)
+!
+! Trace des courbes en noir et blanc
+!
+        ELSE
+
+	  CALL GSPLCI(1)
+	  CALL GSTXCI(1)
+	  CALL GSLWSC(1.)
+
+	  IF(LPVKT1)THEN     !++++++++++++++++++++++++++++++++++++++++++++++++++
+!***************** A FAIRE ET VERIFIER *****************************************
+            IF(MOD(JA,4) == 1)CALL GSLN(1)
+            IF(MOD(JA,4) == 2)CALL GSLN(3)
+            IF(MOD(JA,4) == 3)CALL GSLN(2)
+            IF(MOD(JA,4) == 0)CALL GSLN(4)
+	    IF(JA > 4)THEN
+	      CALL GSLWSC(2.)
+	    ELSE
+	      CALL GSLWSC(1.)
+	    ENDIF
+
+	  ELSE               !++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+	    IF(MOD(JJ,2) == 1)THEN      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+              IF(LFTSTYLUSER )THEN
+!               IF(ISLNFT1 == 0)THEN
+                  print *,' Rentrez le type de trait voulu :'
+                  print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+                  read(5,*,END=50)ISLNFT1
+                  GO TO 60
+                  50 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)ISLNFT1
+                  60 CONTINUE
+                  !WRITE(YCAR80,*)ISLNFT1
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,ISLNFT1)
+
+                  print *,' Epaisseur des traits ? (valeur de base 1) '
+                  read(5,*,END=52)EPAIS
+                  GO TO 62
+                  52 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)EPAIS
+                  62 CONTINUE
+                  !WRITE(YCAR80,*)EPAIS
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,EPAIS)
+                  CALL GSLWSC(EPAIS)
+!               ENDIF
+                CALL GSLN(ISLNFT1)
+                CALL GSLN(1)
+		IF(ISLNFT1 == 1)CALL AGSETR('DAS/PA/1.',65535.)
+		IF(ISLNFT1 == 2)CALL AGSETR('DAS/PA/1.',30583.)
+		IF(ISLNFT1 == 3)CALL AGSETR('DAS/PA/1.',21845.)
+		IF(ISLNFT1 == 4)CALL AGSETR('DAS/PA/1.',10023.)
+              ELSE
+		CALL GSLN(1)
+	      ENDIF
+	    ELSE IF(MOD(JJ,2) == 0)THEN     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Modif pour JMartial
+              IF(LFTSTYLUSER )THEN
+!               print *,' ISLNFT2 ',ISLNFT2
+!               IF(ISLNFT2 == 0)THEN
+                  print *,' Rentrez le type de trait voulu :'
+                  print *,' Trait plein : 1, Tiretes : 2, Pointilles : 3, Tiretes longs-courts : 4'
+                  read(5,*,END=51)ISLNFT2
+                  GO TO 61
+                  51 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)ISLNFT2
+                  61 CONTINUE
+                  !WRITE(YCAR80,*)ISLNFT2
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,ISLNFT2)
+#ifdef RHODES
+	CALL FLUSH(NDIR,ISTAF)
+#else
+	CALL FLUSH(NDIR)
+#endif
+!                 print *,' Conservation de ces caracteristiques pour les autres diagrammes  (y/n)?'
+!                 YREPO='   '
+!                 read(5,*)YREPO
+!                 IF(YREPO == 'Y' .OR. YREPO == 'y' .OR. YREPO == 'yes'.OR.&
+!                 YREPO == 'YES' .OR. YREPO == 'o' .OR. YREPO == 'oui'.OR. &
+!                 YREPO == 'O' .OR. YREPO == 'OUI')then
+!                 else
+!                 print *,' Vous serez sollicite pour chaque courbe !'
+!                 print *,' Et on ne grogne pas !!!'
+!                 ISLNFT1=0
+!               ENDIF
+!               ENDIF
+                CALL GSLN(ISLNFT2)
+                CALL GSLN(1)
+		IF(ISLNFT2 == 1)CALL AGSETR('DAS/PA/1.',65535.)
+		IF(ISLNFT2 == 2)CALL AGSETR('DAS/PA/1.',30583.)
+		IF(ISLNFT2 == 3)CALL AGSETR('DAS/PA/1.',21845.)
+		IF(ISLNFT2 == 4)CALL AGSETR('DAS/PA/1.',10023.)
+		print *,' Epaisseur des traits ? (valeur de base 1) '
+                  read(5,*,END=53)EPAIS
+                  GO TO 63
+                  53 CONTINUE
+                  CLOSE(5)
+                  CALL GETENV("VARTTY",YCAR20)
+                  YCAR20=ADJUSTL(YCAR20)
+                  OPEN(5,FILE=YCAR20)
+                  read(5,*)EPAIS
+                  63 CONTINUE
+                  !WRITE(YCAR80,*)EPAIS
+                  !YCAR80=ADJUSTL(YCAR80)
+                  !WRITE(NDIR,'(A80)')YCAR80
+                  CALL WRITEDIR(NDIR,EPAIS)
+		  CALL GSLWSC(EPAIS)
+!               IF(YREPO == 'n' .AND. ISLNFT1==0)ISLNFT2=0
+              ELSE
+	        CALL GSLN(2)
+              ENDIF
+            ENDIF                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!           IF(MOD(JJ,2) == 0)CALL GSLN(3)
+          ENDIF              !++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!         DO JI=1,NBRECOUV
+!         JD=NRECOUV(JI*2-1)
+!         JF=NRECOUV(JI*2)
+	  DO JI=1,IBRECOUV(INUM)
+	    JD=IRECOUV(JI*2-1,INUM)
+	    JF=IRECOUV(JI*2,INUM)
+!           print *,' JD JF AVANT ',JD,JF
+! 270896 !!!!!!!!!!!!!!!
+
+            SELECT CASE(CTYPE)
+	      CASE('DRST','RSPL','RAPL')
+		J2=IST(INUM)
+!               J2=NLOOPN
+	      CASE DEFAULT
+		J2=1
+	    END SELECT
+
+          IF(LFT .OR. (LPVKT .AND. L1K))THEN
+            IF(.NOT. LTINCRDIA(INUM,J2))THEN
+	      DO JE=1,NBTIMEDIA(INUM,J2)
+		IF(NTIMEDIA(JE,INUM,J2) >= JD)THEN
+		  JD=JE
+		  EXIT
+		ENDIF
+	      ENDDO
+	      DO JE=1,NBTIMEDIA(INUM,J2)
+		IF(NTIMEDIA(JE,INUM,J2) == JF)THEN
+		  JF=JE
+		  EXIT
+                ELSE IF(NTIMEDIA(JE,INUM,J2) > JF)THEN
+		  JF=JE-1
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JF=MIN(JF,NBTIMEDIA(INUM,J2))
+            ELSE
+
+	      JJE=0
+	      DO JE=NTIMEDIA(1,INUM,J2),NTIMEDIA(2,INUM,J2),NTIMEDIA(3,INUM,J2)
+		JJE=JJE+1
+		IF(JE >= JD)THEN
+		  JD=JJE
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JJE=0
+	      DO JE=NTIMEDIA(1,INUM,J2),NTIMEDIA(2,INUM,J2),NTIMEDIA(3,INUM,J2)
+		JJE=JJE+1
+		IF(JE == JF)THEN
+		  JF=JJE
+		  EXIT
+                ELSE IF(JE > JF)THEN
+		  JF=MIN(JF,JJE-1)
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JJE=0
+	      DO JE=NTIMEDIA(1,INUM,J2),NTIMEDIA(2,INUM,J2),NTIMEDIA(3,INUM,J2)
+		JJE=JJE+1
+              ENDDO
+!             JF=MIN(JF,NTIMEDIA(2,INUM,J2))
+	      JF=MIN(JF,JJE)
+
+            ENDIF
+          ELSE IF((LPVKT .AND. .NOT.L1K) .OR. LPVKT1)THEN
+            IF(.NOT. LTINCRDIA(JA,J2))THEN
+	      DO JE=1,NBTIMEDIA(JA,J2)
+		IF(NTIMEDIA(JE,JA,J2) >= JD)THEN
+		  JD=JE
+		  EXIT
+		ENDIF
+	      ENDDO
+	      DO JE=1,NBTIMEDIA(JA,J2)
+		IF(NTIMEDIA(JE,JA,J2) == JF)THEN
+		  JF=JE
+		  EXIT
+                ELSE IF(NTIMEDIA(JE,JA,J2) > JF)THEN
+		  JF=JE-1
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JF=MIN(JF,NBTIMEDIA(JA,J2))
+!             print *,' JD JF APRES ',JD,JF
+!             print *,' ZWT2 ',ZWT2(JD:JF)
+            ELSE
+
+	      JJE=0
+	      DO JE=NTIMEDIA(1,JA,J2),NTIMEDIA(2,JA,J2),NTIMEDIA(3,JA,J2)
+		JJE=JJE+1
+		IF(JE >= JD)THEN
+		  JD=JJE
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JJE=0
+	      DO JE=NTIMEDIA(1,JA,J2),NTIMEDIA(2,JA,J2),NTIMEDIA(3,JA,J2)
+		JJE=JJE+1
+		IF(JE == JF)THEN
+		  JF=JJE
+		  EXIT
+                ELSE IF(JE > JF)THEN
+		  JF=MIN(JF,JJE-1)
+		  EXIT
+		ENDIF
+	      ENDDO
+	      JJE=0
+	      DO JE=NTIMEDIA(1,JA,J2),NTIMEDIA(2,JA,J2),NTIMEDIA(3,JA,J2)
+		JJE=JJE+1
+              ENDDO
+	      JF=MIN(JF,JJE)
+!             JF=MIN(JF,NTIMEDIA(2,JA,J2))
+!             print *,' JD JF APRES ',JD,JF
+!             print *,' ZWT2 ',ZWT2(JD:JF)
+
+            ENDIF
+          ENDIF
+! 270896 !!!!!!!!!!!!!!!
+          IF(JF >= JD)THEN
+            CALL AGSETR('DAS/SE.',1.)
+            WHERE(ZWT1(JD:JF) /= XSPVAL)
+              WHERE(ZWT1(JD:JF) == ZWB)
+              ZWT1(JD:JF)=ZWT1(JD:JF)+(ZWT-ZWB)/100.
+              ENDWHERE
+              WHERE(ZWT1(JD:JF) == ZWT)
+              ZWT1(JD:JF)=ZWT1(JD:JF)-(ZWT-ZWB)/100.
+              ENDWHERE
+            ENDWHERE
+	    CALL EZXY(ZWT2(JD:JF),ZWT1(JD:JF),JF-JD+1,0)
+	    CALL SFLUSH
+            CALL AGSETR('DAS/PA/1.',65535.)
+          ELSE
+             if(nverbia >0)then
+                print *,' ** varfct 3 JD,JF JD > JF .Suppression appel EZXY',&
+                 JD,JF
+              endif
+          ENDIF
+!         CALL EZXY(PWORKT(JD:JF),ZWORK1D(JD:JF,INUM),JF-JD+1,0)
+	  ENDDO
+	  CALL GSLN(1)
+	  CALL GSLWSC(1.)
+
+	  IF(LPVKT1)THEN
+!***************** A FAIRE *****************************************
+! Distinguer le cas JA=1 et INUM=1 des cas JA>1 et JJ=1  
+            IF(JA == 1 .AND. INUM == 1)THEN
+!Avril 2002
+  IF(LNOLABELX .AND. LNOLABELY)THEN
+	      CALL GRIDAL(5,2,4,0,0,0,5,0.,0.)
+  ELSEIF(LNOLABELX .AND. .NOT.LNOLABELY)THEN
+	      CALL GRIDAL(5,2,4,0,0,1,5,0.,0.)
+  ELSEIF(.NOT.LNOLABELX .AND. LNOLABELY)THEN
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(5,2,4,0,1,0,5,0.,0.)
+    ELSE
+	      CALL MYHEURX(5,2,4,0,1,0,5,0.,0.)
+    ENDIF
+    ELSE
+	      CALL GRIDAL(5,2,4,0,1,0,5,0.,0.)
+    ENDIF
+  ELSE
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(5,2,4,0,1,1,5,0.,0.)
+    ELSE
+	      CALL MYHEURX(5,2,4,0,1,1,5,0.,0.)
+    ENDIF
+    ELSE
+	      CALL GRIDAL(5,2,4,0,1,1,5,0.,0.)
+    ENDIF
+  ENDIF
+!Avril 2002
+	    ELSE IF(JA > 1 .AND. JJ == IND .AND. .NOT.LZT)THEN
+!           ELSE IF(JA > 1 .AND. JJ == 1)THEN
+	      WRITE(YCAR8,FORMAY)ZWT
+	      CALL PLCHHQ(ZWL+(ZWR-ZWL)/100.+(JA-1)*(ZWR-ZWL)/5., &
+	      ZWT-(ZWT-ZWB)/50.,YCAR8,.009,0.,-1.)
+	      WRITE(YCAR8,FORMAY)ZWB
+	      CALL PLCHHQ(ZWL+(ZWR-ZWL)/100.+(JA-1)*(ZWR-ZWL)/5., &
+	      ZWB+(ZWT-ZWB)/50.,YCAR8,.009,0.,-1.)
+	    ENDIF
+
+	  ELSE
+!           CALL GRIDAL(5,2,4,2,-1,1,9,0.,0.)
+!Avril 2002
+  IF(LNOLABELX .AND. LNOLABELY)THEN
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+  ELSEIF(LNOLABELX .AND. .NOT.LNOLABELY)THEN
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+  ELSEIF(.NOT.LNOLABELX .AND. LNOLABELY)THEN
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+    ELSE
+           CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+    ENDIF
+    ELSE
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,0,9,0.,0.)
+    ENDIF
+  ELSE
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+    ELSE
+            CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+    ENDIF
+    ELSE
+            CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,-1,1,9,0.,0.)
+    ENDIF
+  ENDIF
+!Avril 2002
+          ENDIF
+
+	ENDIF
+	DEALLOCATE(ZWT1,ZWT2)
+
+      ENDDO
+!
+!************** Fin Boucle DO JJ=1,INB **************************************
+!
+      IF(.NOT. LPVKT1)THEN
+
+      ZVB=ZDEBYB
+      ZVT=ZDEBYT
+!     print *,' ****VARFCT ',ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT
+!     CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZVB,ZVT,1)
+      CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+      CALL GETSET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,IDA)
+!     CALL GRIDAL(5,2,4,2,1,-1,6,0.,0.)
+!Avril 2002
+  IF(LNOLABELX .AND. LNOLABELY)THEN
+      CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,0,-1,6,0.,0.)
+  ELSEIF(LNOLABELX .AND. .NOT.LNOLABELY)THEN
+      CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,0,-1,6,0.,0.)
+  ELSEIF(.NOT.LNOLABELX .AND. LNOLABELY)THEN
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+    ELSE
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+    ENDIF
+    ELSE
+      CALL GETSET(ZVL,ZVR,ZVB,ZVT,ZWLL,ZWRR,ZWBB,ZWTT,IDA)
+      IF(LFACTAXEX)THEN
+        CALL SET(ZVL,ZVR,ZVB,ZVT,ZWLL*XFACTAXEX,ZWRR*XFACTAXEX,ZWBB,ZWTT,1)
+        CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+        CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+      ELSE
+        CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+      ENDIF
+    ENDIF
+  ELSE
+!!!!!!!Avril 2002
+    IF(LHEURX)THEN
+    IF(LMYHEURX)THEN
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+    ELSE
+      CALL MYHEURX(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+    ENDIF
+    ELSE
+      CALL GETSET(ZVL,ZVR,ZVB,ZVT,ZWLL,ZWRR,ZWBB,ZWTT,IDA)
+      IF(LFACTAXEX)THEN
+        CALL SET(ZVL,ZVR,ZVB,ZVT,ZWLL*XFACTAXEX,ZWRR*XFACTAXEX,ZWBB,ZWTT,1)
+        CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+        CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+      ELSE
+        CALL GRIDAL(NFTITVXMJ,NFTITVXMN,NFTITVYMJ,NFTITVYMN,1,-1,6,0.,0.)
+      ENDIF
+    ENDIF
+  ENDIF
+!Avril 2002
+
+      ENDIF
+
+      CALL GETSET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,IDA)
+      XCURVPTL=ZVL;XCURVPTR=ZVR;XCURVPTB=ZVB;XCURVPTT=ZVT
+      CALL SET(0.,1.,0.,1.,0.,1.,0.,1.,1)
+  IF(LFACTIMP)THEN
+    CALL FACTIMP
+  ENDIF
+! tttttttttttttttttttttttttttttttttttttttttttttttttttX
+! Titres en X
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITXL',YTEM)
+  IF(YTEM /= ' ' .AND. YTEM /= 'DEFAULT')THEN
+    CALL RESOLV_TIT('CTITXL',YTEM)
+  CALL PLCHHQ(ZVL,ZVB-MIN(ZVB/3.,.05),YTEM,.008,0.,-1.)
+! CALL PLCHHQ(ZVL,ZVB/3.,YTEM,.008,0.,-1.)
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITXM',YTEM)
+  IF(YTEM /= ' ' .AND. YTEM /= 'DEFAULT')THEN
+    CALL RESOLV_TIT('CTITXM',YTEM)
+  CALL PLCHHQ((ZVL+ZVR)/2.,ZVB-MIN(ZVB/2.,.05),YTEM(1:LEN_TRIM(YTEM)),.008,0.,0.)
+! CALL PLCHHQ((ZVL+ZVR)/2.,ZVB/2.,YTEM(1:LEN_TRIM(YTEM)),.008,0.,0.)
+! CALL PLCHHQ((ZVL+ZVR)/2.-ZVB/3.,ZVB/2.,YTEM,.008,0.,-1.)
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  IF(LHEURX)THEN
+  YTEM='(H.)'
+  ELSE
+  YTEM='(Sec.)'
+  ENDIF
+  YTEM=ADJUSTL(YTEM)
+  CALL RESOLV_TIT('CTITXR',YTEM)
+  IF(YTEM /= ' ' .AND. YTEM /= 'DEFAULT')THEN
+    CALL RESOLV_TIT('CTITXR',YTEM)
+      if(nverbia > 0)then
+      print *,' **Passage LFT LPVKT 2',(ZVR-ZVB/2.)
+      endif
+  CALL PLCHHQ(ZVR+.03,ZVB-MIN(ZVB/3.,.05),YTEM(1:LEN_TRIM(YTEM)),.008,0.,-1.)
+! CALL PLCHHQ(ZVR-ZVB/2.,ZVB-MIN(ZVB/3.,.05),YTEM,.008,0.,-1.)
+  ENDIF
+! tttttttttttttttttttttttttttttttttttttttttttttttttttY
+! Titres en Y
+  YTEM(1:LEN(YTEM))=' '
+  IF(LZT)THEN
+    LTITDEF=.FALSE.
+    CTITYT='Altitudes;(M)'
+  ENDIF
+  CALL RESOLV_TITY('CTITYT',ZVL,ZVR,ZVB,ZVT,YTEM)
+  IF(LZT)THEN
+    LTITDEF=.TRUE.
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TITY('CTITYM',ZVL,ZVR,ZVB,ZVT,YTEM)
+  IF(LCNSUM)THEN
+    YTEM='SUM(.TRUE.=1)'
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TITY('CTITYB',ZVL,ZVR,ZVB,ZVT,YTEM)
+! tttttttttttttttttttttttttttttttttttttttttttttttttttT
+! Titres  TOP
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITT3',YTEM)
+  ZXPOSTITT3=.002
+  ZXYPOSTITT3=.93
+  IF(XPOSTITT3 /= 0.)THEN
+    ZXPOSTITT3=XPOSTITT3
+  ENDIF
+  IF(XYPOSTITT3 /= 0.)THEN
+    ZXYPOSTITT3=XYPOSTITT3
+  ENDIF
+  IF(CTITT3 /= ' ')THEN
+    IF(XSZTITT3 /= 0.)THEN
+      CALL PLCHHQ(0.002,0.93,YTEM,XSZTITT3,0.,-1.)
+    ELSE
+      CALL PLCHHQ(0.002,0.93,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  YTEM=YCAR
+  CALL RESOLV_TIT('CTITT2',YTEM)
+  ZXPOSTITT2=.002
+  ZXYPOSTITT2=.95
+  IF(XPOSTITT2 /= 0.)THEN
+    ZXPOSTITT2=XPOSTITT2
+  ENDIF
+  IF(XYPOSTITT2 /= 0.)THEN
+    ZXYPOSTITT2=XYPOSTITT2
+  ENDIF
+  IF(CTITT2 /= ' ')THEN
+    IF(XSZTITT2 /= 0.)THEN
+      CALL PLCHHQ(0.002,0.95,YTEM,XSZTITT2,0.,-1.)
+    ELSE
+      CALL PLCHHQ(0.002,0.95,YTEM,.008,0.,-1.)
+    ENDIF
+  ENDIF
+! IF(.NOT.LPVKT)THEN
+!   YTEM(1:LEN(YTEM))=' '
+!   CALL RESOLV_TIT('CTITT1',YTEM)
+!   IF(CTITT1 /= ' ')THEN
+!     CALL PLCHHQ(0.002,0.98,YTEM,.012,0.,-1.)
+!   ENDIF
+! ENDIF
+! tttttttttttttttttttttttttttttttttttttttttttttttttttB
+! Titres  BOTTOM
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITB3',YTEM)
+  ZXPOSTITB3=.002
+  ZXYPOSTITB3=.05
+  IF(XPOSTITB3 /= 0.)THEN
+    ZXPOSTITB3=XPOSTITB3
+  ENDIF
+  IF(XYPOSTITB3 /= 0.)THEN
+    ZXYPOSTITB3=XYPOSTITB3
+  ENDIF
+! IF(YTEM /= ' ')THEN
+! print *,' +++varfct CTITB3 ',CTITB3,CTITB3MEM
+! print *,' +++varfct YDIFF ',YDIFF
+  IF(YDIFF /= ' ' .AND. (YTEM == ' ' .OR. YTEM == 'DEFAULT'))THEN
+    CALL PLCHHQ(0.002,0.05,YDIFF,.008,0.,-1.)
+    YDIFF(1:LEN(YDIFF))=' '
+  ENDIF
+  IF(CTITB3 /= ' ')THEN
+    CALL PLCHHQ(0.002,0.05,YTEM,.008,0.,-1.)
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITB2',YTEM)
+  IF(CTITB2 /= ' ')THEN
+    CALL PLCHHQ(0.002,0.025,YTEM,.007,0.,-1.)
+  ENDIF
+  YTEM(1:LEN(YTEM))=' '
+  CALL RESOLV_TIT('CTITB1',YTEM)
+  IF(CTITB1 /= ' ')THEN
+    CALL PLCHHQ(0.002,0.005,YTEM,.007,0.,-1.)
+  ENDIF
+      IF(LDATFILE)CALL DATFILE_FORDIACHRO
+
+      IF(.NOT. LPVKT1)THEN
+! Ajout Nov 2000
+      IF(LPVKT .OR. (LFT .AND. LCHXY))THEN
+        IF(L1DT)THEN
+	  SELECT CASE(CTYPE)
+	    CASE('CART')
+              WRITE(YCARCOU,1002)
+            CASE('SSOL')
+	      IF(JA == 1)THEN
+	        YCARCOU(1:LEN(YCARCOU))=' '
+	        YCAR(1:LEN(YCAR))=' '
+	        YCARCOU(1:7)='SSOL N.'
+	        WRITE(YCARCOU(8:10),'(I3)')IST(1)
+	        YCARCOU(11:13)='  ('
+	        WRITE(YCARCOU(14:18),'(F5.0)')XTRAJX(1,1,IST(1))
+	        YCARCOU(19:19)=','
+	        WRITE(YCARCOU(20:24),'(F5.0)')XTRAJY(1,1,IST(1))
+	        YCARCOU(25:27)=')  '
+		ISUIT=28
+		ISUI=8
+		ALLOCATE(ISTM(SIZE(IST,1)))
+		INDISTM=1
+		ISTM(INDISTM)=IST(1)
+		DO JB=2,ICOMPT
+		  ISTOK=0
+		  DO JC=1,INDISTM
+		    IF(IST(JB) == ISTM(JC))THEN
+		      ISTOK=1
+		    ENDIF
+		  ENDDO
+		  IF(ISTOK == 1)THEN
+		    CYCLE
+		  ELSE
+		    INDISTM=INDISTM+1
+		    ISTM(INDISTM)=IST(JB)
+		    IF(ISUIT > 50)THEN
+  		      WRITE(YCAR(ISUI:ISUI+3),'(I4)')IST(JB)
+  		      YCAR(ISUI+4:ISUI+6)='  ('
+  		      WRITE(YCAR(ISUI+7:ISUI+11),'(F5.0)')XTRAJX(1,1,IST(JB))
+  		      ISUI=ISUI+12
+  		      YCAR(ISUI:ISUI)=','
+  		      ISUI=ISUI+1
+  		      WRITE(YCAR(ISUI:ISUI+4),'(F5.0)')XTRAJY(1,1,IST(JB))
+                      ISUI=ISUI+5
+  		      YCAR(ISUI:ISUI+2)=')  '
+  		      ISUI=ISUI+3
+		    ELSE
+		      WRITE(YCARCOU(ISUIT:ISUIT+3),'(I4)')IST(JB)
+		      YCARCOU(ISUIT+4:ISUIT+6)='  ('
+		      WRITE(YCARCOU(ISUIT+7:ISUIT+11),'(F5.0)')XTRAJX(1,1,IST(JB))
+		      ISUIT=ISUIT+12
+		      YCARCOU(ISUIT:ISUIT)=','
+		      ISUIT=ISUIT+1
+		      WRITE(YCARCOU(ISUIT:ISUIT+4),'(F5.0)')XTRAJY(1,1,IST(JB))
+                      ISUIT=ISUIT+5
+		      YCARCOU(ISUIT:ISUIT+2)=')  '
+		      ISUIT=ISUIT+3
+		    ENDIF
+		  ENDIF
+		ENDDO
+		DEALLOCATE(ISTM)
+	      ENDIF
+            CASE DEFAULT
+	      IF(JA == 1)THEN
+	        YCARCOU(1:LEN(YCARCOU))=' '
+	        YCARCOU(1:4)=CTYPE
+	        YCARCOU(5:7)=' N.'
+	        WRITE(YCARCOU(8:10),'(I3)')IST(1)
+		ISUIT=11
+		ALLOCATE(ISTM(SIZE(IST,1)))
+		INDISTM=1
+		ISTM(INDISTM)=IST(1)
+		DO JB=2,ICOMPT
+		  ISTOK=0
+		  DO JC=1,INDISTM
+		    IF(IST(JB) == ISTM(JC))THEN
+		      ISTOK=1
+		    ENDIF
+		  ENDDO
+		  IF(ISTOK == 1)THEN
+		    CYCLE
+                  ELSE
+		    INDISTM=INDISTM+1
+		    ISTM(INDISTM)=IST(JB)
+		    WRITE(YCARCOU(ISUIT:ISUIT+4),'(I5)')IST(JB)
+		    ISUIT=ISUIT+5
+		  ENDIF
+                ENDDO
+		DEALLOCATE(ISTM)
+	      ENDIF
+	  END SELECT
+        ELSE
+          IF(XIDEBCOU.NE.-999.)THEN
+	    IF(LDEFCV2CC)THEN           !%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	      IF(LDEFCV2IND)THEN
+		IF(NPROFILE == 1)THEN
+	          WRITE(YCARCOU,1018)NIDEBCV,NJDEBCV
+		ELSEIF(NPROFILE == NLMAX)THEN
+	          WRITE(YCARCOU,1018)NIFINCV,NJFINCV
+		ELSE
+		ENDIF
+	      ELSE IF(LDEFCV2LL)THEN
+		IF(NPROFILE == 1)THEN
+		  WRITE(YCARCOU,1019)XIDEBCVLL,XJDEBCVLL
+                ELSEIF(NPROFILE == NLMAX)THEN
+		  WRITE(YCARCOU,1019)XIFINCVLL,XJFINCVLL
+                ELSE
+		ENDIF
+	      ELSE
+		IF(NPROFILE == 1)THEN
+                  WRITE(YCARCOU,1020)XIDEBCV,XJDEBCV
+                ELSEIF(NPROFILE == NLMAX)THEN
+                  WRITE(YCARCOU,1020)XIFINCV,XJFINCV
+                ELSE
+		ENDIF
+	      ENDIF
+	    ELSE                        !%%%%%%%%%%%%%%%%%%%%%%%%
+              IF(XIDEBCOU < 99999.)THEN
+                IF(XJDEBCOU < 99999.)THEN
+                  WRITE(YCARCOU,1001)XIDEBCOU,XJDEBCOU,NLANGLE,NPROFILE
+                ELSE
+                  WRITE(YCARCOU,1003)XIDEBCOU,XJDEBCOU,NLANGLE,NPROFILE
+                END IF
+              ELSE
+                IF(XJDEBCOU < 99999.)THEN
+                  WRITE(YCARCOU,1004)XIDEBCOU,XJDEBCOU,NLANGLE,NPROFILE
+                ELSE
+                  WRITE(YCARCOU,1005)XIDEBCOU,XJDEBCOU,NLANGLE,NPROFILE
+                END IF
+              END IF
+	    ENDIF                       !%%%%%%%%%%%%%%%%%%%%%%%%
+          ELSE
+            WRITE(YCARCOU,1000)NIDEBCOU,NJDEBCOU,NLANGLE,NPROFILE
+          END IF
+        END IF
+!       CALL PCSETI('BF',1)               ! Fills a box around characters 
+!       CALL PCSETR('BL',2.)              ! heavy line plotted
+!       CALL PCSETR('BM',.3)              ! sets a box margin
+!       CALL PCSETI('BC(1)',1)            ! sets box color for prints
+!       CALL GETSET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+	CALL SET(0.,1.,0.,1.,0.,1.,0.,1.,1)
+  IF(LFACTIMP)THEN
+    CALL FACTIMP
+  ENDIF
+! tttttttttttttttttttttttttttttttttttttttttttttttttttT
+        CALL RESOLV_TIT('CTITT1',YCARCOU)
+        ZXPOSTITT1=.002
+        ZXYPOSTITT1=.98
+        IF(XPOSTITT1 /= 0.)THEN
+          ZXPOSTITT1=XPOSTITT1
+        ENDIF
+        IF(XYPOSTITT1 /= 0.)THEN
+          ZXYPOSTITT1=XYPOSTITT1
+        ENDIF
+        IF(CTITT1 /= ' ')THEN
+          IF(XSZTITT1 /= 0.)THEN
+  	    CALL PLCHHQ(.002,.98,YCARCOU,XSZTITT1,0.,-1.)
+	  ELSE
+  	    CALL PLCHHQ(.002,.98,YCARCOU,.010,0.,-1.)
+	  ENDIF
+        ENDIF
+        YTEM(1:LEN(YTEM))=' '
+        YTEM=YCAR
+        CALL RESOLV_TIT('CTITT2',YTEM)
+        ZXPOSTITT2=.002
+        ZXYPOSTITT2=.95
+        IF(XPOSTITT2 /= 0.)THEN
+          ZXPOSTITT2=XPOSTITT2
+        ENDIF
+        IF(XYPOSTITT2 /= 0.)THEN
+          ZXYPOSTITT2=XYPOSTITT2
+        ENDIF
+        IF(CTITT2 /= ' ')THEN
+          IF(XSZTITT2 /= 0.)THEN
+            CALL PLCHHQ(0.002,0.95,YTEM,XSZTITT2,0.,-1.)
+	  ELSE
+            CALL PLCHHQ(0.002,0.95,YTEM,.008,0.,-1.)
+	  ENDIF
+        ENDIF
+        CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+	CALL GSFAIS(0)
+!       CALL PCSETI('BF',0)               ! Fills a box around characters 
+      ENDIF
+        IF(J <IPAGE)CALL FRAME
+
+      ELSE
+
+	SELECT CASE(CTYPE)
+	  CASE('CART')
+          CASE('SSOL')
+	    IF(JA == 1)THEN
+	      YCARCOU(1:LEN(YCARCOU))=' '
+	      YCAR(1:LEN(YCAR))=' '
+	      YCARCOU(1:7)='SSOL N.'
+	      WRITE(YCARCOU(8:10),'(I3)')IST(1)
+	      YCARCOU(11:13)='  ('
+	      WRITE(YCARCOU(14:18),'(F5.0)')XTRAJX(1,1,IST(1))
+	      YCARCOU(19:19)=','
+	      WRITE(YCARCOU(20:24),'(F5.0)')XTRAJY(1,1,IST(1))
+	      YCARCOU(25:27)=')  '
+	      ISUIT=28
+	      ISUI=8
+	      ALLOCATE(ISTM(SIZE(IST,1)))
+	      INDISTM=1
+	      ISTM(INDISTM)=IST(1)
+	      DO JB=2,ICOMPT
+		ISTOK=0
+		DO JC=1,INDISTM
+		  IF(IST(JB) == ISTM(JC))THEN
+		    ISTOK=1
+		  ENDIF
+		ENDDO
+		IF(ISTOK == 1)THEN
+		  CYCLE
+		ELSE
+		  INDISTM=INDISTM+1
+		  ISTM(INDISTM)=IST(JB)
+		  IF(ISUIT > 50)THEN
+		    WRITE(YCAR(ISUI:ISUI+3),'(I4)')IST(JB)
+		    YCAR(ISUI+4:ISUI+6)='  ('
+		    WRITE(YCAR(ISUI+7:ISUI+11),'(F5.0)')XTRAJX(1,1,IST(JB))
+		    ISUI=ISUI+12
+		    YCAR(ISUI:ISUI)=','
+		    ISUI=ISUI+1
+		    WRITE(YCAR(ISUI:ISUI+4),'(F5.0)')XTRAJY(1,1,IST(JB))
+		    ISUI=ISUI+5
+		    YCAR(ISUI:ISUI+2)=')  '
+		    ISUI=ISUI+3
+                  ELSE
+	            WRITE(YCARCOU(ISUIT:ISUIT+3),'(I4)')IST(JB)
+	            YCARCOU(ISUIT+4:ISUIT+6)='  ('
+	            WRITE(YCARCOU(ISUIT+7:ISUIT+11),'(F5.0)')XTRAJX(1,1,IST(JB))
+	            ISUIT=ISUIT+12
+	            YCARCOU(ISUIT:ISUIT)=','
+	            ISUIT=ISUIT+1
+	            WRITE(YCARCOU(ISUIT:ISUIT+4),'(F5.0)')XTRAJY(1,1,IST(JB))
+                    ISUIT=ISUIT+5
+	            YCARCOU(ISUIT:ISUIT+2)=')  '
+	            ISUIT=ISUIT+3
+	          ENDIF
+		ENDIF
+              ENDDO
+	      DEALLOCATE(ISTM)
+	    ENDIF
+          CASE DEFAULT
+	    IF(JA == 1)THEN
+	      YCARCOU(1:LEN(YCARCOU))=' '
+	      YCARCOU(1:4)=CTYPE
+	      YCARCOU(5:7)=' N.'
+	      WRITE(YCARCOU(8:10),'(I3)')IST(1)
+	      ISUIT=11
+	      ALLOCATE(ISTM(SIZE(IST,1)))
+	      INDISTM=1
+	      ISTM(INDISTM)=IST(1)
+	      DO JB=2,ICOMPT
+                ISTOK=0
+		DO JC=1,INDISTM
+		  IF(IST(JB) == ISTM(JC))THEN
+		    ISTOK=1
+		  ENDIF
+		ENDDO
+		IF(ISTOK == 1)THEN
+		  CYCLE
+		ELSE
+		  INDISTM=INDISTM+1
+		  ISTM(INDISTM)=IST(JB)
+		  WRITE(YCARCOU(ISUIT:ISUIT+4),'(I5)')IST(JB)
+		  ISUIT=ISUIT+5
+		ENDIF
+	      ENDDO
+	      DEALLOCATE(ISTM)
+	    ENDIF
+	 END SELECT
+
+	CALL SET(0.,1.,0.,1.,0.,1.,0.,1.,1)
+  IF(LFACTIMP)THEN
+    CALL FACTIMP
+  ENDIF
+        CALL RESOLV_TIT('CTITT1',YCARCOU)
+        ZXPOSTITT1=.002
+        ZXYPOSTITT1=.98
+        IF(XPOSTITT1 /= 0.)THEN
+          ZXPOSTITT1=XPOSTITT1
+        ENDIF
+        IF(XYPOSTITT1 /= 0.)THEN
+          ZXYPOSTITT1=XYPOSTITT1
+        ENDIF
+        IF(CTITT1 /= ' ')THEN
+          IF(XSZTITT1 /= 0.)THEN
+  	    CALL PLCHHQ(.002,.98,YCARCOU,XSZTITT1,0.,-1.)
+	  ELSE
+  	    CALL PLCHHQ(.002,.98,YCARCOU,.010,0.,-1.)
+	  ENDIF
+        ENDIF
+        YTEM(1:LEN(YTEM))=' '
+        YTEM=YCAR
+        CALL RESOLV_TIT('CTITT2',YTEM)
+        ZXPOSTITT2=.002
+        ZXYPOSTITT2=.95
+        IF(XPOSTITT2 /= 0.)THEN
+          ZXPOSTITT2=XPOSTITT2
+        ENDIF
+        IF(XYPOSTITT2 /= 0.)THEN
+          ZXYPOSTITT2=XYPOSTITT2
+        ENDIF
+        IF(CTITT2 /= ' ')THEN
+          IF(XSZTITT2 /= 0.)THEN
+            CALL PLCHHQ(0.002,0.95,YTEM,XSZTITT2,0.,-1.)
+	  ELSE
+            CALL PLCHHQ(0.002,0.95,YTEM,.008,0.,-1.)
+	  ENDIF
+        ENDIF
+        CALL SET(ZVL,ZVR,ZVB,ZVT,ZWL,ZWR,ZWB,ZWT,1)
+!
+! Eventuels Titres cas LPVKT1
+!
+      ENDIF
+
+    ENDDO     ! Fin boucle DO JA=1,JAF
+    ENDDO
+!
+!************ Fin Boucle DO J=1,IPAGE ***************************************
+!
+    if(nverbia > 0)then
+      print *,' **varfct AV DEALLOCATE lig 3444'
+    endif
+    DEALLOCATE(ZWORK1D)
+    DEALLOCATE(ZWORKT)
+    IF(ALLOCATED(ZPVMNMX))THEN
+    DEALLOCATE(ZPVMNMX)
+    ENDIF
+    IF(ALLOCATED(YK))THEN
+    DEALLOCATE(YK)
+    ENDIF
+    DEALLOCATE(YGROUP)
+    DEALLOCATE(ICOMPTSZ)
+    DEALLOCATE(IST)
+    DEALLOCATE(IBRECOUV)
+    DEALLOCATE(IRECOUV)
+    ICOMPT=0
+    if(nverbia > 0)then
+      print *,' **varfct AP DEALLOCATE lig 3461'
+    endif
+  ENDIF
+
+ENDIF
+
+!*****************************************************************************
+!****************** Fin LFT  LPVKT  LPVKT1 ***********************************
+!*****************************************************************************
+
+1000 FORMAT('Vertical section IDEB=',I4,' JDEB=',I4,' ANG.=',I3,' IPRO=',I4)
+1001 FORMAT('Vertical section XDEB=',F6.0,' YDEB=',F6.0,' ANG.=',I3,' IPRO=',I4)
+1002 FORMAT('Vertical profile (1D)')
+1003 FORMAT('Vertical section XDEB=',F6.0,' YDEB=',E7.2,' ANG.=',I3,' NBPTS=',I4)
+1004 FORMAT('Vertical section XDEB=',E7.2,' YDEB=',F6.0,' ANG.=',I3,' NBPTS=',I4)
+1005 FORMAT('Vertical section XDEB=',E6.2,' YDEB=',E7.2,' ANG.=',I3,' NBPTS=',I4)
+1018 FORMAT('IND I,J = (',I4,',',I4,')')
+1019 FORMAT('LAT,LON = (',F5.1,',',F5.1,')')
+1020 FORMAT('CONF. COORD. = (',F8.0,',',F8.0,')')
+
+RETURN
+END SUBROUTINE VARFCT  

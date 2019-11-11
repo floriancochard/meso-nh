@@ -1,0 +1,32 @@
+###############################################################
+#  Import Global Variables                                    #
+###############################################################
+. ../confdollar_${CONFEXP}
+
+###############################################################
+# Run Parameters                                              #
+###############################################################
+
+## job parameters
+export NBP=2
+export TIME=3600
+#export MEM="6gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="# "
+export NEXTDIR="\${SUBDIR}/../../010_conv2dia"
+export NEXTRUN="run_conv2dia"
+
+###############################################################
+# Input  Files/Parameters                                     #
+###############################################################
+
+export INP_YINIFILE="${YINIFILE2}"
+export INP_YINIFILEPGD="${YDOMAIN2}"
+export CRT_YSUFFIX="${YSUFFIX}"
+
+###############################################################
+# Output Files                                                #
+###############################################################
+
+export OUT_DIAG="${INP_YINIFILE}${CRT_YSUFFIX}"

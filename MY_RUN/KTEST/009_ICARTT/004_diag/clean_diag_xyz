@@ -1,0 +1,5 @@
+set -x
+rm -f ICART* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+rm -f DIAG1.nam file_for_xtransfer
+rm -f DATAE1 DATAJ1 DATAS1
+

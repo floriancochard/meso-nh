@@ -1,0 +1,56 @@
+&NAM_CONFIO LCDF4=.TRUE.,
+            LLFIOUT=.FALSE.,
+            LLFIREAD=.FALSE. /
+
+&NAM_VER_GRID NKMAX=48,
+              YZGRID_TYPE='FUNCTN',
+              ZDZGRD=10.,
+              ZDZTOP=800.,
+              ZZMAX_STRGRD=100.,
+              ZSTRGRD=5.,
+              ZSTRTOP=5. /
+
+&NAM_CONF_PRE LBOUSS=.FALSE.,
+              NVERB=5,
+              CIDEAL='RSOU',
+              CZS='FLAT',
+              LSHIFT=F /
+
+&NAM_REAL_PGD CPGD_FILE='IROISE_5KM',
+              LREAD_ZS=.TRUE.,
+              LREAD_GROUND_PARAM=.TRUE. /
+
+&NAM_LUNITn CINIFILE='IROISE_5KM_201109_02_00',
+            CINIFILEPGD='IROISE_5KM' /
+
+&NAM_LBCn_PRE CLBCX= 2*'OPEN', CLBCY= 2*'OPEN' /
+
+&NAM_VPROF_PRE CTYPELOC='IJGRID', NILOC=10, NJLOC=2,
+               CFUNU='ZZZ', CFUNV='ZZZ',
+               LGEOSBAL=.FALSE. /
+
+&NAM_PREP_ISBA XHUG_SURF=10.,
+               XHUG_ROOT=10.,
+               XHUG_DEEP=10.,
+               XTG_SURF=290.,
+               XTG_ROOT=290.,
+               XTG_DEEP=290. /
+
+&NAM_PREP_SEAFLUX XSST_UNIF=290. /
+
+&NAM_PREP_WATFLUX XTS_WATER_UNIF=290. /
+
+RSOU
+2011 9 2 0.
+'ZUVTHDMR'
+0.0
+100000.
+285.
+0.0
+3
+ 10.       2.       0.
+ 1000.    10.       0.
+ 10000.   10.       0.
+3
+ 10.                284.       0.
+ 10000.             300.       0.

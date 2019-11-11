@@ -1,0 +1,75 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_CONFZ    NZ_PROC=0,
+              NB_PROCIO_R=1,
+              NB_PROCIO_W=1 /
+&NAM_DIMn_PRE NIMAX=180,
+              NJMAX=1 /
+&NAM_CONF_PRE LCARTESIAN=.TRUE.,
+	      CIDEAL='RSOU',
+              CZS='SCHA', 
+              LBOUSS=.FALSE.,
+              LPERTURB=.FALSE., 
+	      CEQNSYS='DUR',
+              NVERB=5,
+	      JPHEXT=1,
+	      NHALO=1 /
+&NAM_PERT_PRE /
+&NAM_CONFn    LUSERV= T ,
+              LUSERC= F ,
+              LUSERI= F /
+&NAM_GRID_PRE XLAT0=43.29 /
+&NAM_GRIDH_PRE XDELTAX=5.E3, 
+               XHMAX=1500.0,
+               XAX=100.E3,
+               XAY=175.E3,
+               NIZS=90,
+               NJZS=1,
+               NEXPX=3 /
+&NAM_LUNITn    CINIFILE='SCHAR-JUNGFRAU' /
+&NAM_DYNn_PRE  CPRESOPT= 'CRESI' ,
+               NITR=8 ,
+               XRELAX=1. /
+&NAM_LBCn_PRE  CLBCX= 2*'OPEN',
+               CLBCY= 2*'CYCL' /
+&NAM_VPROF_PRE CTYPELOC='IJGRID',
+               NILOC=2,
+               NJLOC=2,
+               CFUNU='ZZZ',
+               CFUNV='ZZZ',
+               LGEOSBAL=.FALSE. /
+&NAM_VER_GRID NKMAX=50, 
+              YZGRID_TYPE='FUNCTN',
+              ZDZGRD=60.,
+              ZDZTOP=7500.,
+              ZSTRGRD=5., 
+              ZSTRTOP=10.,
+              ZZMAX_STRGRD=5000. /
+&NAM_PGD_SCHEMES CNATURE='NONE',
+                 CSEA='FLUX',
+                 CWATER='NONE',
+                 CTOWN='NONE' /
+&NAM_COVER    XUNIF_COVER(1)=1. /
+&NAM_CH_MNHCn_PRE /
+
+
+RSOU
+2004 3 8 0.
+'PUVTHDHU'
+0.0
+100000.00
+275.00
+75.00
+2
+100000.00    15.0     0.
+  5000.00    15.0     0.
+9
+101000.00   275.00   95.00
+100000.00   275.00   95.00
+ 95000.00   280.00   98.00
+ 90000.00   282.00   95.00
+ 80000.00   284.50   95.00
+ 60000.00   290.00   90.00
+ 40000.00   295.00   90.00
+ 20000.00   362.00   15.00
+ 10000.00   440.00   15.00
+  5000.00   650.00   15.00

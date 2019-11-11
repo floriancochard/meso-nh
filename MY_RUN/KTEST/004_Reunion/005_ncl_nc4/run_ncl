@@ -1,0 +1,26 @@
+set -x
+#### Get highres coastline data for ncl
+# If you don't have internet connexion, comment the next line
+# And change in the ncl script HighRes by MediumRes
+./get_ncl_highres_files
+#### nc file to plot
+ln -sf ../003_mesonh/REUNI.1.00A20.004.nc .
+#### Initilizing variables for ncl
+path_ncl=`which ncl`
+if [ "$path_ncl" == "" ]
+then
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!   ERROR: NCL is not installed or the path to   !"
+echo "!     ncl binary is not set correctly            !"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+exit
+fi
+export NCARG_ROOT=${path_ncl%%/bin/ncl}
+export PATH=$NCARG_ROOT/bin:$PATH
+export NCARG_RANGS=.
+#### Running  ncl scripts 
+ncl mnh_BasicMap.ncl
+ncl mnh_ModelLevels.ncl
+ncl mnh_Cloud.ncl
+ncl mnh_CrossSection.ncl
+ncl mnh_PressureLevel.ncl

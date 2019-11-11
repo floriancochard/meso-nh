@@ -1,0 +1,48 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_LUNITn CINIFILE = "KWRAIN" /
+&NAM_CONFn  LUSERV=T LUSERC=T LUSERR=T,
+            LUSERS = T, LUSERG = T /
+&NAM_DYNn XTSTEP =10., CPRESOPT = "RICHA", NITR = 4, XRELAX = 1.,
+          LHORELAX_UVWTH = T, LHORELAX_RV = T, LVE_RELAX = F,
+          NRIMX = 6, NRIMY = 6, XRIMKMAX = .005,
+          XT4DIFU = 75. /
+&NAM_ADVn  CMET_ADV_SCHEME = "PPM_01", CSV_ADV_SCHEME = "PPM_01" /
+&NAM_PARAMn  CCLOUD = "ICE3" /
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_CH_MNHCn       LUSECHEM = T,
+                    LUSECHAQ = T,
+                    LUSECHIC = T,
+                    LCH_CONV_LINOX = T,
+                    LCH_INIT_FIELD = T,
+                    LCH_CONV_SCAV = T,
+                    CCHEM_INPUT_FILE  = "MNHC.input",
+                    LCH_RET_ICE = F,
+                    LCH_PH = T,
+                    XCH_PHINIT = 5.2,
+                    XRTMIN_AQ = 5.e-8,
+                    CCH_TDISCRETIZATION = "SPLIT"
+                    NCH_SUBSTEPS = 2,
+                    LCH_TUV_ONLINE = F,
+                    CCH_TUV_LOOKUP = " ",
+                    CCH_TUV_CLOUDS = "CHAN",
+                    XCH_TUV_ALBNEW  = -1.,
+                    XCH_TUV_DOBNEW  = -1.,
+                    XCH_TUV_TUPDATE = 90.,
+                    CCH_VEC_METHOD = "MAX",
+                    NCH_VEC_LENGTH = 50,
+                    XCH_TS1D_TSTEP = 900.,
+                    CCH_TS1D_COMMENT = "no comment",
+                    CCH_TS1D_FILENAME = "IO1D" /
+&NAM_CH_SOLVERn CSOLVER     = "ROSENBROCK" /
+&NAM_CONF  CCONF = "START", NMODEL = 1,
+           LFLAT = T, NVERB = 5,
+           CEXP = "KWRAI", CSEG = "SEGCH" ,
+           CSPLIT='BSPLITTING' 
+           !JPHEXT=3 NHALO=3
+           /
+&NAM_DYN  XSEGLEN = 1800.,
+          XASSELIN = 0.2, LCORIO = F,
+          LNUMDIFU = F/
+&NAM_BACKUP XBAK_TIME(1,1) = 450., XBAK_TIME(1,2) = 900.,
+           XBAK_TIME(1,3) = 1350., XBAK_TIME(1,4) = 1800. /
+

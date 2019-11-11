@@ -1,0 +1,6 @@
+ifeq ($(B),64)
+F90FLAGS += -dw -Wf, ' -A dbl4 '
+endif
+CPPFLAGS += -DNEC
+LDFLAGS  += 
+

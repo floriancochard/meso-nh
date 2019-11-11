@@ -1,0 +1,173 @@
+Description of namelist variables used to run mesonh simulation
+###############################################################
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+######################################################################################################
+
+&NAM_LUNITn  
+CINIFILE 	= "REUNION_IDEA_49"	; name of the initial file produced by PREP_IDEAL_CASE
+
+&NAM_CONFn  
+LUSERV 		= T 		; switch to use vapor water (prognostic variable)
+LUSERC 		= T 		; switch to use cloud water 
+LUSERR 		= T 		; switch to use rain 
+
+&NAM_DYNn 
+XTSTEP 		= 5.0 		; time step (in second) 
+CPRESOPT 	= "CRESI" 	; type of pressure solver used for the elliptic equation
+                                        ('RICHA', 'CGRAD', 'CRESI')
+LITRADJ		= T		; switch to adjust the number of iterations for the pressure solver
+LHORELAX_UVWTH 	= T 		; switch to apply the horizontal relaxation on the outermost verticals of the model 
+					for U,V,W TH variables. 
+LHORELAX_RV 	= T 		; switch to apply the horizontal relaxation on the outermost verticals of the model
+                                        for RV variable.
+LVE_RELAX 	= T		; switch to apply the vertical relaxation on the outermost verticals of the model
+NRIMX 		= 5 		; number of points in the lateral relaxation area in the x direction
+NRIMY 		= 5 		; number of points in the lateral relaxation area in the y direction
+XRIMKMAX 	= .01	 	; maximum value (in s-1) of the relaxation coefficient for the lateral relaxation area
+XT4DIFU 	= 500. 		; e-folding time for the numerical diffusion of fourth order for momentum (in second)
+
+&NAM_ADVn 	(scalar advection)
+CMET_ADV_SCHEME	="CEN4TH" 	; Advection scheme used for temperature, water substances and TKE variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+				 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+				 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+				 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+				 'PPM_00' PPM advection scheme without constraint 
+				 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+CSV_ADV_SCHEME	="FCT2ND" 	;Advection scheme used for the tracer variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+                                 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+                                 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+                                 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+                                 'PPM_00' PPM advection scheme without constraint
+                                 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+
+&NAM_PARAMn  (parametrizations)
+CTURB 		= "TKEL" 	; turbulence scheme
+                                ( 'NONE' no turbulence scheme
+                                  'TKEL' prognostic turbulent kinetic energy (TKE, one and a half order closure)
+CRAD 		= "FIXE"	; radiative transfer scheme )
+				( 'NONE' the downward surface fluxes are set to zero
+				  'TOPA' the solar flux is equal to the one at top of Atmosphere. 
+					 the infra-red flux is equal to 300 Wm-2
+				  'FIXE' the daily evolutions of the downward surface fluxes are prescribed
+				  'ECMW' the ECMWF radiation scheme is used )
+CCLOUD 		= "NONE" 	; microphysical scheme
+				( 'NONE' no microphysical scheme
+				  'REVE' only the saturation adjustment is performed
+				  'KESS' a warm Kessler microphysical scheme
+				  'C2R2' a 2-moment warm microphysical scheme according to Cohard and Pinty (2000)
+				  'KHKO' a 2-moment warm microphysical scheme according to Khairoudinov and Kogan (2000)
+				  'ICE3' a mixed microphysical scheme (ice, snow, and graupel: 6 classes of hydrometeors)
+				  'ICE4' ICE3 with hail (7 classes of hydrometeors))
+CDCONV 		= "NONE"	; deep convection scheme
+				( 'NONE' : no convection scheme
+				  'KAFR' : Kain-Fritsch-Bechtold scheme)
+
+&NAM_LBCn 
+CLBCX 		= 2*"OPEN" 	; type of lateral boundary condition at the left and right boundaries along x
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+CLBCY 		= 2*"CYCL" 	; type of lateral boundary condition at the left and right boundaries along y
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+
+&NAM_TURBn (turbulence parameters)
+CTURBLEN 	= "BL89" 	; type of turbulent mixing length
+                                        ('DELT' & CTURBDIM='3DIM' the cubic root of the grid volum is used in 3D simulations
+                                                 and the squared root of the volum in 2D simulations.
+                                         'DELT' & CTURBB='1DIM' Delta z is used in simulation of any dimensionality.
+                                         'BL89' Bougeault and Lacarrére scheme
+                                         'DEAR' the mixing length is given by the mesh size
+                                                depending on the model dimensionality )
+
+CTURBDIM 	= "1DIM" 	; turbulence dimensionnality
+                                        ('1DIM' only the vertical turbulent fluxes are taken into account
+                                         '3DIM' all the turbulent fluxes are computed)
+LSUBG_COND 	= F 		; switch to activate the subgrid condensation scheme
+
+&NAM_SERIESn  (temporal series in diagnoctic file)
+NIBOXL		=25 		; lower index along x of the horizontal box used to average the series
+NIBOXH		=50 		; upper index along x of the horizontal box used to average the series
+NJBOXL		=20 		; lower index along y of the horizontal box used to average the series
+NJBOXH		=40		; upper index along y of the horizontal box used to average the series
+NKCLS		=3 		; k level in the CLS ((x,t) series of U, Rv, Rr at KCLS are stored)
+NKLOW		=12 		; lower level ((x,t) series of mean W between KLOW and KUP are stored)
+NKUP		=18 		; upper level ((x,t) series of mean W between KLOW and KUP and
+						Rc between the ground and KUP are stored)
+NKMID		=14		; level at which (x,t) serie of Rv is stored
+NBJSLICE	=1 		; number of y-slices for (x,t) serie
+NJSLICEL(1)	=30 		; lower index along y for the y-slices
+NJSLICEH(1)	=35 		; upper index along y for the y-slices
+
+&NAM_CONF 
+CCONF 		= "START" 	; configuration of all models
+					('START' or 'RESTA' for a restart)
+NMODEL 		= 1 		; number of nested models
+LFLAT		= T		; switch for zero ororography
+NVERB 		= 5		; verbosity level       (0 for minimum of prints
+                                                        5 for intermediate level of prints
+                                                        10 for maximum of prints)
+CEXP 		= "REUNI" 	; experiment name (5 characters, no blank)
+CSEG 		= "00A20" 	; segment name (5 characters, no blank)
+
+&NAM_DYN 
+XSEGLEN 	=40. 		; segment length (in second)
+LCORIO 		= F 		; switch for the Coriolis parameters
+				  (.FALSE. the Earth rotation effects are neglected
+				   .TRUE. the Earth rotation is taken into account )
+LNUMDIFU 	=.T. 		; switch to activate the numerical diffusion for momentum
+
+&NAM_BACKUP 
+XBAK_TIME(1,1) 	= 10.		; an array of increments (in second) from the beginning of the segment 
+				to the instant where the i-th fields output on FM-files is realized by model "m" 
+XBAK_TIME(1,2) 	= 20. 
+XBAK_TIME(1,3) 	= 30. 
+XBAK_TIME(1,4) 	= 40. 
+
+&NAM_BUDGET (box budget description)
+CBUTYPE		='CART' 	; type of box used to compute the budget
+				( 'CART' a cartesian box defined
+				  'MASK' several areas, described by horizontal masks )
+XBULEN		=200.		; duration (in second) of the temporal averaged of all the source terms 
+				(the minimum value is 2*time step)
+NBUKL		=2 		; bottom of the budget box (K level)
+NBUKH		=51 		; top of the budget box (K level)
+NBUIL		=15 		; left side of the budget box (I indice)
+NBUIH		=64 		; right side of the budget box (I indice)
+NBUJL		=15 		; south side of the budget box (J indice)
+NBUJH		=68		; north side of the budget box (J indice)
+LBU_KCP		=.TRUE. 	; switch to average all the budget terms in the K direction 
+LBU_ICP		=.FALSE. 	; switch to average all the budget terms in the I direction
+LBU_JCP		=.FALSE. 	; switch to average all the budget terms in the J direction
+
+&NAM_BU_RTH (budget for TH)
+LBU_RTH		=.FALSE. 	; budget switch
+
+&NAM_BU_RTKE (budget for TKE)
+LBU_RTKE	=.FALSE.	; budget switch
+NDPTKE		=1 		; dynamic production
+NTPTKE		=1 		; thermal production
+NDISSTKE	=0 		; dissipation of TKE
+NTRTKE		=0 		; turbulent transport
+
+&NAM_SERIES (temporal series)
+LSERIES		=.TRUE. 	; switch to write temporal series in the diachronic file
+LMASKLANDSEA	=.TRUE. 	; switch to separate sea and land points in temporal series 
+LWMINMAX	=.FALSE. 	; switch to compute minimum and maximum values of vertical velocity 
+
+&NAM_SEAFLUXn  
+CSEA_ALB 	= 'UNIF' 	; type of albedo formula
+				( 'UNIF' a uniform value of 0.135 is used for water albedo 
+				  'TA96' Taylor et al (1996) formula for water direct albedo )
+
+&NAM_ISBAn  
+
+&NAM_DIAG_SURFn  
+LSURF_BUDGET	=F 		; switch to save the terms of the surface energy balance
+
+&NAM_DIAG_ISBAn  
+

@@ -1,0 +1,9 @@
+CPP = /usr/ccs/lib/cpp -P -C
+AR  = ar
+F90 = frt 
+F77 = frt
+F90FLAGS = -X9 -Am -Sw
+F77FLAGS = -Sw
+CPPFLAGS = -DFUJI
+LDFLAGS = 
+

@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -sf ../004_restart/DUST7.1.SEG02.004.lfi .
+rm -f DUST7.1.SEG02.004_dia*
+${POSTRUN} conv2dia < dir_conv2dia1
+

@@ -1,0 +1,2 @@
+set -x
+rm -f dir.* gmeta REL3D* OUT_DIA

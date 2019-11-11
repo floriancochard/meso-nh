@@ -1,0 +1,29 @@
+ifeq ($(origin MNH_LIBTOOLS), undefined)
+MNH_LIBTOOLS := $(shell pwd|sed -e 's/\/tools\/.*//')
+endif
+
+ifeq ($(origin DIR_LIB), undefined)
+DIR_LIB := $(MNH_LIBTOOLS)/lib
+endif
+
+DIR_CONF:=$(MNH_LIBTOOLS)/conf
+
+DIR_LFI  = $(DIR_LIB)/NEWLFI
+DIR_COMP = $(DIR_LIB)/COMPRESS
+DIR_NCAR = $(NCARG_ROOT)/lib
+DIR_DIA  = $(MNH_LIBTOOLS)/tools/diachro
+DIR_V5D  = $(DIR_LIB)/vis5d
+DIR_GRIB  = $(DIR_LIB)/gribex_1302b
+
+LIBLFI  = $(DIR_LFI)/$(ARCH)/libNEWLFI_ALL.a
+LIBCOMP = $(DIR_COMP)/$(ARCH)/liblficomp.a
+LIBNCAR = -L$(DIR_NCAR) -lncarg -lncarg_gks -lncarg_c
+LIBV5D  = $(DIR_V5D)/$(ARCH)/libv5d.a
+
+LIBDIA  = libdiachro.a
+LIBEXTRACT  = libextract.a
+ifneq ($(strip $(VERSION)),)      # string VERSION not empty
+LIBDIA  = libdiachro_$(VERSION).a
+LIBEXTRACT  = libextract_$(VERSION).a
+endif
+

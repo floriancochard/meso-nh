@@ -1,0 +1,63 @@
+#
+# mesonh2obs
+#
+# Interpolation des champs modele aux points d'observation
+# et sorties aux formats:LL (lon,lat) ou ll (lat,lon) sur l'horizontale
+#                        H (niveaux modèle) ou Z (Z=cst) ou P (p=cst) 
+#                        sur la verticale
+#
+#  1) preparer un fichier ascii des positions d observation (une position par ligne):
+#  lon lat   et les altitudes seront fournies en interactif
+# ou
+#  lon lat altitude_en_m     
+# ou
+#  lat lon   et les altitudes seront fournies en interactif
+# ou
+#  lat lon altitude_en_m     
+#  
+#  2) disposer d un(des) fichier(s) diachronique(s): les champs indiques a mesonh2obs seront interpoles aux points reperes dans le fichier de positions
+#  
+#  3) initialiser (facultatif si les fichiers sont dans le repertoire courant)
+    export DIRLFI=directory_fichier_diachro
+    export DIROBS=directory_fichier_position_des_obs
+#     puis executer
+    mesonh2obs # et repondre aux questions en interactif
+               # un fichier "dirmnh2obs" consignera toutes vos réponses 
+               # rentrées au clavier
+#    ou
+    mesonh2obs < dirmnh2obs_precedente_execution               
+#    ou
+    mesonh2obs << eof
+format_fichier_de_sortie # format du fichier de sortie (LLHV/llhv/LLZV/llzv/LLPV/llpv)
+format_fichier_d_entrée  # LL (lon,lat)ou ll (lat,lon)
+altitude_fichier_d_entrée # O (altitude_en_m en colonne 3)/N 
+si N, nombre_niveaux_verticaux # nombre de niveaux verticaux à la verticale de
+                               # chaque points lat,lon
+      liste de ces niveaux     # liste exemple: (en metres ou hPa): exemple 500 1500
+fichier_position_des_obs # nom du fichier de localisation des obs préparé en 1)
+0                        # prints de controle (0/1/2/3)
+fichier_diachronique1    # fichier contenant les champs a interpoler (sans .lfi)
+champ1_du_fichier_diachro1 # champ à interpoler
+champ2_du_fichier_diachro1
+END                      # fin d extraction fichier_diachronique1
+fichier_diachronique2    # fichier contenant les champs a interpoler (sans .lfi)
+champi_du_fichier_diachro2
+champj_du_fichier_diachro2
+END                      # fin d extraction fichier_diachronique2
+END                      # fin d extraction liste fichiers diachroniques
+eof
+#
+# si champ_du_fichier_diachro contient la chaine 'AC' (pour precipitations
+#ACcumulees), prévoir 1 ou 2 lignes de directive supplémentaire placées 
+#directement derrière ce nom de champ:
+# première ligne supplémentaire= la réponse 'Y/N' à la question 
+#"Pluie cumulee, voulez-vous faire la difference avec un instant anterieur (o/O/y/Y/n/N) ?"
+# si la réponse est 'Y/O', 
+#seconde ligne supplémentaire= nom du fichier diachronique (sans .lfi)
+#correspondant à l'instant précédent
+# on soustrait alors champ_du_fichier_diachro1 et champ_du_fichier_diachro_seconde_ligne_supplémentaire 
+#
+#  4) on obtient un fichier ascii par fichier diachro traite contenant les differents champs modele interpoles aux points d'observation (deux lignes de commentaire avant chaque champ)
+#
+#  Mise à jour le 30/01/2004
+#  Mise à jour le 01/03/2005

@@ -1,0 +1,2 @@
+rm -f SCHAR-JUNGFRAU* pipe_name PRESSURE file_for_xtransfer
+rm -f XPREF.1.SEG01* OUT*

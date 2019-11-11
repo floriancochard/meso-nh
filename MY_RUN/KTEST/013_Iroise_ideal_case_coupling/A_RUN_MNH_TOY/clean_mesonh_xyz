@@ -1,0 +1,15 @@
+#!/bin/bash
+
+rm -f file_*
+rm -f IROIS*
+rm -f OUTPUT_LIST* REMAP*
+rm -f PRESSURE*
+rm -f *.nc
+rm -f EXSEG1.nam
+rm -f namcouple
+rm -f TOYNAMELIST.nam 
+rm -f debug* mesonh* toyexe*
+rm -f nout.000000
+rm -f OUTPUT_TOY.txt
+rm -f pipe_name
+

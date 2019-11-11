@@ -1,0 +1,44 @@
+#!/bin/bash
+echo '--------------------------------------'
+echo '--  input for Meso-NH : PREP_PGD      '
+echo '--------------------------------------'
+PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"} ; export PREP_PGD_FILES
+if [ "$PREP_PGD_FILES" = "" ]
+then
+
+echo 'Your directory PREP_PGD_FILES=$PREP_PGD_FILES doesnt exist.'
+echo 'Please define the location of your PREP_PGD_FILES through'
+echo 'the environment variable PREP_PGD_FILES'
+exit
+
+else
+ 
+ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
+ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
+ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
+ln -sf $PREP_PGD_FILES/gtopo30.??? .
+ln -sf $PREP_PGD_FILES/etopo2.nc .
+
+time ${MONORUN} PREP_PGD${XYZ}
+
+#rm *.hdr
+#rm *.dir
+#rm etopo2.nc
+
+echo '---------------------------------------'
+echo '--  input for Meso-NH : PREP_IDEAL_CASE'
+echo '---------------------------------------'
+
+time ${MONORUN} PREP_IDEAL_CASE${XYZ}
+
+echo '---------------------------------------'
+echo '--  input for Meso-NH :                ' 
+echo '--  Create_restart_file_for_MNH.ncl/py '
+echo '---------------------------------------'
+
+rm -f rstrt_MNH.nc
+ncl Create_restart_file_for_MNH.ncl
+#python Create_restart_file_for_MNH.py
+
+fi
+#----------------------------

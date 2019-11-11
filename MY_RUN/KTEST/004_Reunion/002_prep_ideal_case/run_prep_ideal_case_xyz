@@ -1,0 +1,11 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+ln -sf ../001_prep_pgd/REUNION_PGD_1km5.{des,lfi,nc} .
+rm -f REUNION_IDEA* OUTPUT_LISTING* pipe* *.tex
+
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}          
+#ddd --directory=~/../src/dir_obj PREP_IDEAL_CASE${XYZ}

@@ -1,0 +1,7 @@
+&NAM_STO_FILE CFILES(1)='AR40_mc2_19990921.00d.Z',
+              CFILES(2)='AR40_mc2_19990920.12d.Z',
+              CFILES(3)='AR40_mc2_19990920.00d.Z',
+              CFILES(4)='AR40_mc2_19990919.12d.Z', 
+              CFILES(5)='AR40_mc2_19990919.00d.Z' /
+&NAM_FIELD  CFIELD_LAG(1)='THM',
+            CFIELD_LAG(2)='RVM' /

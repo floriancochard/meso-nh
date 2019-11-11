@@ -1,0 +1,38 @@
+#!/bin/sh
+##
+##  Import Global Experiment Variables
+##
+. ../confdollar_${CONFEXP}
+
+##############################################################
+## Run Parameters                                            #
+##############################################################
+
+## job parameters
+export NBP=1
+export TIME=3600
+#export MEM="3gb"
+
+## Next Step , in RMSHELL put a "#" to inhibit !!!
+#export RMSHELL="#"
+export NEXTDIR="\${SUBDIR}/../../003_nest"
+export NEXTRUN="run_prep_nest_pgd_xyz"
+
+##############################################################
+## INTERFACE :: Input Files/Parameters                       #
+##############################################################
+
+## input pgd father file
+export INP_CPGDFILE_FATHER="${CPGDFILE1}"
+
+##############################################################
+## INTERFACE :: Output Files                                 #
+##############################################################
+
+## output pgd son file
+export OUT_CPGDFILE="${CPGDFILE2}"
+
+
+
+
+

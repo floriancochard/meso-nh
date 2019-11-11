@@ -1,0 +1,145 @@
+Nouveautes:
+----------
+
+* les fichiers d'entree de diaprog peuvent etre dans des repertoires autre que
+le repertoire courant. Les noms de ces repertoires sont indiques par des 
+variables d'environnement (initialisées et exportées). Ainsi
+ les fichiers .lfi sont (tous) placés dans le repertoire indique par la 
+variable DIRLFI
+ les fichiers 'fond de carte' dans celui indique par DIRFDC
+ les fichiers 'table de couleurs' dans celui indique par DIRCOL
+Le programme crée un lien symbolique au moment de l'ouverture du fichier, et le
+detruit a la fin (directive QUIT). 
+Si une des 3 variables d'environnement n'est pas initialisée, les fichiers 
+correspondants sont cherchés dans le repertoire courant, comme precedemment.
+
+ rq: le nom du fichier de sortie (defaut gmeta) peut etre indique avant l'appel au programme par la variable d'environnement NCARG_GKS_OUTPUT 
+
+* NIMNMX=3 permet de definir les isolignes avec 
+ XISOREF (ou XISOREF_proc) pour une isoligne
+ XDIAINT (ou XDIAINT_proc) pour l intervalle
+ (les isolignes sont calculees en partant de XISOREF+- XDIAINT jusqu'aux extrema du champ)
+
+* LTRACECV=T permet de representer la trace de la coupe verticale dans les
+coupes horizontales suivantes (il faut demander un tracé dans la coupe verticale
+_CV_ et pas seulement definir la coupe)
+
+* ajout de segments de droite sur un plan horizontal definis en points de grille
+de maniere similaire a XSEGMS, ex.: 
+ LSEGM=T 
+ ISEGMS=I1,J1,I2,J2,0,0,I3,J3,I4,J4,I5,J5,I6,J6,9999.
+ (les segments sont tracés dans la grille du champ)
+
+* tracé de fichier fond de carte avec NIFDC=2 ou 3
+le fichier ascii contient une serie de lignes lat lon n
+ trait pointillé si n=2(plume levee) et n=3(plume baissee)
+ rappel: trait plein si n=0(plume levee) et n=1(plume baissee)
+
+* DDUMVM (ou DDUTVT ou DDUMVM10 ou avec autres composantes) calcule la 
+direction du vent, le trace se fait comme pour n'importe quel autre champ 
+scalaire (rappel: trace en etoiles colorees avec DIRUMVM)
+en coupe horizontale 20040202
+en coupe et profil verticaux 20040427
+
+* LMARKER=T (avec LCOLAREA=T et LSPOT=F) permet de tracer les valeurs du champ
+en etoiles colorees (precedemment seulement actif avec _MSKTOP_ )
+(mieux vaut enlever les isolignes avec LISO=F)
+
+* LSPOT=T (avec LCOLAREA=T et LMARKER=F) permet de tracer les valeurs du champ
+en paves de couleur  (mieux vaut enlever les isolignes avec LISO=F)
+eventuellement entoures de noir et redimensionnes (question posee)
+exemple de directives:
+NIMNMX=1 pour fixer la palette de couleur
+T2M_file1_ON_
+LSPOT=T
+n
+T2M11H_file2_
+
+* LRADAR (voir message 08092003)
+
+* pour le trace de trajectoires (LXYZ00=T), possibilité de définir la boite 
+suivant la verticale a partir de champs lagrangiens autres que les Z00i 
+(ex: CGROUPSV3='TH001') les surfaces inferieure et superieure sont toujours
+indiquées par XZL et XZH (tramask3d.f90)
+
+* Avec LFT3C=T ou LFT4C=T , possibilite de representer 3 ou 4 courbes
+ (au lieu de 2 en standard) sur les petits diagrammes obtenus avec les
+ fonctions _FT_ et _PVKT_ ; a condition de representer le meme
+ parametre ou des parametres avec des bornes semblables.
+ (varfct.f90) 20040419
+
+* pour les traces avec _FT_ et _PVKT_ , _FT1_ et _PVKT1_
+ les bornes sont calculees avec le min et le max effectifs avec LFTBAUTO=T ou LFT1BAUTO=T ,
+ ajout d'une constante de temps pour la nieme courbe avec XFT_ADTIMn et XFT1_ADTIMn (n=1 a 8)
+ (varfct.f90 traxy.f90) 20040419
+
+* Possibilite de gerer les valeurs des labels de l'axe des temps 
+dans les series temporelles (PXT PYT PVT PVKT FT FT1 ?)
+comme pour les autres graphiques 
+avec LFACTAXEX,LFACTAXEY ou LAXEXUSER,LAXEYUSER.
+ (myheurx.f90 varfct.f90) 20040419
+
+* impression de la moyenne du champ (en plus des min et max) avec print gpe MINMAX
+
+* operation LOG sur les parametres lus avec GPE(log) (20050217)
+
+Correction de bugs:
+------------------
+
+* ecriture valeur champ du dernier point de la retro-trajectoire (tratraj3d.f90)
+
+* relecture de l entete du fichier seulement s il est different
+du dernier fichier courant
+
+* la 2e directive est ignoree dans les 2 exemples suivants:
+_file1_'toto'
+_file2_'toto'   
+(le fichier toto reste associe a file1)
+et
+_file1_'toto'
+_file1_'tata'
+(file1 fait toujours reference a toto)
+
+* tracé des streamlines réactivé (manquait un fichier source f77)
+
+* en cas de superposition de 2 champs (1: vecteurs et 2: isocontours) avec
+LCOLINE=T, les isolignes sont tracées en couleurs (et non en mono-couleur).
+
+* le fichier pseudo-diachronique issu d'un fichier 1D etant cree avec la 
+duplication des points de garde (conv2dia):
+ - tracé de RS possible
+ - pour le PV, defaut pour NIDEBCOU,NJDEBCOU,NLMAX,NLANGLE,PROFILE 
+  (respectivement a 2,2,2,0,1)
+
+* l interpolation pour les coupes verticales prend en compte les valeurs a 
+XSPVAL (coupe_fordiachro.f90) (cas de fichiers issus de obs2mesonh) 20040402
+
+* Introduction des titres et du fond de carte standards pour les traces de
+retro-trajectoires (tratraj3d.f90), lachers (tramask3d.f90), et lignes de
+courant (traflux3d.f90) 20040419
+ 
+* Correction d un pb de relecture des min et max definis avec XISOMIN_PROC ou 
+XISOLEV_PROC quand 2 PROC avaient un prefixe commun (par ex MUMVM et MUMVM10).
+(readmnmxint_iso.f90 et readxisolevp.f90) 20040419
+
+* les min max et loc donnes par PRINT NomGPE MINMAX et LMNMXLOC=T ne prennent
+plus en compte les valeurs XSPVAL (prints.f90) 20040506
+
+* Pour les retro-trajectoires (tratraj3d.f90) et lignes de courant 
+(traflux3d.f90): (20050217)
+ - si LCOLINE=F traces en noir,
+   sinon boucle sur les 16 premieres couleurs de la table par defaut.
+ - dans le plan XY, couleurs des etoiles en fonction de l altitude de la part.
+ - impression des positions calculees dans FICVAL si LPRINT=T
+
+* Impression du type d isosurface lu dans CGROUPSV3 (cas LXYZ00) sur 5 car. au
+lieu de 4 (traceh_fordiachro.f90)  (20050217)
+
+Autres:
+------
+
+* ecriture des directives dans le fichier dir:jjmmaa:hh sans blancs en fin de ligne
+
+* un seul listing est cree (OUT_DIA) au lieu de d'un OUT_DIAnn par fichier ouvert
+
+

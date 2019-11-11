@@ -1,0 +1,15 @@
+LIBGRB =  -L/usr/local/lib -lemos_000200 
+LIBV5D =  -L$(MESONH)/binaries -lv5d_v51
+#LIBV5D =  -L$(MESONH)/binaries -lv5d_v51 -L/usr/local/lib -lemosR64_1303g
+#############################################################################
+PROGALL = conv2dia lfi2grb
+
+CPPFLAGS += -DVPP
+ifeq ($(B),64)
+F77FLAGS += -Ad
+F90FLAGS += -Ad 
+endif
+LDFLAGS  += -Wl,-zdummy_verbose
+
+OBJS2=
+

@@ -1,0 +1,9 @@
+NETCDFHOME=/usr/local
+DIR_CDF = $(NETCDFHOME)/lib
+LIBCDF = $(DIR_CDF)/libnetcdf.a
+###################################
+CPPFLAGS += -DFUJI # -DLOWMEM
+INC      += -I$(NETCDFHOME)/include
+F90FLAGS +=
+LDFLAGS  += -X9 -Wg,-c
+

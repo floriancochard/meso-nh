@@ -1,0 +1,162 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+##########################################################
+#                                                        #
+# ENVIRONEMMENT CONFIGURATION FOR MESONH                 #
+#                                                        #
+##########################################################
+if [ "\$SRC_MESONH" != "" ] 
+then
+##########################################################
+#                                                        #
+# ENVIRONEMENT MESONH ALLREADY SET                       #
+#                                                        #
+##########################################################
+echo 
+echo '--->' WARNING :: "profile_mesonh"
+echo '--->' vous avez deja initialise votre variable d environnement '\$SRC_MESONH'
+echo '--->' '\$SRC_MESONH="'\$SRC_MESONH'"'
+echo '--->' '"check your environnment profile_mesonh" !!!! '
+echo 
+fi
+##########################################################
+#                                                        #
+# SOME SETTING FOR MESONH                                #
+#                                                        #
+##########################################################
+#
+# SRC_MESONH : default path to mesonh sources 
+#              MUST BE SET TO YOUR OWN MESONH PATH
+#
+export SRC_MESONH="${LOCAL}"   
+#
+#  Version MESONH PACKAGE :: PACK-${VERSION_XYZ} : ${VERSION_DATE}
+#
+export VERSION_XYZ=${VERSION_XYZ}
+#
+#  Target Architecture/compiler Machine <=> Rules.*.mk files
+#
+#export ARCH=LXgfortran,LXifort,LXpgi,AIX64,SX8,BGQ
+#
+export ARCH=${ARCH}
+#
+#  Version of MPI
+#
+#export VER_MPI=MPIVIDE,MPIAUTO,MPIICE,MPIINTEL
+#
+export VER_MPI=${VER_MPI}
+#
+# OPTIMIZATION LEVEL
+#
+#export OPTLEVEL=DEBUG,O2
+#
+export OPTLEVEL=${OPTLEVEL}
+#
+#  USER VERSION
+#
+export VER_USER=${VER_USER}
+#
+# 'Scandollar' Post Processing default variables
+#
+export CONF_DOLLAR=${CONF_DOLLAR}
+#
+# Version of NETCDF / HDF
+#
+export VER_CDF=${VER_CDF}
+export VERSION_CDFC=${VERSION_CDFC}
+export VERSION_CDFCXX=${VERSION_CDFCXX}
+export VERSION_CDFF=${VERSION_CDFF}
+export VERSION_HDF=${VERSION_HDF}
+export VERSION_LIBAEC=${VERSION_LIBAEC}
+#
+# NETCDF4  INPUT/OUTPUT
+#
+export MNH_IOCDF4=${MNH_IOCDF4}
+#
+# Version of GRIBAPI
+#
+export VER_GRIBAPI=${VER_GRIBAPI}
+export VERSION_GRIBAPI=${VERSION_GRIBAPI}
+#
+# Version of Def integer
+#
+export MNH_INT=${MNH_INT}
+export LFI_INT=${LFI_INT}
+#
+# Version of Def Real
+#
+export MNH_REAL=${MNH_REAL}
+#
+#  Len of HREC characters 
+#
+export LEN_HREC=${LEN_HREC}
+#
+#  FOREFIRE
+#
+export MNH_FOREFIRE=${MNH_FOREFIRE}
+#
+#  RTTOV
+#
+export MNH_RTTOV=${MNH_RTTOV}
+export VER_RTTOV=${VER_RTTOV}
+#
+#  ECRAD
+#
+export MNH_ECRAD=${MNH_ECRAD}
+export VERSION_ECRAD=${VERSION_ECRAD}
+#
+#  OASIS
+#
+export VER_OASIS=${VER_OASIS}
+#
+# NCL_NCARG
+#
+export VERSION_NCL=${VERSION_NCL}
+#
+# MEGAN
+#
+export MNH_MEGAN=${MNH_MEGAN}
+#
+##########################################################
+##########################################################
+##########################################################
+#                                                        #
+#    DONT MODIFY LINES AFTER THIS  !!!!!!!!!!!!!         #         
+#                                                        #
+##########################################################
+##########################################################
+##########################################################
+#
+export XYZ="-\${ARCH}-R\${MNH_REAL}I\${MNH_INT}-\${VERSION_XYZ}\${MNH_ECRAD:+-ECRAD}\${MNH_FOREFIRE:+-FF}\${VER_USER:+-\${VER_USER}}-\${VER_MPI}-\${OPTLEVEL}"
+#[ "x\${VER_USER}" != "x" ] && export XYZ="\${XYZ}-\${VER_USER}"
+# PATH to find tools like "makegen, etc ..."
+export BIN_TOOLS=${BIN_TOOLS}
+export PATH=.:\$SRC_MESONH/bin:\$SRC_MESONH/exe:\$SRC_MESONH/bin_tools:\$SRC_MESONH/bin_tools/\${BIN_TOOLS}:\$PATH
+#
+# NCARG_ROOT : for use of graphic tools : diaprog 
+# 
+#  The "lib" and "bin" directory version 
+#  are include in this package
+#  ( and also the full pacakge , source etc... 
+#    to be compiled for other plateforms )
+#
+export NCARG_ROOT=\${NCARG_ROOT:-\$SRC_MESONH/pub/\${VERSION_NCL}}
+export PATH=\$PATH:\$NCARG_ROOT/bin
+# WARNING : NCARG Man not installed in that version
+export MANPATH=\$MANPATH:\$NCARG_ROOT/man  
+#
+# VARTTY : for graphic tty console identification
+#
+export VARTTY=\`tty\`
+#
+# Variable depending on \$ARCH 
+#
+[ -f \${SRC_MESONH}/conf/conf_\${ARCH} ] && . \${SRC_MESONH}/conf/conf_\${ARCH}
+
+#
+# Optional Environnement variable/Module  Env
+#
+${MNHENV}

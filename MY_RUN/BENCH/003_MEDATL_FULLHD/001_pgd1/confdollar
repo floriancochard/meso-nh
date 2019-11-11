@@ -1,0 +1,4 @@
+export STEP=PGD
+export EXEC=PREP_PGD
+#
+. ../${CONFEXP}

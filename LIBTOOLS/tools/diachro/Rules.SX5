@@ -1,0 +1,13 @@
+#
+# Pas de diaprog sur SX5 
+#
+PROGALL = conv2dia
+#
+#############################################################################
+CPPFLAGS += -DVPP
+F77FLAGS +=
+F90FLAGS +=
+LDFLAGS  += 
+
+OBJS2=
+

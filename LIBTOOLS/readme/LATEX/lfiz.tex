@@ -1,0 +1,61 @@
+\section{Compression of FM files} 
+
+A specific compression tool has been developed for FM files.  This
+tool, called {\tt lfiz}, was first devoted for files that will be
+explored by the graphic utility {\tt diaprog}. In fact, it is also
+used for files used during a simulation (initial and coupling files)
+to reduce the data storage.  Some information of how the compression
+works is given here, its execution is particularly easy.
+
+\subsection{{\tt lfiz} tool}
+
+The \texttt{lfiz} tool works on the binary part (LFI file) of a FM
+file, synchronous or diachronic.  It is a lossy compression tool.
+The compressed articles are exclusively the 2-dimensional or
+3-dimensional \texttt{REAL} fields. When dealing with 3D fields the tool works
+with each 2D plane on every vertical level. The initial values stored
+with 64-bit \texttt{REAL} precision are first converted into 32-bit
+\texttt{REAL} precision and then compressed by mapping the 32-bit
+real values upon 16-bit integer values (with a possible isolation of
+extrema values).  The better compression is
+achieved for fields with small value range.  For fields with missing
+value (e.g.  2-dimensional fields with land-sea mask), the extremum
+value is excluded and the compression is done on significant values of
+the field. The minimum compression ratio is 4 for each 2D or 3D
+\texttt{REAL} compressed field.
+
+\subsection{{\tt unlfiz} tool}
+The \texttt{unlfiz} tool will restore the 64-bit \texttt{REAL} value size to all
+the compressed LFI articles. However, each previously compressed article
+will gain no more than a 32-bit \texttt{REAL} precision because of the lossy
+technique involved above.
+
+
+\subsection{Usage}
+The binary part of the FM file is required in the current
+directory. To compress the file \texttt{myfile.lfi}, you can type:
+
+\begin{verbatim}
+lfiz myfile.lfi
+\end{verbatim}
+
+\noindent This will produce the compressed file \texttt{myfile.Z.lfi}\\
+
+
+\noindent In the same way, to uncompress the file \texttt{myfile.Z.lfi}, you can
+type:
+\begin{verbatim}
+unlfiz myfile.Z.lfi
+\end{verbatim}
+
+\noindent The output file \texttt{myfile.lfi} is a valid LFI file but the LFI
+articles previously compressed are 64-bit \texttt{REAL} with no more than 32-bit
+\texttt{REAL} precision.
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tools"
+%%% End: 

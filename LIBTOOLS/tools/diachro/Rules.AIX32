@@ -1,0 +1,18 @@
+LIBX = -lX11
+
+#LIBV5D = -L/usr/local/lib -lv5d 
+
+LIBGRB = $(EMOSLIB)
+
+#############################################################################
+
+CPPFLAGS += -DHPPA
+F77FLAGS += 
+ifeq ($(B),64)
+F90FLAGS += -qautodbl=dbl4
+endif
+LDFLAGS  += 
+#
+OBJS2 = caresolv.o
+$(OBJS2) : F90FLAGS = -qfree=f90 -qsuffix=f=f90 -O2 -qmaxmem=-1
+

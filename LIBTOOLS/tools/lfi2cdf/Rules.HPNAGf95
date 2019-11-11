@@ -1,0 +1,9 @@
+NETCDFHOME=/free
+DIR_CDF = $(NETCDFHOME)/lib
+LIBCDF = $(DIR_CDF)/libnetcdf.a
+###################################
+CPPFLAGS += -DNAGf95 -DLOWMEM
+INC      += -I$(NETCDFHOME)/include
+F90FLAGS += -r8 -g
+LDFLAGS  += -f77 -w
+

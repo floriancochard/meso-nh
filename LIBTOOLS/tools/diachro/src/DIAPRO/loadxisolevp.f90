@@ -1,0 +1,177 @@
+!     ######spl
+      MODULE  MODI_LOADXISOLEVP
+!     ##############################
+!
+INTERFACE
+!
+SUBROUTINE LOADXISOLEVP(HCARIN,KIND,PISOLEVP)
+CHARACTER(LEN=*) :: HCARIN
+INTEGER          :: KIND
+REAL,DIMENSION(:):: PISOLEVP
+END SUBROUTINE LOADXISOLEVP
+!
+END INTERFACE
+!
+END MODULE MODI_LOADXISOLEVP
+!     ######spl
+      SUBROUTINE LOADXISOLEVP(HCARIN,KIND,PISOLEVP)
+!     #############################################
+!
+!!****  *LOADXISOLEVP* - 
+!!
+!!    PURPOSE
+!!    -------
+!       Memorise pour un processus donne les valeurs
+!       d'isocontours (utilises avec NIMNMX=2)
+!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!      None
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module
+!!
+!!      Module
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       2/09/96
+!!      Updated   PM   
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_RESOLVCAR
+
+IMPLICIT NONE
+!
+!*       0.1   Dummy arguments
+!              ---------------
+
+CHARACTER(LEN=*) :: HCARIN
+INTEGER          :: KIND
+REAL,DIMENSION(:):: PISOLEVP
+!
+!*       0.1   Local variables
+!              ---------------
+
+INTEGER           :: ILEN, IMA
+INTEGER           :: J,JM, JA
+REAL,DIMENSION(:,:),ALLOCATABLE  :: ZISOLEVP
+INTEGER,DIMENSION(:),ALLOCATABLE  :: ILENP
+CHARACTER(LEN=100),DIMENSION(:),ALLOCATABLE  :: YISOLEVP
+
+!
+!------------------------------------------------------------------------------
+ILEN=7
+IF(HCARIN(KIND+ILEN:KIND+ILEN) /= '_')THEN
+  RETURN
+ELSE
+  DO J=ILEN+1,ILEN+100
+    IF(HCARIN(KIND+J:KIND+J) == ' ' .OR.  &
+       HCARIN(KIND+J:KIND+J) == '=')THEN
+      JM=J-1
+      EXIT
+    ENDIF
+  ENDDO
+ENDIF
+IF(NVERBIA > 0)THEN
+  print *,' LOADXISOLEVP ',SIZE(PISOLEVP),' SIZE(PISOLEVP,1) ',SIZE(PISOLEVP,1)
+ENDIF
+ 
+IF(NBISOLEVP == 0)THEN
+! 1er passage
+  NBISOLEVP=NBISOLEVP+1
+  ALLOCATE(XISOLEVP(SIZE(PISOLEVP),NBISOLEVP),CISOLEVP(NBISOLEVP))
+  ALLOCATE(NLENP(NBISOLEVP))
+  XISOLEVP(:,NBISOLEVP)=9999.
+  XISOLEVP(:,NBISOLEVP)=PISOLEVP(:)
+  NLENP(NBISOLEVP)=SIZE(PISOLEVP)
+  CISOLEVP(NBISOLEVP)=HCARIN(KIND+ILEN+1:KIND+JM)
+  CISOLEVP(NBISOLEVP)=ADJUSTL(CISOLEVP(NBISOLEVP))
+    IF(NVERBIA >= 5)THEN
+      DO JA=1,NBISOLEVP
+        print *,' NBISOLEVP ',NBISOLEVP
+        print *,NLENP(JA),CISOLEVP(JA)
+        print *,XISOLEVP(1:NLENP(JA),JA)
+      ENDDO
+    ENDIF
+  RETURN
+ELSE
+  DO J=1,NBISOLEVP
+  IF(HCARIN(KIND+ILEN+1:KIND+JM) == CISOLEVP(J))THEN
+! Cas ou la variable existe deja
+    if(nverbia > 0)then
+    print *,' loadxisolev ap deja.. HCARIN(KIND+ILEN+1:KIND+JM) ', &
+    HCARIN(KIND+ILEN+1:KIND+JM)
+    print *,' loadxisolev CISOLEVP(J) ',CISOLEVP(J)
+    endif
+    IF(SIZE(PISOLEVP) <= SIZE(XISOLEVP,1))THEN
+      XISOLEVP(1:SIZE(XISOLEVP,1),J)=9999.
+      XISOLEVP(1:SIZE(PISOLEVP),J)=PISOLEVP(:)
+      NLENP(J)=SIZE(PISOLEVP)
+      EXIT
+    ELSE
+! AFAIRE A FAIRE
+      ALLOCATE(ZISOLEVP(SIZE(XISOLEVP,1),NBISOLEVP))
+      ZISOLEVP(:,:)=XISOLEVP(:,:)
+      IMA=MAX(SIZE(XISOLEVP,1),SIZE(PISOLEVP,1))
+      DEALLOCATE(XISOLEVP)
+      ALLOCATE(XISOLEVP(IMA,NBISOLEVP))
+      XISOLEVP(1:SIZE(ZISOLEVP,1),:)=ZISOLEVP(:,:)
+      XISOLEVP(1:SIZE(PISOLEVP),J)=PISOLEVP(:)
+      NLENP(J)=SIZE(PISOLEVP)
+    ENDIF
+    IF(NVERBIA >= 5)THEN
+      DO JA=1,NBISOLEVP
+        print *,' NBISOLEVP ',NBISOLEVP
+        print *,NLENP(JA),CISOLEVP(JA)
+        print *,XISOLEVP(1:NLENP(JA),JA)
+      ENDDO
+    ENDIF
+    RETURN
+  ENDIF
+  ENDDO
+! Cas ou la variable n'existe pas
+  ALLOCATE(ZISOLEVP(SIZE(XISOLEVP,1),NBISOLEVP),YISOLEVP(NBISOLEVP))
+  ALLOCATE(ILENP(NBISOLEVP))
+  ZISOLEVP(:,:)=XISOLEVP(:,:)
+  YISOLEVP(:)=CISOLEVP(:)
+  ILENP(:)=NLENP(:)
+  IMA=MAX(SIZE(XISOLEVP,1),SIZE(PISOLEVP,1))
+  DEALLOCATE(XISOLEVP,CISOLEVP,NLENP)
+  NBISOLEVP=NBISOLEVP+1
+  ALLOCATE(XISOLEVP(IMA,NBISOLEVP),CISOLEVP(NBISOLEVP))
+  ALLOCATE(NLENP(NBISOLEVP))
+  XISOLEVP(1:SIZE(ZISOLEVP,1),1:NBISOLEVP-1)=ZISOLEVP(:,:)
+  CISOLEVP(1:NBISOLEVP-1)=YISOLEVP(:)
+  XISOLEVP(1:SIZE(PISOLEVP),NBISOLEVP)=PISOLEVP(:)
+  NLENP(1:NBISOLEVP-1)=ILENP(:)
+  NLENP(NBISOLEVP)=SIZE(PISOLEVP)
+  CISOLEVP(NBISOLEVP)=HCARIN(KIND+ILEN+1:KIND+JM)
+  CISOLEVP(NBISOLEVP)=ADJUSTL(CISOLEVP(NBISOLEVP))
+  DEALLOCATE(ZISOLEVP,YISOLEVP,ILENP)
+    IF(NVERBIA >= 5)THEN
+      DO JA=1,NBISOLEVP
+        print *,' NBISOLEVP ',NBISOLEVP
+        print *,NLENP(JA),CISOLEVP(JA)
+        print *,XISOLEVP(1:NLENP(JA),JA)
+      ENDDO
+    ENDIF
+ENDIF
+RETURN
+END SUBROUTINE LOADXISOLEVP

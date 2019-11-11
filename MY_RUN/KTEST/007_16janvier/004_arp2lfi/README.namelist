@@ -1,0 +1,24 @@
+Description of namelist variables used to run pre_real_case
+############################################################
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+
+######################################################################################################
+
+NAM_FILE_NAMES 
+HATMFILE 	='arpifs.AN.19980116.06'; name of the atmospheric file (up to 28 characters) 
+HATMFILETYPE	='GRIBEX'		; type of the atmospheric file ('GRIBEX' or 'MESONH')
+HPGDFILE 	='16JAN98_36km.neste1' 	; name of the physiographic data file
+CINIFILE	='16JAN_06_MNH' 	; name of the MESO-NH output file
+
+&NAM_VER_GRID (vertical grid definition)
+NKMAX		=50 			; number of points in z-direction
+YZGRID_TYPE	='FUNCTN'		; type of vertical grid definition
+					( 'FUNCTN' : the levels are calculated by the program
+					  'MANUAL' : the levels are written in the free-formatted part
+					  'SAMEGR' : the levels are the same as those in the input file )
+ZDZGRD		=60. 			; gridsize in z-direction near the ground (in meter)
+ZDZTOP		=700.			; gridsize in z-direction near the top of the model (in meter)
+ZZMAX_STRGRD	=2500. 			; altitude separating the two constant stretching layers
+ZSTRGRD		=9. 			; constant imposed stretching (in %) in the lower layer (below ZZMAX_STRGRD)
+ZSTRTOP		=7. 			; constant imposed stretching (in %) in the upper layer (above ZZMAX_STRGRD)

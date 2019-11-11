@@ -1,0 +1,4 @@
+CPPFLAGS += 
+F77FLAGS += 
+F90FLAGS += -r8
+LDFLAGS  +=

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -x
+set -e
+rm -f eurocs* OUTPUT_LISTING* pipe* *.tex
+time ${MONORUN} PREP_IDEAL_CASE${XYZ}
+#ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_PGD${XYZ}

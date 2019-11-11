@@ -1,0 +1,218 @@
+Description of namelist variables used for prep_ideal_case
+###########################################################
+
+This namelist is made of two parts :
+
+    * A namelist-part with directives for the preparation of an idealized case (always present). The order of namelists is free and unset namelists can be ommited.
+    * A free-formatted part describing a vertical profile of n layers of constant moist Brunt-Vaisala frequency or a radiosounding and sometimes the explicit list of the heights of the vertical levels. This part can be present or absent in the other cases. 
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+
+Details of the namelist-part 
+#############################
+
+&NAM_DIMn_PRE (dimensions)
+NIMAX		=256     	; number of points in x-direction 
+NJMAX		=1          	; number of points in y-direction
+
+&NAM_VER_GRID  (vertical grid definition)
+NKMAX		=48 		; number of points in z-direction 
+ZDZGRD		=40.		; gridsize in z-direction near the ground (in meter)
+ZDZTOP		=500.		; gridsize in z-direction near the top of the model (in meter)
+ZZMAX_STRGRD	=5000.	  	; altitude separating the two constant stretching layers
+ZSTRGRD		=10.  		; constant imposed stretching (in %) in the lower layer (below ZZMAX_STRGRD)
+ZSTRTOP		=10. 		; constant imposed stretching (in %) in the upper layer (above ZZMAX_STRGRD)
+
+&NAM_CONF_PRE 
+LCARTESIAN	=.TRUE.		; switch for cartesian geometry (.TRUE. for cartesian geometry 
+								.FALSE. for conformal projection)
+LBOUSS		=.FALSE. 	; switch for a Boussinesq version (.FALSE. The reference anelastic state 
+									varies with the altitude)
+NVERB		=5              ; verbosity level 	(0 for minimum of prints
+							5 for intermediate level of prints
+							10 for maximum of prints)
+CIDEAL		='RSOU'         ; type of of idealized fields 	('CSTN' for constant moist Brunt Vaisala frequency case
+								'RSOU'  for radiosounding case )
+CZS		='BELL'         ; type of orography 	('FLAT' for constant XHMAX orography-zero by default
+							'SINE' for sine-shaped orography 
+							'BELL' for bell-shaped orography
+							'DATA' for discretized orography)
+
+&NAM_CONFn (configuration variables for modeln)
+LUSERV		=.TRUE. 	; switch to write vapor mixing ratio in initial file (TRUE when CIDEAL='RSOU')
+
+&NAM_GRID_PRE (projection definition)
+XLAT0		=43.29 		; reference latitude for conformal projection and cartesian plane
+
+&NAM_GRIDH_PRE (horizontal grid definition)
+XDELTAX		=5.E3		; gridsize in x-direction (in meter)
+XDELTAY		=5.E3		; gridsize in y-direction (in meter)
+XHMAX		=500.		; maximum height (in meter) for orography (case CZS non equal to 'FLAT') 
+					or ground level for flat orography 
+XAX		=10.E3 		; width (in meter) along x for orography in case CZS='BELL' 
+XAY		=10.E3 		; width (in meter) along y for orography in case CZS='BELL'
+NIZS		=128 		; position in x-direction of the mountain center in the case CZS ='BELL'
+NJZS		=2 		; position in y-direction of the mountain center in the case CZS ='BELL'
+
+&NAM_LUNITn 
+CINIFILE	='HYD2D' 	; name of the initial file produced by PREP_IDEAL_CASE 
+				and used as initial file for MESONH numerical simulation. 
+
+&NAM_LBCn_PRE (lateral boundary conditions)
+CLBCX		= 2*'CYCL' 	; type of lateral boundary condition at the left and right boundaries along x
+					("CYCL" for cyclic boundary conditions
+					"OPEN" for open boundqary conditions
+					"WALL" for rigid boundary conditions)
+CLBCY		= 2*'CYCL' 	; type of lateral boundary condition at the left and right boundaries along y
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+
+
+&NAM_VPROF_PRE (variables for CIDEAL ='CSTN' or 'RSOU') 
+CTYPELOC	='IJGRID'	; type of informations used to give the location of vertical profile 
+				 (string of 6 characters)
+    				 ('IJGRID' for (i,j) point on index space
+			    	 'XYHATM' for (x,y) coordinates on conformal plane or cartesian plane
+			    	 'LATLON' for (latitude,longitude) on spherical earth)
+
+NILOC		=10		; i-position of the vertical profile (used in cases CTYPELOC='IJGRID')
+NJLOC		=2		; j-position of the vertical profile (used in cases CTYPELOC='IJGRID')
+CFUNU		='ZZZ'		; type of function for the x-component of the wind
+				 ('ZZZ' : U = U(z) taken from the Radio-Sounding 
+					or analitycal profile given in the free-formatted part)
+				  'Y*Z' : U= F(Y)*U(Z)
+				  'Y,Z' : U= G(Y,Z))
+CFUNV		='ZZZ'		; type of function for the y-component of the wind
+				 ('ZZZ' : V = V(z) taken from the Radio-Sounding
+                                        or analitycal profile given in the free-formatted part)
+                                  'X*Z' : V= F(X)*V(Z)
+                                  'X,Z' : V= G(X,Z))
+LGEOSBAL	=.FALSE.	; switch for the geostrophic balance
+
+
+Details of the free-formatted part
+##################################
+
+RSOU				; radiosounding data are written in the free-format part 
+2000 1 1 0.			; YEAR MONTH DAY TIME (in seconds)
+'ZUVTHDMR'			; type of data used for the radiosounding
+				('STANDARD' ,'PUVTHVMR', 'PUVTHVHU', 'ZUVTHVMR', 'ZUVTHVHU', 
+				'PUVTHDMR', 'PUVTHDHU', 'ZUVTHDMR', 'ZUVTHLMR')
+				For STANDARD type: the altitude variable is the pressure, 
+					the wind variables are direction and force of wind, 
+					the temperature variable is the temperature and 
+					the moist variable is the due point temperature.  
+				For all other types: 
+					1st letter: variable used for altitude (P for pressure and Z for height)
+                                	2nd and 3rd letters: wind variables (U for zonal wind, V for meridian wind)
+					4th, 5th and 6th letters:temperature variables (THV for virtual potential 
+						temperature, THD for dry potential temperature and
+						 THL for liquid potential temperature) 
+					7th and 8th letters: moist variables (HU for relative humidity and 
+						MR for vapor mixing ratio)
+0.0				; ground level height (in meter)
+100000.				; pressure at ground level (in Pa)
+285.				; temperature at ground level (in K)
+3.969834663680948E-3		; moisture at ground level (in kg/kg)
+49				; number of levels for the wind data 
+ 20.                 4.899679558744793   0.E+0	; altitude x-wind y-wind
+ 61.99999999999977  6.087279296344803   0.E+0
+ 108.1999999999989  7.042433235678175   0.E+0
+ 159.0199999999977  7.950357035147192   0.E+0
+ 214.9219999999968  8.785414474783749   0.E+0
+ 276.4141999999938  9.560131493941583   0.E+0
+ 344.0556199999901  9.969777568513507   0.E+0
+ 418.4611819999845  9.99996961844414    0.E+0
+ 500.3073001999783  9.999999999993292   0.E+0
+ 590.3380302199694  9.999999999999773   0.E+0
+ 689.3718332419558  9.999999999999545   0.E+0
+ 798.3090165661415  9.999999999998863   0.E+0
+ 918.1399182227397  10.00000000000006   0.E+0
+ 1049.953910044998  10.                 0.E+0
+ 1194.949301049477  10.00000000000034   0.E+0
+ 1354.444231154397  10.                 0.E+0
+ 1529.888654269809  9.999999999999829   0.E+0
+ 1722.877519696762  9.999999999999773   0.E+0
+ 1935.165271666403  9.999999999999773   0.E+0
+ 2168.681798833     10.0000000000004       0.E+0
+ 2425.549978716255  10.00000000000011   0.E+0
+ 2708.104976587842  9.999999999999545   0.E+0
+ 3018.915474246562  10.                0.E+0
+ 3360.807021671164  10.00000000000006   0.E+0
+ 3736.887723838212  9.999999999999432   0.E+0
+ 4150.57649622194  10.00000000000006   0.E+0
+ 4605.634145844058  10.00000000000006   0.E+0
+ 5093.99767659849  10.  0.E+0
+ 5593.99767659849  10.   0.E+0
+ 6093.99767659849  9.999999999998749  0.E+0
+ 6593.99767659849  9.999999999999773  0.E+0
+ 7093.99767659849  9.999999999999432  0.E+0
+ 7593.99767659849  10.00000000000006  0.E+0
+ 8093.99767659849  10.  0.E+0
+ 8593.99767659849  9.999999999999147  0.E+0
+ 9093.99767659849  10.00000000000006  0.E+0
+ 9593.99767659849  10.00000000000006  0.E+0
+ 10093.99767659849  10.               0.E+0
+ 10593.99767659849 9.999999999998977  0.E+0
+ 11093.99767659849  10.  0.E+0
+ 11593.99767659849  10.  0.E+0
+ 12093.99767659849  10.  0.E+0
+ 12593.99767659849  10.  0.E+0
+ 13093.99767659849  9.999999999998806  0.E+0
+ 13593.99767659849  10.00000000000006  0.E+0
+ 14093.99767659849  10.                0.E+0
+ 14593.99767659849  10.00000000000006  0.E+0
+ 15093.99767659849  10.00000000000034  0.E+0
+ 15843.99767659849  10.00000000000034  0.E+0
+49			; number of levels for thermodynamic data (Note that this number includes the ground level.
+				This is why there is only 48 lines in the following.)
+ 20.                284.6918121778854  3.973551993460444E-3	; altitude temperature moisture
+ 61.99999999999977  284.7008998576166  3.969834663680948E-3
+ 108.1999999999989  284.7182724643735  3.962732181377909E-3
+ 159.0199999999977  284.7505499845665  3.949548259937901E-3
+ 214.9219999999968  284.810525987461   3.925090498607009E-3
+ 276.4141999999938  284.9486405349289  3.868947516355414E-3
+ 344.0556199999901  285.293033532138   3.730476389686751E-3
+ 418.4611819999845  285.5932587278658  3.612842473712671E-3
+ 500.3073001999783  285.8491631402867  3.51511669145689E-3
+ 590.3380302199694  286.1297982441884  3.410155487933538E-3
+ 689.3718332419558  286.4383568052544  3.297386361121687E-3
+ 798.3090165661415  286.7776070523178  3.176551555237355E-3
+ 918.1399182227397  287.1505909368971  3.047462833824884E-3
+ 1049.953910044998  287.560651584743   2.910023326054639E-3
+ 1194.949301049477  288.0114637878232  2.764252892850011E-3
+ 1354.444231154397  288.5070679989312  2.610317036379691E-3
+ 1529.888654269809  289.0519084107491  2.448559116302651E-3
+ 1722.877519696762  289.6508758516065  2.27953524704956E-3
+ 1935.165271666403  290.3093564286264  2.104050693308212E-3
+ 2168.681798833     291.0332871047012  1.923195815810303E-3
+ 2425.549978716255  291.8292197230421  1.738378612484041E-3
+ 2708.104976587842  292.704395402463   1.551349637705479E-3
+ 3018.915474246562  293.6668317208696  1.364213596329405E-3
+ 3360.807021671164  294.7254256822107  1.17942031424878E-3
+ 3736.887723838212  295.8900760906345  9.99726336926375E-4
+ 4150.57649622194   297.1718295736846  8.281175612891052E-4
+ 4605.634145844058  298.5830549909097  6.676838010179451E-4
+ 5093.99767659849   300.0997284145978  5.246601204132832E-4
+ 5593.99767659849   301.6555663366998  4.053429487614022E-4
+ 6093.99767659849   303.2151642882291  3.094472822477174E-4
+ 6593.99767659849   304.7791762247198  2.332880980962731E-4
+ 7093.99767659849   306.348201035793   1.735561634422337E-4
+ 7593.99767659849   307.9227797563744  1.273221166139364E-4
+ 8093.99767659849   309.5033947298434  9.203044616376164E-5
+ 8593.99767659849   311.0904704959285  6.548482863943938E-5
+ 9093.99767659849   312.6843761373293  4.582644772997235E-5
+ 9593.99767659849   314.2854287947303  3.150698808811647E-5
+ 10093.99767659849  315.8938980526436  2.12579856440668E-5
+ 10593.99767659849  317.510010904125   1.405813326967427E-5
+ 11093.99767659849  319.1339570210475  9.09999808017519E-6
+ 11593.99767659849  320.7658940836536  5.757417140833356E-6
+ 12093.99767659849  322.4059529598653  3.554615207638603E-6
+ 12593.99767659849  324.0542425640779  2.137845189416023E-6
+ 13093.99767659849  325.7108542704755  1.250103289131598E-6
+ 14093.99767659849  329.0493445271368  3.894876870197631E-7
+ 14593.99767659849  330.7313501116605  2.065174327501689E-7
+ 15093.99767659849  332.4219373463184  1.054266626352389E-7
+ 15843.99767659849  332.4219373463184  1.054266626352389E-7
+

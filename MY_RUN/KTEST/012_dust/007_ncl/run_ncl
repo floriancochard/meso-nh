@@ -1,0 +1,14 @@
+set -x
+ln -sf ../004_restart/DUST7.1.SEG02.004.nc .
+
+rm -f visu_dust.*.png
+
+ncl plot_dust.ncl
+
+for ECH in '000001' '000002' '000003' '000004' '000005' '000006' '000007' '000008' '000009' '000010' '000011' 
+
+
+
+do
+display visu_dust.${ECH}.png
+done

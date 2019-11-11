@@ -1,0 +1,196 @@
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+!     #####################
+      MODULE MODD_MEGAN_n
+!     ######################
+!
+!!
+!!    PURPOSE
+!!    -------
+!     
+!   
+!
+!!
+!!**  IMPLICIT ARGUMENTS
+!!    ------------------
+!!      None
+!!
+!
+!!    AUTHOR
+!!    ------
+!!  P. Tulet   *LACy
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!  16/07/2003 (P. Tulet)    restructured for externalization
+!!  24/05/2017 (J. Pianezze) adaptation for SurfEx v8.0
+!!  13/02/2019 (J. Pianezze) correction for use of MEGAN
+!------------------------------------------------------------------------------
+!
+!*       0.   DECLARATIONS
+!             ------------
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+TYPE MEGAN_t
+!
+  INTEGER  :: NBIO, NALKA, NALKE, NARO, NCARBO, NETHE, NOLEL, NOLEH, &
+              NALKL, NALKM, NALKH, NAROH, NAROO, NAROL, NARAL, NSO,  &
+              NARAC, NPAH, NALD2, NKETL, NKETH, NMEOH, NETOH, NALCH, &
+              NISOP, NBIOL, NBIOH, NMTBE, NMVK, NMCR, NMGLY, NISO,   &
+              NCH4, NETH, NHC3, NHC5, NHC8, NOL2, NOLI, NOLT, NALD,  &
+              NKET, NTOL, NHCHO, NORA1, NORA2, NAPI, NLIM, NCO,      &
+              NSO2, NNO, NHNO3, NNO2, NNR, N3CAR, NACTA, NACTO,      &
+              NAPIN, NFORM, NBPIN, NMYRC, NOCIM, NOMTP, NSABI,       &
+              NISP, NTRP, NXYLA, NCG5, NSQT, NTOLA, NCG6, NCG4,      &
+              NISOPRENE, NTRP1, NACET, NMEK, NHCOOH, NCCO_OH,        &
+              NCCHO, NRCHO, NRCO_OH, NBALD, NETHENE, NALK4, NALK5,   & 
+              NARO1, NARO2, NOLE1, NACID
+!
+  CHARACTER(LEN=16)  :: CMECHANISM             ! name of the MesoNH chemical scheme
+  CHARACTER(LEN=16)  :: CMECHANISM2            ! name of the MEGAN scheme used for conversion
+  LOGICAL            :: LCONVERSION            ! flag for the MEGAN output species (speciation on scheme or not)
+  INTEGER            :: NVARS3D,  N_SCON_SPC   ! number of megan and chemical scheme species
+  REAL               ::  XDROUGHT              ! Drought Index
+  REAL               ::  XDAILYPAR             ! Mean daily PAR
+  REAL               ::  XDAILYTEMP            ! Mean daily temperature (K)
+  REAL               ::  XMODPREC              ! Precipitation correction factor (megan)
+  REAL, POINTER, DIMENSION(:,:) :: XEF         ! efficiency factor
+  REAL, POINTER, DIMENSION(:,:) :: XPFT        ! PFT factor (veg type)
+  INTEGER, POINTER, DIMENSION(:) :: NSLTYP     ! USDA soil number category
+  CHARACTER(LEN=16), POINTER, DIMENSION(:) :: CVNAME3D  ! name of the scheme species
+  CHARACTER(LEN=16), POINTER, DIMENSION(:) :: CMECH_SPC ! name of the scheme species
+  INTEGER, POINTER, DIMENSION(:) :: NSPMH_MAP           ! index map of the scheme species
+  INTEGER, POINTER, DIMENSION(:) :: NMECH_MAP           ! index map the mecanisum species
+  REAL, POINTER, DIMENSION(:) :: XCONV_FAC              ! conversion factor of species
+  REAL, POINTER, DIMENSION(:) :: XMECH_MWT              ! molecular weight of species
+  REAL, POINTER, DIMENSION(:) ::XBIOFLX                 ! molecular weight of species
+!
+END TYPE MEGAN_t
+
+ CONTAINS
+!
+SUBROUTINE MEGAN_INIT(YMEGAN)        
+TYPE(MEGAN_t), INTENT(INOUT) :: YMEGAN
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_MEGAN_n:MEGAN_INIT",0,ZHOOK_HANDLE)
+NULLIFY(YMEGAN%XEF)
+NULLIFY(YMEGAN%XPFT)
+NULLIFY(YMEGAN%NSLTYP)
+NULLIFY(YMEGAN%CVNAME3D)
+NULLIFY(YMEGAN%CMECH_SPC)
+NULLIFY(YMEGAN%NSPMH_MAP)
+NULLIFY(YMEGAN%NMECH_MAP)
+NULLIFY(YMEGAN%XCONV_FAC)
+NULLIFY(YMEGAN%XMECH_MWT)
+NULLIFY(YMEGAN%XBIOFLX)
+YMEGAN%NBIO=0
+YMEGAN%NALKA=0
+YMEGAN%NALKE=0
+YMEGAN%NARO=0
+YMEGAN%NCARBO=0
+YMEGAN%NETHE=0
+YMEGAN%NOLEL=0
+YMEGAN%NOLEH=0
+YMEGAN%NALKL=0
+YMEGAN%NALKM=0
+YMEGAN%NALKH=0
+YMEGAN%NAROH=0
+YMEGAN%NAROO=0
+YMEGAN%NAROL=0
+YMEGAN%NARAL=0
+YMEGAN%NSO=0
+YMEGAN%NARAC=0
+YMEGAN%NPAH=0
+YMEGAN%NALD2=0
+YMEGAN%NKETL=0
+YMEGAN%NKETH=0
+YMEGAN%NMEOH=0
+YMEGAN%NETOH=0
+YMEGAN%NALCH=0
+YMEGAN%NISOP=0
+YMEGAN%NBIOL=0
+YMEGAN%NBIOH=0
+YMEGAN%NMTBE=0
+YMEGAN%NMVK=0
+YMEGAN%NMCR=0
+YMEGAN%NMGLY=0
+YMEGAN%NISO=0
+YMEGAN%NCH4=0
+YMEGAN%NETH=0
+YMEGAN%NHC3=0
+YMEGAN%NHC5=0
+YMEGAN%NHC8=0
+YMEGAN%NOL2=0
+YMEGAN%NOLI=0
+YMEGAN%NOLT=0
+YMEGAN%NALD=0
+YMEGAN%NKET=0
+YMEGAN%NTOL=0
+YMEGAN%NHCHO=0
+YMEGAN%NORA1=0
+YMEGAN%NORA2=0
+YMEGAN%NAPI=0
+YMEGAN%NLIM=0
+YMEGAN%NCO=0
+YMEGAN%NSO2=0
+YMEGAN%NNO=0
+YMEGAN%NHNO3=0
+YMEGAN%NNO2=0
+YMEGAN%NNR=0
+YMEGAN%N3CAR=0
+YMEGAN%NACTA=0
+YMEGAN%NACTO=0
+YMEGAN%NAPIN=0
+YMEGAN%NFORM=0
+YMEGAN%NBPIN=0
+YMEGAN%NMYRC=0
+YMEGAN%NOCIM=0
+YMEGAN%NOMTP=0
+YMEGAN%NSABI=0
+YMEGAN%NISP=0
+YMEGAN%NTRP=0
+YMEGAN%NXYLA=0
+YMEGAN%NCG5=0
+YMEGAN%NSQT=0
+YMEGAN%NTOLA=0
+YMEGAN%NCG6=0
+YMEGAN%NCG4=0
+YMEGAN%NISOPRENE=0
+YMEGAN%NTRP1=0
+YMEGAN%NACET=0
+YMEGAN%NMEK=0
+YMEGAN%NHCOOH=0
+YMEGAN%NCCO_OH=0
+YMEGAN%NCCHO=0
+YMEGAN%NRCHO=0
+YMEGAN%NRCO_OH=0
+YMEGAN%NBALD=0
+YMEGAN%NETHENE=0
+YMEGAN%NALK4=0
+YMEGAN%NALK5=0
+YMEGAN%NARO1=0
+YMEGAN%NARO2=0
+YMEGAN%NOLE1=0
+YMEGAN%NACID=0
+!
+YMEGAN%CMECHANISM=' '
+YMEGAN%CMECHANISM2=' '
+YMEGAN%LCONVERSION=.FALSE.
+YMEGAN%NVARS3D=0
+YMEGAN%N_SCON_SPC=0
+YMEGAN%XDROUGHT=0.
+YMEGAN%XDAILYPAR=150.
+YMEGAN%XDAILYTEMP=293.
+YMEGAN%XMODPREC=0.
+IF (LHOOK) CALL DR_HOOK("MODD_MEGAN_n:MEGAN_INIT",1,ZHOOK_HANDLE)
+END SUBROUTINE MEGAN_INIT
+
+
+END MODULE MODD_MEGAN_n

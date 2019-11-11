@@ -1,0 +1,138 @@
+#!/bin/sh
+##
+## Run Parameter
+##
+
+export MNH_EXP=007_16janvier_4101
+export REMSH="#"
+
+##
+## transfert protocole
+##
+
+export INDIR="KTEST/${MNH_EXP}/DIR${XYZ}"
+
+##
+## Here some examples of different location of archiving files
+## depending of the 'INHOST' value
+##
+## To test it in different configuration -->  'hostname' and '$WHERE' flag  test 
+##
+
+case `hostname` in
+
+    aeropc*)
+    case "${WHERE}" in
+ 	remote) # to get/put files via 'ssh' where you want
+                # you need ssh key to avoid password prompt !!!
+	export INHOST="mesonh@yin"
+	export INDIR="/raid4/mesonh/ARCH/${INDIR}"
+	;;
+	local|*) # default in local host --> global path needed
+	export INHOST=""
+	export INDIR="${HOME}/ARCH/${INDIR}"
+	;;
+    esac
+    ;;
+
+    brodie*|vargas*)
+    case "${WHERE}" in
+ 	local) # to get/put file in workdir --> workdir  add automaticly
+	export INHOST="workdir"
+	;;
+	remote) # to get/put files via 'ssh' where you want
+                # you need ssh key to avoid password prompt !!!
+	export INHOST="escj@aeropc107.aero.obs-mip.fr"
+	export INDIR="/workdir/escj/ARCH/${INDIR}"
+        ;;
+	gaya) #default --> gaya
+	export INHOST=""
+	;;
+    esac
+    ;;
+
+    c1a*) # default ECFS files 
+    export INHOST=""
+    ;;
+
+    service*) # default ECFS files 
+    export INHOST="workdir"
+    ;;
+
+    *) #for unknow host --> default local host
+    export INHOST=""
+    export INDIR="${HOME}/${INDIR}"
+    ;;
+esac
+
+export OUTDIR="${INDIR}"
+
+##
+## 001 Prep_Pgd parameters
+##
+
+export CPGDFILE1="16JAN98_36km"
+
+##
+## 002 Prep_Pgd nest parameters
+##
+
+export CPGDFILE2="16JAN98_9km"  
+
+##
+## 003 Prep_Nest parameters
+##
+
+export YNEST="e1"
+
+##
+## 004 Prep_Real_Case parameters
+##
+
+export HATMFILE1="arpifs.AN.19980116.06"
+export HPGDFILE1="${CPGDFILE1}.nest${YNEST}"
+export CINIFILE1="16JAN_06_MNH"
+
+##
+## 005 Spawn parameters
+##
+
+export YDOMAIN1="${CPGDFILE1}.nest${YNEST}"
+export YDOMAIN2="${CPGDFILE2}.nest${YNEST}"
+export YSPANBR="04"
+
+##
+## 006 Prep Real model2 
+##
+
+export HATMFILE2="${CINIFILE1}.spa${YSPANBR}"
+export HPGDFILE2="${CPGDFILE2}.nest${YNEST}"
+export CINIFILE2="16JAN_06_MNH2"
+
+##
+## 008 Mesonh parameters
+##
+
+export CEXP="16JAN" CSEG="12B18"
+
+##
+## 009 Diag parameters
+##
+
+#export YINIFILE1="${CEXP}.1.${CSEG}.001"
+export YINIFILE2="${CEXP}.2.${CSEG}.001"
+export YSUFFIX="dg"
+
+##
+## 010 Conv2dia parameters
+##
+
+# output sufixe files
+export CVYSUFFIX="cv"
+
+##
+## 011 Diaprog parameters
+##
+ 
+export FILE2="${YINIFILE2}${CVYSUFFIX}"
+

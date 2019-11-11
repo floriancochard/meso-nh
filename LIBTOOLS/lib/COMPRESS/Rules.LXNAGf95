@@ -1,0 +1,5 @@
+F77FLAGS +=
+F90FLAGS += -O2
+CPPFLAGS = -DNAGf95 -DLITTLE_endian
+
+OBJS=comppar.o compress.o decompress.o nearestpow2.o searchgrp.o bitbuff.o

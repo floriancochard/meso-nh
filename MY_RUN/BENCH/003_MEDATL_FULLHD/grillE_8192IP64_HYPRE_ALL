@@ -1,0 +1,112 @@
+# GRILLE 6144x6144x128
+#
+# GRID FACTOR & NSTEP
+#
+#export GRIDFAC=64
+export GRIDFAC=1
+export GRIDFAC=8
+export GRIDFAC=32
+export NSTEP=51
+#
+# job parameter
+#
+export EXECDIR=${SCRATCH}/${CONFEXP}${XYZ}
+
+#
+export TIME_PIDEAL=1800  # max CPU time for PREP_IDEAL_CASE 
+export QUEUE_PIDEAL=test # batch queue test/bigmem
+#
+export TIME=3600                # max ELAPSE CPU time for MESONH                 
+#export NCN=0512 NBP=2048 MODE=VN SHAPE=1x1x1 # number of processor for  PREP_IDEAL
+#export NCN=1024 NBP=4096 MODE=VN SHAPE=2x1x1 # number of processor for MESONH
+#export NCN=1024 NBP=2048 MODE=DUAL SHAPE=2x1x1 # number of processor for MESONH
+#export NCN=2048 NBP=4096 MODE=DUAL SHAPE=1x2x2 # number of processor for MESONH
+#export NCN=2048 NBP=8192 MODE=VN SHAPE=2x2x1 LISTE_MAP="TXYZ" MPI_LIMIT="300" # number of processor for MESONH
+#export NCN=4096 NBP=16384 MODE=VN SHAPE=2x2x2 # number of processor for MESONH
+#export NCN=8192 NBP=32768 MODE=VN SHAPE=2x2x4 LISTE_MAP="TXYZ" MPI_LIMIT="300" # number of processor for MESONH
+#export NCN=16384 NBP=65536 MODE=VN SHAPE=2x4x4 # number of processor for MESONH
+#export NCN=32768 NBP=131072 MODE=VN SHAPE=4x4x4 LISTE_MAP="TXYZ" MPI_LIMIT="300" # number of processor for MESONH
+#export NCN=65536 NBP=262144 MODE=VN SHAPE=8x4x4 LISTE_MAP="TZYX" MPI_LIMIT="300"  # number of processor for MESONH
+#export NBP=0256 CORE=8 TIME_MNH=3600
+#export NBP=0128 CORE=2 TIME_MNH=3600
+export NBP=0512 CORE=4 TIME_MNH=7200 PROC_ARCH=nhm
+#export NBP=128 CORE=8 TIME_MNH=7200  PROC_ARCH=hpt
+#export NBP=512 CORE=8 TIME_MNH=3600  PROC_ARCH=nhm
+#export NBP=1024 CORE=8 TIME_MNH=3600  PROC_ARCH=nhm
+#export NBP=2048 CORE=8 TIME_MNH=3600 PROC_ARCH=nhm
+#export NBP=2048 CORE=8 TIME_MNH=3600 PROC_ARCH=nhm
+#export NBP=3072 CORE=8 TIME_MNH=3600 PROC_ARCH=nhm
+#export NBP=4096 CORE=8 TIME_MNH=7200 PROC_ARCH=nhm
+#export NBP=8192 CORE=8 TIME_MNH=3600
+#export NBP=10240 CORE=8 TIME_MNH=3600
+#export NBP=12288 CORE=8 TIME_MNH=3600
+#export NBP=16384 CORE=8 TIME_MNH=3600
+#
+#
+export NCPUS=${NCPUS-${CORE}} MPIPROCS=${CORE}                                                                                
+export NBNODES=$( echo " scale=0 ; 1 + ( ${NBP} - 1 ) / ${NCPUS} " | bc -l )                                                 
+export MONORUN="mpiexec_mpt -n ${NBP} "                                                                           
+export MPIRUN="mpiexec_mpt -n ${NBP} "            
+export RUN_MODE="${CORE}CORE_${NBP}NBP"
+export EXECDIR=${SCRATCH}/${CONFEXP}${XYZ}/${RUN_MODE}
+export MEM_MAX=32000000
+export MEM="$( echo " scale=0 ;  ${MEM_MAX} / ${NCPUS} " | bc -l )"
+
+ulimit -c 0
+export MNHENV="
+#ulimit -m $MEM
+cat \$PBS_NODEFILE | uniq > mpd.hosts
+#mpdcleanup -f mpd.hosts --rsh=ssh
+mpdboot --rsh=ssh -v -n \$(cat mpd.hosts|wc -l) -f mpd.hosts
+nprocs=\$(cat \$PBS_NODEFILE|wc -l)
+"
+
+export MONORUN=" mpiexec -ilp64 -np \$nprocs "
+export MPIRUN=" mpiexec -ilp64 -np \$nprocs "
+
+
+# prep_pgd NoPROC write
+export NB_PROCIO_W_PGD=8
+#export NB_PROCIO_W_PGD=1
+
+#
+# Initial grid & time parameter
+#
+export XLAT0=44.0       XLON0=-20.0
+
+export   NIMAX0=128     NJMAX0=128  CSPLIT="BSPLITTING"
+export XDELTAX0=48000.0 XDELTAY0=48000.0
+
+export XTSTEP0=0.5
+#export NKMAX=64
+export NKMAX=126
+
+export NB_PROCIO_R_MNH=128
+export NB_PROCIO_W_MNH=128
+export MPI_BUFFER_SIZE=600
+
+#
+# MNH parameter
+#
+export LISTE_CPRESOPT="CRESI"
+export NITR=16
+export NIMAX=$( echo "${GRIDFAC} * ${NIMAX0} " | bc -l )
+export NJMAX=$( echo "${GRIDFAC} * ${NJMAX0} " | bc -l )
+#
+export XDELTAX=$( echo " scale=5 ; ${XDELTAX0} / ${GRIDFAC} " | bc -l )
+export XDELTAY=$( echo " scale=5 ; ${XDELTAY0} / ${GRIDFAC} " | bc -l )
+export XDX=${XDELTAX}
+export XDY=${XDELTAY}
+
+#
+export CINIFILE=$( printf "KW%4.4d\n" ${NIMAX} )
+#
+export CEXP=$( printf "K%4.4d\n" ${NIMAX} )
+export CSEG="SG474"
+#
+export XTSTEP=$( echo " scale=5 ; ${XTSTEP0} / ${GRIDFAC} " | bc -l )
+export XSEGLEN=$( echo "$NSTEP * $XTSTEP" | bc -l )
+
+# PGDH = PGD Helene
+export CPGDFILE=$( printf "PGDH%4.4d" ${NIMAX} )
+

@@ -1,0 +1,4 @@
+F90FLAGS += -g
+CPPFLAGS +=
+LDFLAGS  +=
+

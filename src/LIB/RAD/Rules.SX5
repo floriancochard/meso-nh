@@ -1,0 +1,15 @@
+F77FLAGS +=  -dw -Wf"-A dbl4" -P static
+F90FLAGS +=  -dw -Wf"-A dbl4" -P static
+
+CPP = f90 -E -macro_expand
+CPPFLAGS = 
+#SPL = cat 
+SPL = egrep -v '^\#' 
+
+SRCRRT = $(shell cd ECMWF_RAD2 ; ls rrtm_kgb*.f90 suecae*.f90)
+OBJSD = $(SRCRRT:.f90=.o) \
+        rrtm_kgb3_a.o rrtm_kgb3_b.o rrtm_kgb3_c.o \
+        rrtm_kgb4_a.o rrtm_kgb4_b.o rrtm_kgb4_c.o \
+        rrtm_kgb5_a.o rrtm_kgb5_b.o rrtm_kgb5_c.o 
+
+$(OBJSD) : F90FLAGS =  -dw -Wf"-A dbl4" -P static -C debug

@@ -1,0 +1,4 @@
+set -x
+rm -f KWRAI.1.SEGCH.004.* 
+rm -f KWRAI.1.SEGCH.004dg.*
+rm -f dirconv FICJD LISTING_DIA OUT_DIA pipe_name

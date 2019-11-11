@@ -1,0 +1,12 @@
+CPP = cpp -P -traditional -Wcomment
+AR = ar
+CC = cc 
+F77 = g95
+F90 = g95
+
+CPPFLAGS = -DG95 
+F90FLAGS = -w -fno-second-underscore
+F77FLAGS = -w -fno-second-underscore
+
+LDFLAGS =  
+

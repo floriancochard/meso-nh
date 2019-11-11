@@ -1,0 +1,21 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+
+ln -sf ../002_mesonh/XPREF.1.SEG01.000.nc .
+
+rm -f visu_LIMA.*.png
+
+ncl  plot_LIMA.ncl
+display visu_LIMA.*.png
+
+#display visu_LIMA.000001.png
+#display visu_LIMA.000002.png
+#display visu_LIMA.000003.png
+#display visu_LIMA.000004.png
+#display visu_LIMA.000005.png
+#display visu_LIMA.000006.png
+#display visu_LIMA.000007.png
+exit 0

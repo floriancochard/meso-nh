@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# cleaning PGD files
+rm -f IROISE* fort*
+rm -f file*
+rm -f *.dir *.hdr
+rm -f OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+rm -f etop*
+
+# cleaning PIC files
+rm -f arome* 
+rm -f file*
+rm -f ecmwf* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+rm -f *.txt IROIS*
+rm -f PRE_REAL1.nam
+
+# cleaning rstrt files
+rm -f rstrt_*.nc 

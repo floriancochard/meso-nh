@@ -1,0 +1,60 @@
+visu
+! directives generales
+LINVWB=T                                                                        
+! plages de couleur
+LCOLAREA=T LISO=F                                                               
+XLWCONT=2                                                                       
+LMINMAX=T                                                                       
+! label de toutes les iso                                                       
+NULBLL=0                                                                        
+! pour obtenir des labels d isolignes                                           
+XSIZEL=0.012                                                                    
+! localisation du minmax dans le print minmax                                   
+LMNMXLOC=T                                                                      
+! High&Low                                                                      
+NHI=0                                                                           
+! label des axes en indices plutot que km en CH                                 
+LINDAX=T                                                                        
+NIGRNC=10                                                                       
+! vecteur                                                                       
+XVRL=0.15                                                                       
+NISKIP=4                                                                        
+! pas de dilatation de la composante W                                          
+LDILW=F                                                                         
+! min max vecteur                                                               
+LVECTMNMX=T                                                                     
+! min max du zoom si NIMNMX<=0                                                  
+LCVZOOM=T                                                                       
+! normaliser la longueur des vecteurs a 20m/s et tracer tous les vecteurs       
+XVHC=-20                                                                        
+LVSUPSCA=T                                                                      
+! pour agrandir la legende a droite                                             
+LVPTUSER=T                                                                      
+XVPTL=0.1 XVPTR=0.9 !XVPTT=0.8                                                  
+!LVPTVUSER=T                                                                    
+!XVPTVL=0.08 XVPTVR=0.78 XVPTVT=0.8                                             
+!LVPTPVUSER=T                                                                   
+!XVPTPVL=0.08 XVPTPVR=0.78 XVPTPVT=0.8                                          
+!LVPTXYUSER=T                                                                   
+!XVPTXYL=0.08 XVPTXYR=0.78 XVPTXYT=0.8                                          
+                                                                                
+_file_'EXPER.1.HYD2D.002-3d'                                                    
+LCOLINE=T LCOLAREA=F                                                            
+! coupe verticale                                                               
+nidebcou=2 njdebcou=1 nlangle=0 xhmin=0 xhmax=15000 nlmax=256 lpointg=.T.       
+UT_CV_                                                                          
+THT_CV_                                                                         
+WT_CV_                                                                          
+RVT_CV_
+CFLU_CV_                                                                         
+CFLV_CV_                                                                         
+CFLW_CV_                                                                         
+!profile                                                                        
+PROFILE=128                                                                     
+WT_T_time1_PV__ON_THT_T_time1_PV__MINUS_LSTHM_T_time1_PV_
+WT_T_time2_PV__ON_THT_T_time1_PV__MINUS_LSTHM_T_time2_PV_
+WT_T_time1_PV__ON_UT_T_time2_PV__MINUS_LSUM_T_time1_PV_
+WT_T_time2_PV__ON_UT_T_time2_PV__MINUS_LSUM_T_time2_PV_
+!
+! a vous d indiquer vos directives                                                                            
+quit

@@ -1,0 +1,12 @@
+
+exemple 1, identification des ascendances > 10 m/s
+ 
+&NAM_DIAG  LCLSTR = T, LBOTUP = T, CFIELD = "W", XTHRES = 10. /
+
+
+
+exemple 2, identification des overshoots
+
+&NAM_DIAG  LCLSTR = T, LBOTUP = F, CFIELD = "CLOUD", XTHRES = 0.00001 /
+
+NB: par défaut CLOUD prend en compte Rc+Ri+Rs+Rg i.e. cloud water and ice, graupel and snow

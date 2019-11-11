@@ -1,0 +1,301 @@
+===================================================================
+*** the following section will be read by ch_field_valuen.f90 ***
+===================================================================
+
+FORMPROF
+different norm-profile
+3 13
+(F6.0,F7.2,F7.2,F7.2)
+    0.   0.30   1.00   1.00
+  300.   0.50   1.00   1.00
+  350.   0.80   1.00   0.70
+  400.   1.00   1.00   0.40
+  500.   1.05   1.00   0.30
+  600.   1.06   1.00   0.20
+ 1000.   1.08   1.00   0.10
+ 1500.   1.10   1.00   0.05
+ 3000.   1.25   1.00   0.01
+ 6000.   1.50   1.00   0.01
+ 9000.   2.00   0.50   0.01
+10000.   2.25   0.20   0.01
+11000.   6.25   0.01   0.01
+
+===================================================================
+*** the following section will be read by ch_field_valuen.f90 ***
+===================================================================
+
+NORMINIT
+initial values (units are par per part = MIX)
+MIX
+37
+(1X,A12,1X,E17.2)
+'O3          '        40.00E-09
+'H2O2        '         0.00E-12
+'NO          '         0.00E-09
+'NO2         '         0.00E+00
+'NO3         '         0.00E+00
+'N2O5        '         0.00E+00
+'HONO        '         0.00E+00
+'HNO3        '         0.00E+00
+'HNO4        '         0.00E+00
+'SO2         '         0.00E+00
+'CO          '       100.00E-09
+'HO2         '         0.00E+00
+'CH4         '      1700.00E-09
+'ETH         '         0.00E+00
+'ALKA        '         0.00E+00
+'ALKE        '         0.00E+00
+'BIO         '         0.00E+00
+'ARO         '         0.00E+00
+'HCHO        '         0.00E+00
+'ALD         '         0.00E+00
+'KET         '         0.00E+00
+'CARBO       '         0.00E+00
+'ONIT        '         0.00E+00
+'PAN         '         0.00E+00
+'OP1         '         0.00E+00
+'OP2         '         0.00E+00
+'ORA2        '         0.00E+00
+'MO2         '         0.00E+00
+'ALKAP       '         0.00E+00
+'ALKEP       '         0.00E+00
+'BIOP        '         0.00E+00
+'PHO         '         0.00E+00
+'ADD         '         0.00E+00
+'AROP        '         0.00E+00
+'CARBOP      '         0.00E+00
+'OLN         '         0.00E+00
+'XO2         '         0.00E+00
+
+===================================================================
+*** the following section will be read by ch_field_valuen.f90 ***
+===================================================================
+
+PROFASSO
+norm-profiles to be associated
+37
+(1X,A12,1X,I3)
+'O3          '  1
+'H2O2        '  3
+'NO          '  3
+'NO2         '  3
+'NO3         '  3
+'N2O5        '  3
+'HONO        '  3
+'HNO3        '  3
+'HNO4        '  3
+'SO2         '  3
+'CO          '  2
+'HO2         '  3
+'CH4         '  2
+'ETH         '  3
+'ALKA        '  3
+'ALKE        '  3
+'BIO         '  3
+'ARO         '  3
+'HCHO        '  3
+'ALD         '  3
+'KET         '  3
+'CARBO       '  3
+'ONIT        '  3
+'PAN         '  3
+'OP1         '  3
+'OP2         '  3
+'ORA2        '  3
+'MO2         '  3
+'ALKAP       '  3
+'ALKEP       '  3
+'BIOP        '  3
+'PHO         '  3
+'ADD         '  3
+'AROP        '  3
+'CARBOP      '  3
+'OLN         '  3
+'XO2         '  3
+
+
+=====================================================================
+*** the following section will be read by ch_init_dep_isban.F90 ***
+=====================================================================
+
+SURF_RES
+surface resistances (s/m), refer to Seinfeld and Pandis, 1998, p. 975, Tab.19.2
+   1
+(A32,2E15.5)
+NONE                                0.0
+
+=====================================================================
+*** the following section will be read by ch_init_depconst.F90 ***
+=====================================================================
+
+MASS_MOL
+molecular mass (in g/mol) for molecular diffusion, from Stockwell et al., 1997
+  41
+(A32,2E15.5)                            
+O3                                  0.48000E+02
+H2O2                                0.34000E+02
+NO                                  0.30000E+02
+NO2                                 0.46000E+02
+NO3                                 0.62000E+02
+N2O5                                0.10800E+03
+HONO                                0.47000E+02
+HNO3                                0.63000E+02
+HNO4                                0.79000E+02
+NH3                                 0.17000E+02
+SO2                                 0.64000E+02
+SULF                                0.98000E+02
+CO                                  0.28000E+02
+OH                                  0.17000E+02
+HO2                                 0.33000E+02
+CH4                                 0.16000E+02
+ETH                                 0.30000E+02
+ALKA                                0.50861E+02
+ALKE                                0.29160E+02
+BIO                                 0.10200E+03
+ARO                                 0.10100E+03
+HCHO                                0.30000E+02
+ALD                                 0.44000E+02
+KET                                 0.72000E+02
+CARBO                               0.66900E+02
+ONIT                                0.11900E+03
+PAN                                 0.12100E+03
+OP1                                 0.48000E+02
+OP2                                 0.63100E+02
+ORA1                                0.46000E+02
+ORA2                                0.60000E+02
+MO2                                 0.47000E+02
+ALKAP                               0.81380E+02
+ALKEP                               0.83611E+02
+BIOP                                0.11700E+03
+PHO                                 0.10700E+03
+ADD                                 0.11680E+03
+AROP                                0.14867E+03
+CARBOP                              0.85434E+02
+OLN                                 0.13600E+03
+XO2                                 0.10000E+03
+
+=====================================================================
+*** the following section will be read by ch_init_depconst.F90 ***
+=====================================================================
+
+REA_FACT
+reactivity factor with biology, Seinfeld and Pandis, 1998, p. 975, Tab. 19.3
+  41
+(A32,2E15.5)                            
+O3                                  0.10000E+01
+H2O2                                0.10000E+01
+NO                                  0.00000E+00
+NO2                                 0.10000E+00
+NO3                                 0.10000E+00
+N2O5                                0.10000E+00
+HONO                                0.10000E+00
+HNO3                                0.00000E+00
+HNO4                                0.00000E+00
+NH3                                 0.00000E+00
+SO2                                 0.00000E+00
+SULF                                0.00000E+00
+CO                                  0.00000E+00
+OH                                  0.00000E+00
+HO2                                 0.00000E+00
+CH4                                 0.00000E+00
+ETH                                 0.00000E+00
+ALKA                                0.00000E+00
+ALKE                                0.00000E+00
+BIO                                 0.00000E+00
+ARO                                 0.00000E+00
+HCHO                                0.00000E+00
+ALD                                 0.00000E+00
+KET                                 0.00000E+00
+CARBO                               0.00000E+00
+ONIT                                0.00000E+00
+PAN                                 0.10000E+00
+OP1                                 0.30000E+00
+OP2                                 0.10000E+00
+ORA1                                0.00000E+00
+ORA2                                0.00000E+00
+MO2                                 0.00000E+00
+ALKAP                               0.00000E+00
+ALKEP                               0.00000E+00
+BIOP                                0.00000E+00
+PHO                                 0.00000E+00
+ADD                                 0.00000E+00
+AROP                                0.00000E+00
+CARBOP                              0.00000E+00
+OLN                                 0.00000E+00
+XO2                                 0.00000E+00
+
+=====================================================================
+*** the following section will be read by ch_init_depconst.F90 ***
+=====================================================================
+
+HENRY_SP
+Effective Henrys law factor / exponent, See Leriche et al.2013
+  35
+(A32,2E15.5)                            
+O3                                  1.03000E-02   -0.28300E+04
+H2O2                                8.44000E+04   -0.76000E+04
+NO                                  1.92000E-03   -0.17900E+04
+NO2                                 1.20000E-02   -0.25160E+04
+NO3                                 3.80000E-02   -0.87070E+04
+N2O5                                2.10000E+00   -0.34000E+04
+HONO                                8.38000E+04   -0.31200E+04
+HNO3                                1.46000E+13   -0.10500E+05
+HNO4                                4.78000E+04   -0.69000E+04
+NH3                                 3.24000E+03    0.19000E+03
+SO2                                 5.59000E+04   -0.48950E+04
+SULF                                6.64000E+14   -0.87000E+04
+CO                                  9.81000E-04   -0.17200E+04
+OH                                  3.90000E+01   -0.00000E+00
+HO2                                 3.49000E+04   -0.00000E+00
+CH4                                 1.41000E-03   -0.20400E+04
+ETH                                 1.88000E-03   -0.28750E+05
+ALKA                                0.15000E-02   -0.32750E+04
+ALKE                                0.59600E-02   -0.21700E+04
+BIO                                 0.38500E-01   -0.00000E+00
+ARO                                 0.18000E+00   -0.41000E+04
+HCHO                                3.23000E+03   -0.71960E+04
+ALD                                 0.12900E+02   -0.58900E+04
+KET                                 0.27800E+02   -0.55300E+04
+CARBO                               0.36000E+06   -0.75450E+04
+ONIT                                0.10000E+02   -0.59100E+04
+PAN                                 0.28000E+01   -0.57300E+04
+OP1                                 0.30000E+01   -0.52800E+04
+OP2                                 0.33600E+01   -0.59950E+04
+ORA1                                5.07000E+06   -0.59500E+04
+ORA2                                2.66000E+05   -0.62000E+04
+MO2                                 0.24500E+01   -0.23200E+04
+ALKAP                               0.26600E+03   -0.60000E+04
+ALKEP                               0.83000E+03   -0.60000E+04
+BIOP                                0.23110E+04   -0.60000E+04
+
+================================================================
+*** the following section will be read by build_emisstabn.F90 ***
+*** <called by ch_init_emissionn.F90>  ***
+*** CON: flux is given in molecules/cm2/s ***
+================================================================
+
+EMISUNIT
+Emission GEIA_POET
+CON
+
+================================================================
+*** the following section will be read by build_pronoslistn.F90 ***
+*** <called by ch_init_emissionn.F90>  ***
+================================================================
+
+AGREGATION
+Schema reactionnel ReLACS/ inventaire GEIA-poet
+NH3 1. NH3DA 1. NH3SF 1. NH3BC 1. NH3S 1. NH3C 1. NH3H 1. NH3FF 1. NH3I
+SO2 1. SO2BFI 1. SO2BFT 1. SO2BFR 1. SO2FFI 1. SO2FFP 1. SO2FFR 1. SO2FFRE 1. SO2FFT 1. SO2FFTL 1. SO2FFTI 1. SO2II 1. SO2INF 1.  SO2ICH 1. SO2LUW 0.004 COBB
+CO  1. COBB 1. COBIO 1. COAN
+NO  0.7 NOXBB 0.7 NOXAN
+NO2 0.3 NOXBB 0.3 NOXAN
+HCHO 1. CH2OBB 1. CH2OAN
+BIO 1. ISOPBIO 1. TERPBIO
+ETH 1. C2H6BB 1. C2H6BIO 1. C2H6AN
+ARO 1. TOLUBB 1. TOLUAN
+ALD 1. CH3CHOBB 1. CH3CHOAN
+KET 0.33 ACETBB 0.33 ACETBIO 0.33 ACETAN 1.61 MEKBB 1.61 MEKAN
+ALKE 0.96 C2H4BB 0.96 C2H4BIO 0.96 C2H4AN 1.04 C3H6BB 1.04 C3H6BIO 1.04 C3H6AN 1.04 BUTEBB 1.04 BUTEAN
+ALKA 0.44 C3H8BB 0.44 C3H8BIO 0.44 C3H8AN 0.38 CH3OHBB 0.38 CH3OHBIO 0.38 CH3OHAN 1. BUTABB 1. BUTAAN 1. C2H5OHBB 1. C2H5OHAN
+END_AGREGATION

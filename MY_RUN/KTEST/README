@@ -1,0 +1,51 @@
+
+cas du stage MesoNH
+-------------------
+2D relief: cas academique 2D, dx=5km, montagne en cloche, plan cartesien
+           initialise par un radio-sondage (RSOU de type ZUVTHDMR)
+           turb. DELT 
+           CLL CYCL, pas de relax. laterale, relax. sommitale, diffusion num.
+
+3Drelief: cas academique 3D, dx=2km, montagne en cloche, plan cartesien
+          initialisation par un profil vertical a 1 couche a stabilite constante        (CSTN)
+          pas d humidite
+          pas Coriolis
+          CLL open, relax. laterale, relax. sommitale, pas de diffusion num.
+          advection FCT2ND
+
+KW78: cas academique 3D, dx=1km,
+      initialise par un RS
+      cellule convective initialisee par une perturbation (bulle chaude),
+      KESSler, 
+      advection CEN2ND
+
+Reunion: cas academique a orographie reelle (lue dans un fichier PGD), dx=1.5km
+         initialisation par un profil vertical a 2 couches a stabilite constante
+         Rv seul
+         CLL open, relax. laterale, relax. sommitale, diffusion num.
+         advection FCT2ND
+         turb. BL89, rayonnement FIXE, 
+         bilans cartesiens pour TH, RV et TKE
+         series temporelles 
+
+Escompte: cas reel a 2 modeles a 15 et 3km ,
+          initialise par Mocage (sous cougar:~mrmh005/CHPOI) 
+          emissions chimiques (sous cougar:~mrmh005/CHPOI) 
+          simulation en grid-nesting de 6h
+          KESSler, turb. BL89, rayonnement ECMWF, conv. KAFR, 
+	  advection scalaires MPDATA
+	  -> a faire avec prep_experiment
+
+Aude: cas reel a 2 modeles
+      initialise par Arpege
+      9 segments de 2h
+      en M44B2: cougar:~mrmp232/D991112 pour fichiers PGD
+                                D991112/arp12 et arp12/diag 
+
+16janv: cas reel a 2 modeles a 36 et 9km, initialise par Arpege
+        KESSler, turb. BL89, rayonnement ECMWF, conv. KAFR
+
+KMAP: cas reel a 3 modeles a 32, 8 et 2km, initialise par ECMWF
+      ICE3, turb. BL89,  rayonnement ECMWF, conv. KAFR
+
+        

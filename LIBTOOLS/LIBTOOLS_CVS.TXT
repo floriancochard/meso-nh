@@ -1,0 +1,87 @@
+Libtools sources may be retrieved with the following commands.
+Choose a working directory to install the sources, then
+
+- To get the latest stable revision :
+
+         cvs co libtools
+
+- To get the latest development release :
+
+         cvs co -r LIBTOOLS-DEVEL-branch libtools
+
+- To get the latest CNRM development release :
+
+         cvs co -r LIBTOOLS-CNRM-branch libtools
+
+- to get the LIBTOOLS-DEVEL-1-0-2 release :
+   
+         cvs co -r LIBTOOLS-DEVEL-1-0-2 libtools
+
+
+
+
+Tags that may appear in this repository are explained below :
+
+       MAIN
+       ====
+        |               LIBTOOLS-DEVEL-branch              LIBTOOLS-CNRM-branch
+        |               =====================              ====================
+        |                         |                                 |
+        |                         |                                 |
+ LIBTOOLS-1-0-0 ------------------+---------------------------------+
+        |                         |                                 |
+        |                         |                                 |
+        |                         |                                 |
+        |                   DEV-SURC-7-4-1                          |
+        |                         |                                 |
+        |                         |                                 |
+        |                  DEV-SURC-7-4-1-1                         |
+        |                         |                                 |
+        |                         |                                 |
+        |                  DEV-SURC-7-4-1-2                         |
+        |                         |                                 |
+        |                         |                                 |
+        |                LIBTOOLS-DEVEL-1-0-1                       | 
+        |                         |                                 |
+        |                         |                                 |
+        |                         |                                 |
+        |                LIBTOOLS-DEVEL-1-0-2     merge             | 
+        |             merged_from_DEVEL_to_CNRM ---------> LIBTOOLS-CNRM-1-0-2
+        |                         |                                 |
+        .                         .                                 .
+        .                         .                                 .
+        .                         .                                 .
+
+
+
+Branch TAGS
+===========
+
+   MAIN : this branch contains official stable LibTools sources.
+  
+   LIBTOOLS-DEVEL-branch : this branch contains sources currently under 
+                           development that sooner or later are merged to
+                           main branch.
+
+   LIBTOOLS-CNRM-branch : this branch is reserved to CNRM development/tests.
+                          Sources may be merged to MAIN or LIBTOOLS-DEVEL-branch
+                          branch.
+
+
+Release TAGS
+============
+
+LIBTOOLS-x-y-z : this tag is applied to all sources of a stable LIBTOOLS release
+                 on the MAIN branch.
+
+LIBTOOLS-DEVEL-x-y-z : this tag is applied to all sources of a development LIBTOOLS 
+                       release on the LIBTOOLS-DEVEL-branch development branch.
+
+DEV-SURC-x-y... : this tag is only applied to the lib/SURCOUCHE sources on the
+                  LIBTOOLS-DEVEL-branch development branch.
+
+LIBTOOLS-CNRM-x-y... : this tag is applied to all sources of a development/test LIBTOOLS 
+                       release on the LIBTOOLS-CNRM-branch development branch.
+
+Note that all sources from LIBTOOLS-DEVEL-1-0-2 and LIBTOOLS-CNRM-1-0-2 release
+are strictly identical (except maybe for the README.TXT file).

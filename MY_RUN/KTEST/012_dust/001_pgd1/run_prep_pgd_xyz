@@ -1,0 +1,31 @@
+set -x
+set -e
+#
+PREP_PGD_FILES=$HOME/PREP_PGD_FILES_WWW
+export PREP_PGD_FILES
+#
+if [ ! -d $PREP_PGD_FILES ]
+then
+cat << EOF
+
+Your directory  PREP_PGD_FILES=$PREP_PGD_FILES
+
+containing the files gtopo30*, ecoclimats_v2* 
+doesn't exist ( or was not found !!! )
+use the script 'get_pgd_files' to download 
+this files from the MESONH WEB PAGES !!!
+( or change the variable PREP_PGD_FILES ... )
+
+After fixing it , run this script again !!!
+ 
+EOF
+exit 1
+else
+ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
+ln -sf $PREP_PGD_FILES/gtopo30.??? .
+ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
+ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
+
+rm -f pgd_dust* OUTPUT_LISTING* pipe* *.tex
+time ${MONORUN} PREP_PGD${XYZ}
+fi

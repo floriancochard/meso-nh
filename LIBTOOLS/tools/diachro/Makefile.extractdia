@@ -1,0 +1,100 @@
+B ?= 32
+DIR_OBJ=./$(ARCH)_$(B)
+
+ifeq ($(strip $(VERSION)),)
+VPATH=src/BUG:src/EXTRACTDIA:src/TOOL:src/mesonh:$(DIR_OBJ)
+else                            # string VERSION not empty
+VPATH=src/$(VERSION):src/BUG:src/EXTRACTDIA:src/TOOL:src/mesonh:src/MOD:src/mesonh_MOD:$(DIR_OBJ)
+endif
+
+ifeq ($(origin MNH_LIBTOOLS), undefined)
+include ../where.Libs
+else
+include $(MNH_LIBTOOLS)/tools/where.Libs
+endif
+
+INC  = -I $(DIR_OBJ)
+LIBS = $(DIR_DIA)/$(DIR_OBJ)/$(LIBDIA) $(LIBCOMP) $(LIBLFI)
+
+include $(DIR_CONF)/config.$(ARCH)
+include Rules.$(ARCH)
+
+
+PROG = extractdia
+OBJS = shuman.o hor_interp_4pts.o modd_readlh.o \
+       uv_to_zonal_and_merid.o temporal_dist_for_ext.o \
+       low2up.o up2low.o \
+       change_a_grid.o \
+       zinter.o zmoy.o pinter.o \
+       readvar.o writevar.o writecdl.o writellhv.o writegrib.o\
+       dd.o ff.o computedir.o verif_group.o \
+       ini2lalo.o int2lalo.o \
+       to_computing_units.o from_computing_units.o modn_outfile.o
+
+
+all: $(LIBEXTRACT) $(PROG)
+
+# generation de l executable
+$(PROG): $(addsuffix .o,$(PROG)) $(OBJS) $(LIBS)
+	#cd $(DIR_OBJ);$(F90) $(LDFLAGS) $(patsubst $(DIR_OBJ)/%,%,$^) -o $@ $(LIBV5D) $(LIBGRB)
+	cd $(DIR_OBJ);$(F90) $(LDFLAGS) $(patsubst $(DIR_OBJ)/%,%,$^) -o $@ $(LIBGRB)
+	@echo executable $@ disponible sous $(DIR_OBJ)
+
+# gestion des versions
+ifeq ($(strip $(VERSION)),)
+$(LIBEXTRACT): $(OBJS)
+	cd $(DIR_OBJ) ; $(AR) rv $@ $(OBJS)
+	ls -l $(DIR_OBJ)/$@
+else                            # string VERSION not empty
+$(LIBEXTRACT): $(OBJS)
+	@echo '***' if libxxx_$(VERSION).a does not exist, cp libxxx.a libxxx_$(VERSION).a
+	ls -l $(DIR_OBJ)/$@
+	cd $(DIR_OBJ) ; $(AR) rv $@ $(OBJS)
+	ls -l $(DIR_OBJ)/$@
+endif
+
+# creation du repertoire contenant les objets
+$(DIR_OBJ)/.dummy:
+	mkdir $(DIR_OBJ)
+	@touch $(DIR_OBJ)/.dummy
+
+# cleaning
+clean:
+	(if [ -d $(DIR_OBJ) ] ; then cd $(DIR_OBJ); rm $(PROG)* $(OBJS) $(addprefix cpp_,$(OBJS:.o=.f90)); fi)
+
+distclean:
+	(if [ -d $(DIR_OBJ) ] ; then cd $(DIR_OBJ); rm * ; fi)
+
+# regle de compilation
+%.o:%.f90 $(DIR_OBJ)/.dummy
+	$(CPP) $(INC) $(CPPFLAGS) $< >  $(DIR_OBJ)/cpp_$(*F).f90
+	$(F90) $(INC) -c $(F90FLAGS) $(DIR_OBJ)/cpp_$(*F).f90 -o $(DIR_OBJ)/$(*F).o
+	-@mv *.mod $(DIR_OBJ)/. 2>/dev/null || echo pas de module dans $*.f90
+
+
+# dependances du programme principal
+$(PROG).o: $(PROG).f90 change_a_grid.o hor_interp_4pts.o \
+	uv_to_zonal_and_merid.o zinter.o zmoy.o \
+	ini2lalo.o int2lalo.o writedir.o \
+	writevar.o writecdl.o writellhv.o writegrib.o writedir.o \
+	dd.o ff.o low2up.o modn_outfile.o
+
+# dependances des routines
+uv_to_zonal_and_merid.o: uv_to_zonal_and_merid.f90 shuman.o 
+writecdl.o: writecdl.f90 temporal_dist_for_ext.o from_computing_units.o
+writevar.o: writevar.f90 modn_ncar.o modd_files_diachro.o from_computing_units.o
+writellhv.o: writellhv.f90 from_computing_units.o
+writegrib.o: writegrib.f90 from_computing_units.o  modn_outfile.o
+writedir.o: writedir.f90 
+change_a_grid.o: change_a_grid.f90 shuman.o
+zmoy.o: zmoy.f90 zinter.o
+temporal_dist_for_ext.o: temporal_dist_for_ext.f90
+dd.o: dd.f90 computedir.o
+computedir.o: computedir.f90
+readvar.o: readvar.f90 verif_group.o to_computing_units.o modd_readlh.o
+verif_group.o: verif_group.f90
+modn_outfile.o: modn_outfile.f90 modd_conf.o	
+ini2lalo.o: ini2lalo.f90 modd_cst.o modd_parameters.o modd_grid.o modd_grid1.o
+int2lalo.o: int2lalo.f90 modd_cst.o modd_parameters.o modd_dim1.o modd_grid1.o \
+        mode_gridproj.o
+

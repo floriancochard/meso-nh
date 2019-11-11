@@ -1,0 +1,213 @@
+!     ######spl
+      MODULE MODI_READMNMXINT_ISO 
+!     ###########################
+!
+INTERFACE
+!
+SUBROUTINE READMNMXINT_ISO(KIMNMX,HCARIN,PMN,PMX,PINT)
+INTEGER, INTENT(INOUT) :: KIMNMX
+CHARACTER(LEN=*) :: HCARIN
+REAL             :: PMN, PMX, PINT
+END SUBROUTINE READMNMXINT_ISO
+!
+END INTERFACE
+END MODULE MODI_READMNMXINT_ISO
+!     ######spl
+      SUBROUTINE READMNMXINT_ISO(KIMNMX,HCARIN,PMN,PMX,PINT)
+!     ###############################################
+!
+!!****  *READMNMXINT_ISO* - 
+!!
+!!    PURPOSE
+!!    -------
+!      
+!
+!!**  METHOD
+!!    ------
+!!     
+!!     N.A.
+!!
+!!    EXTERNAL
+!!    --------
+!!      None
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module
+!!
+!!      Module
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       2/09/96
+!!      Updated   PM   
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_RESOLVCAR
+
+IMPLICIT NONE
+!
+!*       0.1   Dummy arguments
+!              ---------------
+!
+INTEGER, INTENT(INOUT) :: KIMNMX
+CHARACTER(LEN=*) :: HCARIN
+REAL             :: PMN, PMX, PINT
+!
+!*       0.1   Local variables
+!              ---------------
+
+INTEGER           :: IMASK
+INTEGER           :: J,JM
+LOGICAL           :: GOKMN, GOKMX, GOKINT
+REAL              :: ZMEMINT
+!REAL,DIMENSION(:),ALLOCATABLE  :: ZISOMN, ZISOMX, ZISOINT
+!CHARACTER(LEN=100),DIMENSION(:),ALLOCATABLE  :: YISOMN, YISOMX, YISOINT
+CHARACTER(LEN=LEN(HCARIN)) :: YCARIN, YCARIN2
+!
+!------------------------------------------------------------------------------
+GOKMN=.FALSE.
+GOKMX=.FALSE.
+GOKINT=.FALSE.
+!
+YCARIN(1:LEN(YCARIN))=' '
+HCARIN=ADJUSTL(HCARIN)
+YCARIN=HCARIN
+IMASK=INDEX(YCARIN,'MASK')
+IF(IMASK /=0)THEN
+DO J=1,LEN(YCARIN)
+ IF(YCARIN(J:J) == ' ')THEN
+   JM=J-1
+   EXIT
+ ENDIF
+ENDDO
+YCARIN(1:LEN(YCARIN))=' '
+YCARIN=HCARIN(JM+2:LEN_TRIM(HCARIN))
+YCARIN=ADJUSTL(YCARIN)
+ENDIF
+JM=0
+DO J=1,LEN(YCARIN)
+ IF(YCARIN(J:J) == ' ')THEN
+   JM=J-1
+   EXIT
+ ENDIF
+ENDDO
+IF(JM /= 0)THEN
+  YCARIN2(1:LEN(YCARIN2))=' '
+  YCARIN2=YCARIN(1:JM)
+  YCARIN(1:LEN(YCARIN))=' '
+  YCARIN=ADJUSTL(YCARIN2)
+ENDIF
+!
+ZMEMINT=PINT
+PINT=0.
+!
+IF(NBISOMN == 0)THEN
+  GOKMN=.FALSE.
+  print *,' AUCUN MIN USER ENREGISTRE POUR :  ',YCARIN(1:LEN_TRIM(YCARIN))
+ELSE
+  DO J=1,NBISOMN
+    IF(YCARIN(1:LEN_TRIM(YCARIN)) == CISOMN(J)(1:LEN_TRIM(CISOMN(J))))THEN
+      PMN=XISOMN(J)
+      GOKMN=.TRUE.
+      EXIT
+    ENDIF
+  ENDDO
+  IF(.NOT.GOKMN)THEN
+    print *,' AUCUN MIN USER ENREGISTRE POUR :  ',YCARIN(1:LEN_TRIM(YCARIN))
+  ENDIF
+ENDIF
+!
+IF(NBISOMX == 0)THEN
+  GOKMX=.FALSE.
+  print *,' AUCUN MAX USER ENREGISTRE POUR :  ',YCARIN(1:LEN_TRIM(YCARIN))
+ELSE
+  DO J=1,NBISOMX
+    IF(YCARIN(1:LEN_TRIM(YCARIN)) == CISOMX(J)(1:LEN_TRIM(CISOMX(J))))THEN
+      PMX=XISOMX(J)
+      GOKMX=.TRUE.
+      EXIT
+    ENDIF
+  ENDDO
+  IF(.NOT.GOKMX)THEN
+    print *,' AUCUN MAX USER ENREGISTRE POUR :  ',YCARIN(1:LEN_TRIM(YCARIN))
+  ENDIF
+ENDIF
+IF(NBISOINT == 0)THEN
+  GOKINT=.FALSE.
+  print *,' AUCUN INT USER ENREGISTRE POUR :  ',YCARIN(1:LEN_TRIM(YCARIN))
+ELSE
+  DO J=1,NBISOINT
+    IF(YCARIN(1:LEN_TRIM(YCARIN)) == CISOINT(J)(1:LEN_TRIM(CISOINT(J))))THEN
+      PINT=XISOINT(J)
+      GOKINT=.TRUE.
+      EXIT
+    ENDIF
+  ENDDO
+  IF(.NOT.GOKINT)THEN
+    print *,' AUCUN INT USER ENREGISTRE POUR :  ',YCARIN(1:LEN_TRIM(YCARIN))
+  ENDIF
+ENDIF
+IF(.NOT.GOKMN .OR. .NOT.GOKMX .OR. .NOT.GOKINT)THEN
+  LISOK=.FALSE.
+  print *,' UTILISATION DES VALEURS DE XISOMIN,XISOMAX,XDIAINT POUR : ',YCARIN(1:LEN_TRIM(YCARIN))
+ELSE
+  LISOK=.TRUE.
+ENDIF
+!
+!------------------------------------------------------------------------------
+IF(.NOT. LISOK)THEN
+
+  IF(PINT == 0.)THEN
+    PINT=ZMEMINT
+  ENDIF
+  IF((KIMNMX == 0 .OR. KIMNMX == 1) .AND. PINT == 0.)THEN
+!     IF(XISOMIN == XISOMAX)THEN
+! 230498
+    IF(XISOMIN == XISOMAX .AND. XISOMIN /= 0. .AND. XISOMAX /= 0.)THEN
+      PMN=XISOMIN
+      PMX=XISOMAX
+    ELSE
+    print *,' AVEC NIMNMX = ',KIMNMX,' VOUS DEVEZ FOURNIR DANS XDIAINT (OU',&
+    &' XDIAINT_PROCESSUS) UN INTERVALLE D''ISOCONTOURS NON NUL.'
+    print *,' NIMNMX FORCE A LA VALEUR -1'
+    KIMNMX=-1
+    ENDIF
+  ELSE IF(KIMNMX == 1 .AND. PINT /= 0.)THEN
+    IF(XISOMAX == XISOMIN .OR. XISOMAX-XISOMIN <0 .OR. (XISOMAX-XISOMIN)/PINT <1)THEN
+      IF(XISOMAX == XISOMIN)THEN
+        PMN=XISOMIN
+        PMX=XISOMAX
+      ELSE
+        print *,' AVEC NIMNMX = ',KIMNMX,' VOUS DEVEZ FOURNIR DANS XDIAINT (OU',&
+	&' XDIAINT_PROCESSUS) UN INTERVALLE D''ISOCONTOURS NON NUL.'
+        print *,' DANS XISOMIN (OU XISOMIN_PROCESSUS)  et XISOMAX (OU', &
+	&' XISOMAX_PROCESSUS) DES VALEURS EXTREMES D''ISOCONTOURS COHERENTES'
+        print *,' VALEURS ACTUELLES XISOMIN,XISOMAX,XDIAINT :',XISOMIN,XISOMAX,XDIAINT
+        print *,' NIMNMX FORCE A LA VALEUR -1'
+        KIMNMX=-1
+      ENDIF
+    ELSE
+    !  On explore la table utilisateur en premier
+      PMN=XISOMIN
+      PMX=XISOMAX
+    ENDIF
+  ENDIF
+ELSE
+  LISOK=.FALSE.
+ENDIF
+
+
+END SUBROUTINE READMNMXINT_ISO

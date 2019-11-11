@@ -1,0 +1,47 @@
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#PBS -S /bin/ksh             # ligne obligatoire specifiant le shell: ksh ou csh
+#PBS -q multi                # classe multiple
+#PBS -l cpunum_job=2         # réservation de 4 processeurs (max=8)
+#PBS -j o                    # concatene la sortie standard avec l erreur standard
+#PBS -l cputim_job=3600      # temps max (HH:MM:SS)/job
+#PBS -l memsz_job=8gb        # memoire max /job 
+
+# Echo des commandes                                 
+set -x                                               
+# Arrete du job des la premiere erreur
+#set -e
+# Nom de la machine
+hostname 
+
+[ -d $PBS_O_WORKDIR ] && cd $PBS_O_WORKDIR
+#
+. ../conf/profile_mesonh-SX8-R8I4-MNH-V5-4-2-MPIAUTO-O4
+
+export MONORUN="Mpirun -np 1 "
+export MPIRUN="Mpirun -np 2 "
+export POSTRUN="echo "
+
+cd $SRC_MESONH/MY_RUN/KTEST/001_2Drelief 
+make  -k
+#
+cd $SRC_MESONH/MY_RUN/KTEST/002_3Drelief 
+make -k
+#
+cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
+make -k
+#
+cd $SRC_MESONH/MY_RUN/KTEST/004_Reunion
+make -k << EOF
+
+
+EOF
+#
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#

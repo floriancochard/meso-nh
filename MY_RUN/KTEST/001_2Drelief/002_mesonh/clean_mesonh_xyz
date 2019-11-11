@@ -1,0 +1,2 @@
+rm -f HYD2D* pipe_name PRESSURE file_for_xtransfer
+rm -f EXPER.1.HYD* OUT*

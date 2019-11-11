@@ -1,0 +1,39 @@
+Description of namelist variables used for prep_pgd
+####################################################
+
+This namelist is used to create a hysiographic data file
+For more details see the Externalized Surface Users's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+
+
+&NAM_PGDFILE 
+CPGDFILE	='16JAN98_9km' 		; name of the output physiographic data file
+
+&NAM_PGD_GRID 
+YINIFILE	='16JAN98_36km' 	; name of the file used to define the grid. 
+YFILETYPE	='MESONH' 		; type of the YINIFILE file 
+
+&NAM_INIFILE_CONF_PROJ (horizontal domain definition)
+IXOR		=10 			; first point I index, according to the YINIFILE grid
+						( left to and out of the new physical domain )
+IYOR		=10 			; first point J index, according to the YINIFILE grid 
+						( under and out of the new physical domain )
+IXSIZE		=10 			; number of grid points in I direction
+						(If to be used in MESONH, it must be a factor of 2,3 or 5)
+IYSIZE		=10 			; number of grid points in J direction
+						(If to be used in MESONH, it must be a factor of 2,3 or 5)
+IDXRATIO	=4 			; resolution factor in I direction between the YINIFILE grid and the new grid
+IDYRATIO	=4 			; resolution factor in J direction between the YINIFILE grid and the new grid
+
+&NAM_COVER      (surface cover fractions)
+YCOVER		='ecoclimats_v2' 	; ecoclimap data file name (used only if XUNIF_COVER is not set)
+YFILETYPE	='DIRECT' 		; type of YCOVER file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV').
+
+&NAM_ZS        (orography)
+YZS		='gtopo30'    		; topography file name (used only if XUNIF_ZS is not set)
+YFILETYPE	='DIRECT' 		; type of YZS file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')
+
+&NAM_ISBA     
+YCLAY		='clay_fao' 		; clay fraction file name
+YCLAYFILETYPE	='DIRECT' 		; type of YCLAY file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')
+YSAND		='sand_fao' 		; sand fraction file name
+YSANDFILETYPE	='DIRECT' 		; ype of YSAND file ('DIRECT', 'BINLLV', 'BINLLF', 'ASCLLV')

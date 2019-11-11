@@ -1,0 +1,126 @@
+${JOBMONO}
+#!/bin/sh
+###############################################################
+# Script                                                      #
+###############################################################
+
+set -x
+#set -e
+
+
+true   '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true   '!!              Input/Output parameters                                      !!'
+true   '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+export PROFILE_MESONH="$SRC_MESONH/conf/profile_mesonh${XYZ}"
+export EXECDIR="${EXECDIR}"
+export SUBDIR="${SUBDIR}"
+export INP_CINIFILEPGD="${INP_CINIFILEPGD}"
+export INP_YDOMAIN="${INP_YDOMAIN}"
+export INP_CINIFILE="${INP_CINIFILE}"
+export CRT_YSPANBR="${CRT_YSPANBR}"
+export OUT_CINIFILE_SPA="${OUT_CINIFILE_SPA}"
+export RMINDIR="${RMINDIR}"
+export MONORUN="${MONORUN}"
+export SPAWNING="${SRC_MESONH}/exe/SPAWNING${XYZ}"
+export OUTDIR="${OUTDIR}"
+export RMOUTDIR="${RMOUTDIR}"
+export NEXTDIR="${NEXTDIR}"
+export NEXTRUN="${NEXTRUN}"
+
+#################################################################
+#################################################################
+#                                                               #
+# Don't touch after this line (or know what your ar doing !!! ) #
+#                                                               #
+#################################################################
+#################################################################
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Init Mesonh environnment                                     !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+. \${PROFILE_MESONH}
+
+set -e
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              goto execdir                                                 !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+mkdir -p \${EXECDIR} 
+cd \${EXECDIR}
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Clean before run                                             !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+# clean input
+rm -f  \${INP_YDOMAIN}.??? \${INP_CINIFILE}.??? \${INP_CINIFILEPGD}.???
+
+# clean output
+rm -f \${OUT_CINIFILE_SPA}.??? OUTPUT_LISTING* pipe* *.tex
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!              Get files                                                    !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${GETFILES} \${RMINDIR}/\${INP_CINIFILEPGD}.??? .
+${GETFILES} \${RMINDIR}/\${INP_YDOMAIN}.??? .
+${GETFILES} \${RMINDIR}/\${INP_CINIFILE}.??? .
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!              Definition of NAMELIST = RUN PARAMETERS                      !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+cat <<EOF > SPAWN1.nam
+&NAM_LUNIT2_SPA  CINIFILE="\${INP_CINIFILE}",
+                 CINIFILEPGD="${INP_CINIFILEPGD}"
+                  YDOMAIN="\${INP_YDOMAIN}",
+                  YSPANBR="\${CRT_YSPANBR}" /
+
+EOF
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!               End NAMELIST = RUN PARAMETERS                               !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                                                                           !!'
+true '!!               RUN PREP_PGD                                                !!'
+true '!!                                                                           !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+time \${MONORUN} \${SPAWNING}             
+#ddd --directory=~/DEV/MNH... SPAWNING${XYZ}
+
+for file in OUTPUT_LISTING* ; do
+ ${CAT} \${file}
+done
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!                Save Files                                                 !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${RMMKDIR}  \${OUTDIR}
+${PUTFILES} \${OUT_CINIFILE_SPA}.??? \${RMOUTDIR}
+
+
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+true '!!               Next job                                                    !!'
+true '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+${RMSHELL} "cd \${NEXTDIR}/${CONFEXP}; ${QSUB} \${NEXTRUN} "
+

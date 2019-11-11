@@ -1,0 +1,29 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+set -e
+rm -f 16JAN* OUT*  
+#
+# First modele
+#
+ln -sf  ../008_run2/16JAN.1.12B18.001.*{des,lfi,nc} .
+ln -sf ../003_nest/16JAN98_9km.neste1.* .
+ln -sf ../003_nest/16JAN98_36km.neste1.* .
+
+if [ "x${MNH_ECRAD}" != "x" ]  ; then
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/RAD* .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/*.nc .
+fi
+
+cp  DIAG1.nam1 DIAG1.nam
+time ${MPIRUN} DIAG${XYZ}
+#exit
+#
+# 2nd modele
+#
+ln -sf  ../008_run2/16JAN.2.12B18.001.*{des,lfi,nc} .
+cp  DIAG1.nam2 DIAG1.nam
+time ${MPIRUN} DIAG${XYZ}

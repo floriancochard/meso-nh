@@ -1,0 +1,2 @@
+set -x
+rm -f REUNI.1* dirconv FICJD LISTING_DIA OUT_DIA pipe_name

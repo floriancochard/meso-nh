@@ -1,0 +1,14 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+# Idris SP4
+F90 = mpxlf90_r_old -qarch=pwr4 -qinitauto=0 -qzerosize -qautodbl=dbl4 -qdpc=E -qmaxmem=-1
+F90FLAGS += -qnooptimize -O -g -qfullpath
+
+# Others
+ 
+#include path for 'mpif.h'
+#INC +=  -I../MPIvide
+
+CPPFLAGS = -DMNH_MPI_DOUBLE_PRECISION -DMNH_SP4 -DMNH_MPI_BSEND

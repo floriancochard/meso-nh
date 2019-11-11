@@ -1,0 +1,296 @@
+!     ######spl
+      SUBROUTINE TABCOL_FORDIACHRO
+!     ############################
+!
+!!****  *TABCOL_FORDIACHRO* - Definition d'une table de couleurs en RGB
+!!
+!!    PURPOSE
+!!    -------
+!
+!!**  METHOD
+!!    ------
+!!     
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!      None
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       16/01/95
+!!      Updated   PM 
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_RESOLVCAR
+IMPLICIT NONE
+!
+!*       0.1  local variables
+!          
+
+REAL,DIMENSION(3,255) :: ZRGB, ZRGB2
+
+INTEGER          :: J, JJ, II
+INTEGER          :: ISTA, IER,INB, IWK, INBB
+!
+!-------------------------------------------------------------------------------
+!
+CALL GQOPS(ISTA)
+CALL GQACWK(1,IER,INB,IWK)
+!print *,' TABCOL_FORDIACHRO INB IWK ',INB,IWK
+CALL GQOPWK(1,IER,INB,IWK)
+!print *,' TABCOL_FORDIACHRO AP GQOPWK INB IWK ',INB,IWK
+IF(LINVWB)THEN
+CALL GSCR(1,1,0.,0.,0.)
+CALL GSCR(1,0,1.,1.,1.)
+ELSE
+CALL GSCR(1,0,0.,0.,0.)
+CALL GSCR(1,1,1.,1.,1.)
+ENDIF
+IF(ISTA >1 .AND. INB >1)THEN
+! CALL GSCR(2,0,0.,0.,0.)
+! CALL GSCR(2,1,1.,1.,1.)
+ENDIF
+ZRGB(1,1)=1.
+ZRGB(2,1)=1.
+ZRGB(3,1)=1.
+ZRGB(1,2)=1.
+ZRGB(2,2)=0.
+ZRGB(3,2)=0.
+ZRGB(1,3)=0.
+ZRGB(2,3)=1.
+ZRGB(3,3)=0.
+ZRGB(1,4)=0.
+ZRGB(2,4)=0.
+ZRGB(3,4)=1.
+ZRGB(1,5)=0.
+ZRGB(2,5)=1.
+ZRGB(3,5)=1.
+ZRGB(1,6)=1.
+ZRGB(2,6)=0.
+ZRGB(3,6)=1.
+ZRGB(1,7)=1.
+ZRGB(2,7)=1.
+ZRGB(3,7)=0.
+ZRGB(1,8)=1.
+ZRGB(2,8)=.5
+ZRGB(3,8)=0.
+ZRGB(1,9)=.65
+ZRGB(2,9)=.16
+ZRGB(3,9)=0.16
+ZRGB(1,10)=0.86
+ZRGB(2,10)=0.58
+ZRGB(3,10)=.44
+ZRGB(1,11)=0.5
+ZRGB(2,11)=0.
+ZRGB(3,11)=1.
+ZRGB(1,12)=.2
+ZRGB(2,12)=0.56
+ZRGB(3,12)=.8
+ZRGB(1,13)=.14
+ZRGB(2,13)=0.56
+ZRGB(3,13)=.14
+ZRGB(1,14)=.4
+ZRGB(2,14)=.4
+ZRGB(3,14)=.4
+ZRGB(1,15)=.66
+ZRGB(2,15)=.66
+ZRGB(3,15)=.66
+DO J=16,96
+ZRGB(1,J)=.90
+ENDDO
+DO J=16,96,9
+ZRGB(3,J)=0.
+ZRGB(3,J+1)=.125
+ZRGB(3,J+2)=.25
+ZRGB(3,J+3)=.375
+ZRGB(3,J+4)=.5
+ZRGB(3,J+5)=.625
+ZRGB(3,J+6)=.75
+ZRGB(3,J+7)=.875
+ZRGB(3,J+8)=1.
+ENDDO
+DO J=16,24
+ZRGB(2,J)=0.
+ENDDO
+DO J=25,33
+ZRGB(2,J)=.125
+ENDDO
+DO J=34,42
+ZRGB(2,J)=.25
+ENDDO
+DO J=43,51
+ZRGB(2,J)=.375
+ENDDO
+DO J=52,60
+ZRGB(2,J)=.5
+ENDDO
+DO J=61,69
+ZRGB(2,J)=.625
+ENDDO
+DO J=70,78
+ZRGB(2,J)=.75
+ENDDO
+DO J=79,87
+ZRGB(2,J)=.875
+ENDDO
+DO J=88,96
+ZRGB(2,J)=1.
+ENDDO
+!
+DO J=97,177
+ZRGB(1,J)=0.
+ENDDO
+DO J=97,177,9
+ZRGB(3,J)=0.
+ZRGB(3,J+1)=.125
+ZRGB(3,J+2)=.25
+ZRGB(3,J+3)=.375
+ZRGB(3,J+4)=.5
+ZRGB(3,J+5)=.625
+ZRGB(3,J+6)=.75
+ZRGB(3,J+7)=.875
+ZRGB(3,J+8)=1.
+ENDDO
+DO J=97,105
+ZRGB(2,J)=0.
+ENDDO
+DO J=106,114
+ZRGB(2,J)=.125
+ENDDO
+DO J=115,123
+ZRGB(2,J)=.25
+ENDDO
+DO J=124,132
+ZRGB(2,J)=.375
+ENDDO
+DO J=133,141
+ZRGB(2,J)=.5
+ENDDO
+DO J=142,150
+ZRGB(2,J)=.625
+ENDDO
+DO J=151,159
+ZRGB(2,J)=.75
+ENDDO
+DO J=160,168
+ZRGB(2,J)=.875
+ENDDO
+DO J=169,177
+ZRGB(2,J)=1.
+ENDDO
+!
+DO J=178,239
+ZRGB(1,J)=0.5
+ENDDO
+DO J=178,249,9
+ZRGB(3,J)=0.
+ZRGB(3,J+1)=.125
+ZRGB(3,J+2)=.25
+ZRGB(3,J+3)=.375
+ZRGB(3,J+4)=.5
+ZRGB(3,J+5)=.625
+ZRGB(3,J+6)=.75
+ZRGB(3,J+7)=.875
+ZRGB(3,J+8)=1.00
+ENDDO
+DO J=178,186
+ZRGB(2,J)=0.125
+ENDDO
+DO J=187,195
+ZRGB(2,J)=.25
+ENDDO
+DO J=196,204
+ZRGB(2,J)=.375
+ENDDO
+DO J=205,213
+ZRGB(2,J)=.5
+ENDDO
+DO J=214,222
+ZRGB(2,J)=.625
+ENDDO
+DO J=223,231
+ZRGB(2,J)=.75
+ENDDO
+DO J=232,240
+ZRGB(2,J)=.875
+ENDDO
+!
+ZRGB2(:,1:240)=ZRGB(:,1:240)
+IF(LTABCOLDEF2)THEN
+  DO JJ=18,90,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+1)
+  ENDDO
+  DO JJ=19,91,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+2)
+  ENDDO
+  DO JJ=20,92,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+3)
+  ENDDO
+  DO JJ=21,93,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+3)
+  ENDDO
+  DO JJ=22,94,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+75)
+  ENDDO
+  DO JJ=23,95,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+76)
+  ENDDO
+  DO JJ=24,96,9
+    ZRGB(:,JJ)=ZRGB2(:,JJ+76)
+  ENDDO
+  DO JJ=97,105
+    IF(JJ == 97)II=0
+    IF(JJ > 97)II=II+8
+    ZRGB(:,JJ)=ZRGB2(:,JJ+5+II)
+  ENDDO
+  DO JJ=106,114
+    IF(JJ == 106)II=0
+    IF(JJ > 106)II=II+8
+    ZRGB(:,JJ)=ZRGB2(:,JJ-3+II)
+  ENDDO
+  DO JJ=115,123
+    IF(JJ == 115)II=0
+    IF(JJ > 115)II=II+8
+    ZRGB(:,JJ)=ZRGB2(:,JJ-10+II)
+  ENDDO
+  ZRGB(:,22)=ZRGB2(:,232)
+  ZRGB(:,124)=ZRGB2(:,186)
+  ZRGB(:,125)=ZRGB2(:,195)
+  ZRGB(:,126)=ZRGB2(:,204)
+  ZRGB(:,127)=ZRGB2(:,222)
+  ZRGB(:,128)=ZRGB2(:,231)
+ENDIF
+! En raison de problemes avec la couleur pour certains terminaux, on ne definit
+! que 128 couleurs (Confirmation avec le terminal de Karsten)
+!DO J=2,237
+DO J=2,128
+DO JJ=1,INB
+  CALL GQOPWK(JJ,IER,INBB,IWK)
+! print *,' TABCOL_FORDIACHRO JJ,INBB,IWK ',JJ,INBB,IWK
+  IF(IWK == 9)THEN
+    CYCLE
+  ELSE
+    CALL GSCR(IWK,J,ZRGB(1,J),ZRGB(2,J),ZRGB(3,J))
+  ENDIF
+ENDDO
+ENDDO
+!
+!
+RETURN
+END SUBROUTINE  TABCOL_FORDIACHRO 

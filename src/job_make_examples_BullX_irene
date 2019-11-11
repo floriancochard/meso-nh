@@ -1,0 +1,74 @@
+#!/bin/bash
+#MSUB -J Examples
+#MSUB -N 2            # nodes number
+#MSUB -n 4            # CPUs number (on all nodes) 
+#MSUB --exclusive           
+#MSUB -o Examples.eo%j   #
+#MSUB -e Examples.eo%j   #
+#MSUB -T 3600        # time limit
+#MSUB -I             # do not propaget variable from interactif
+#MSUB -m work,scratch,store # use this files system
+#MSUB -x #  exclusive usage of nodes
+#MSUB -X # enable X forwarding -> force 'ccc_msub -i ' to get it work
+#MSUB -q skylake
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+#set -e
+set +x
+# Nom de la machine
+hostname 
+
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-4-2-MPIINTEL-O2
+
+set -x
+
+module list
+
+export MONORUN="Exec ccc_mprun -n 1 "
+export MPIRUN="Exec ccc_mprun -n 4 "
+export POSTRUN="time "
+
+cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/001_2Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/002_3Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+
+cd $SRC_MESONH/MY_RUN/KTEST/004_Reunion
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/014_LIMA 
+make -k
+
+

@@ -1,0 +1,40 @@
+###############################################################
+#  Import Global Variables                                    #
+###############################################################
+. ../confdollar_${CONFEXP}
+
+##############################################################
+## Run Parameters                                            #
+##############################################################
+
+## job parameters
+export NBP=1
+export TIME=3600
+#export MEM="3gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="#"
+export NEXTDIR="\${SUBDIR}/../../006_preal"
+export NEXTRUN="run_preal_xyz"
+
+###############################################################
+# Input  Variables                                            #
+###############################################################
+
+## input file/controle parametrers
+export CRT_YSPANBR="${YSPANBR}"  
+export INP_CINIFILEPGD="${YDOMAIN1}" 
+export INP_YDOMAIN="${YDOMAIN2}"   
+export INP_CINIFILE="${CINIFILE1}"  
+
+###############################################################
+# Output Variables                                            #
+###############################################################
+
+## output files
+export OUT_CINIFILE_SPA="${INP_CINIFILE}.spa${CRT_YSPANBR}"            
+
+
+
+
+

@@ -1,0 +1,5 @@
+CPP = cpp -P -traditional -Wcomment
+F90 = pgf90 
+F90FLAGS = -O
+CPPFLAGS = -Dpgf
+LDFLAGS =

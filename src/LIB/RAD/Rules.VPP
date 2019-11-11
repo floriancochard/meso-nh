@@ -1,0 +1,5 @@
+F77FLAGS += -Ad
+F90FLAGS += -Aa -Ad
+CPPFLAGS += 
+SPL = cat 
+

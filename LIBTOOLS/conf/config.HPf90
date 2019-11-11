@@ -1,0 +1,10 @@
+CPP = /usr/lib/cpp -P -C
+AR  = ar
+F90 = f90 +DAportable
+F77 = f90 +DAportable
+
+CPPFLAGS = -DHP -DF90HP
+F90FLAGS = -w
+F77FLAGS = -w
+
+

@@ -1,0 +1,9 @@
+CPP = cc -C -E
+AR  = ar -X64
+F77 = xlf90_r -qarch=pwr4 -qzerosize -qautodbl=dbl4 -qmaxmem=-1
+F90 = xlf90_r -qarch=pwr4 -qzerosize -qautodbl=dbl4 -qmaxmem=-1
+F77FLAGS = -q64 -qfixed -O3 -qstrict
+F90FLAGS = -q64 -qfree=f90 -qsuffix=f=f90 -O3 -qstrict
+CFLAGS = -q64 
+CPPFLAGS = 
+LDFLAGS = -q64 -bloadmap:map_ld

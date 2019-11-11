@@ -1,0 +1,91 @@
+# exrwdia
+# =======
+#outil (version simplifiee de extractdia) qui permet:
+#   1)d'extraire des champs 2D/3D d'un fichier diachronique (sortie conv2dia)
+#   2)d'extraire un zoom i,j,k,t,traj,process du champ
+#   3)d'effectuer des calculs sur le champ extrait
+# (ex: maximum sur la verticale, moyenne verticale entre 2 niveaux, 
+#      interpolation verticale et horizontale, autre code perso)
+#   4)d'ecrire ce zoom extrait au format:
+#       'DIAC'= nouveau fichier diachronique visualisable par  diaprog
+#       'LLHV'= fichier ascii lon,lat,altitude,valeur
+#       'llhv'= fichier ascii lat,lon,altitude,valeur
+#       'FREE'= format libre à fixer au programme
+#       'KCDL'= format CDL ( passage au format netcdf via
+#        le script Unix tonetcdf appelé par le programme)
+#             
+#
+# Pour les autres formats possibles LLZV LLPV llzv llpv ZCDL ou PCDL,
+# 'CONF' grille régulière sur le plan conforme,'LALO' grille régulière 
+#  en lat-lon , un conseil: sortir en format 'DIAC' puis utiliser extractdia
+#  et activer les choix LLZV LLPV llzv llpv ZCDL PCDL , CONF ou LALO
+#
+# Cet outil nécessite une connaissance de l'utilisation des différentes
+# grilles de Mesonh (voir le book3).
+#
+#personnalisation :
+#=================
+#  Le programme extractdia est base sur  2 routines de lecture (READVAR) 
+# et d'écriture (WRITEVAR) de champs Mesonh qui peuvent être utilisées
+# dans un programme utilisateur pour traiter des fichiers diachroniques.
+#
+#- Un exemple de programme (exrwdia.f90) est disponible sous le repertoire 
+# $MESONH/MAKE/tools/diachro/src/EXTRACTDIA
+#
+#  Pour modifier le programme exrwdia (ou un autre programme personnel): 
+# 1)initialiser et exporter la variable ARCH
+#(LXpgf90 ou LXNAGf95 sur PC Linux 32bits, HPf90 sur HP)
+#
+export ARCH=LXNAGf95
+#
+# 2)creer un repertoire nomme src qui contiendra les fichiers sources
+# puis y copier exrwdia.f90 et eventuellement vos propres routines
+#
+mkdir src
+cp $MESONH/MAKE/tools/diachro/src/EXTRACTDIA/exrwdia.f90 src/my_prog.f90
+#  
+# 3)dans votre repertoire de travail:
+# compiler par 
+#
+gmaketools PROG=my_prog OBJS="my_routine1.o my_routine2.o"
+#
+# 3bis)OU initialiser et exporter la variable MNH_LIBTOOLS
+#
+export MNH_LIBTOOLS=$MESONH/MAKE
+#
+# copier le fichier Makefile.exrwdia de $MNH_LIBTOOLS/tools/diachro
+#
+cp $MNH_LIBTOOLS/tools/diachro/Makefile.exrwdia Makefile
+#
+# completer le Makefile si vous avez des routines supplementaires
+#(liste des objets dans OBJS et dependances) :
+# exemple dans $MESONH/MAKE/tools/diachro/Makefile.extractdia
+# 
+# compiler par 
+#
+gmake 
+# 4) l executable est dans le repertoire $ARCH
+#
+#- D autres exemples de programmes bases sur READVAR et WRITEVAR sont
+#extractdia.f90
+#mesonh2obs.f90
+#obs2mesonh.f90
+#compute_r00_pc.f90 
+#dans $MESONH/MAKE/tools/diachro/src/EXTRACTDIA
+#
+#execution :
+#===========
+# initialiser (facultatif si le fichier est dans le repertoire courant)
+export DIRLFI=directory_fichier_diachro
+# et executer 
+exrwdia
+#
+#
+#
+#Scripts utilisés donc accessibles depuis votre environnement:
+#===========================================================
+#rmlink, tonetcdf
+#
+#
+#  Mise à jour le 30/01/2004
+#  Mise à jour le 01/03/2005

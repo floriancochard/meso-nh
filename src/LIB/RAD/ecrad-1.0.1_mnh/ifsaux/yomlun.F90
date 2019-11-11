@@ -1,0 +1,15 @@
+MODULE YOMLUN
+
+USE PARKIND1,      ONLY : JPIM
+USE YOMLUN_IFSAUX, ONLY : NULOUT, NULERR
+
+IMPLICIT NONE
+
+SAVE
+
+INTEGER(KIND=JPIM) :: NULRAD = 145
+
+INTEGER(KIND=JPIM) :: NULNAM  =  4
+
+!     ------------------------------------------------------------------
+END MODULE YOMLUN

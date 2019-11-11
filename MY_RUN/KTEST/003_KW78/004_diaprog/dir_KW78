@@ -1,0 +1,80 @@
+! directives de presentation
+LINVWB=T NIGRNC=10 nhi=0 lminmax=t xsizel=0.015
+! fenetre graphique
+visu
+! plages de couleur, pas d isolignes
+LCOLAREA=T LISO=F               
+! gestion des vecteurs (1 vecteur sur 4)
+NISKIP=4 XVRL=0.15                                                              
+! 1er fichier a ouvrir
+_file1_'KWRAI.1.SEG01.004dg'                                                    
+!visu                     
+! couleur de fond pour le 1er intervalle
+LCOLZERO=T NCOLZERO=1                                                           
+! precipitations explicites instantanees
+NIMNMX=1
+XISOMIN_INPRR=0
+XISOMAX_INPRR=6
+XDIAINT_INPRR=0.250
+INPRR                                                                           
+! precipitations explicites cumulees
+XISOMIN_ACPRR=0
+XISOMAX_ACPRR=0.150
+XDIAINT_ACPRR=0.005
+ACPRR                                                                           
+! trace de tous les vecteurs
+NISKIP=1                                                                        
+! superposition de la pression et des vecteurs de vent au niveau K=2
+XISOMIN_PABST=98250
+XISOMAX_PABST=98350
+XDIAINT_PABST=5
+PABST_K_2_ON_UTVT_K_2                                                           
+! superposition du rapport d eau nuageuse et des vecteurs vent a 3000m
+XISOMIN_RCT=0
+XISOMAX_RCT=0.003
+XDIAINT_RCT=0.00005
+RCT_Z_3000_ON_UTVT_Z_3000                                                       
+! superposition du rapport d eau nuageuse et des vecteurs vent a 5000m
+RCT_Z_5000_ON_UTVT_Z_5000                                                       
+! definition d une coupe verticale
+NIDEBCOU=5 NJDEBCOU=2 NLANGLE=47 NLMAX=21                                       
+! trace de la coupe verticale dans le plan horizontal
+LTRACECV=T                                                                      
+! rapport de vapeur et vecteurs vent dans la coupe verticale
+XISOMIN_RVT=0
+XISOMAX_RVT=0.015
+XDIAINT_RVT=0.0005
+RVT_CV__ON_ULTWT_CV_                                                    
+! plus de trace de la coupe verticale
+LTRACECV=F                                                                      
+! rapport de melange d eau nuageuse et rapport d eau de pluie
+XISOMIN_RRT=0.00025
+XISOMAX_RRT=0.005
+XDIAINT_RRT=0.00025
+XISOMIN_RCT=0.
+XISOMAX_RCT=0.001
+XDIAINT_RCT=0.00005
+RCT_CV__ON_RRT_CV_                                                     
+! difference pour la temperature potentielle avec le champ initial
+XISOMIN=-4
+XISOMAX=4
+XDIAINT=0.2
+THT_CV__MINUS_LSTHM_CV_                                                         
+! vitesse verticale en coupe verticale
+XISOMIN_WT=-4
+XISOMAX_WT=10
+XDIAINT_WT=0.5
+WT_CV_                                                                          
+! definition d une autre coupe verticale
+NIDEBCOU=15 NJDEBCOU=2 NLANGLE=90 NLMAX=23       
+LTRACECV=T                                                                   
+RVT_CV__ON_ULTWT_CV_                                                            
+LTRACECV=F                                                                 
+RCT_CV__ON_RRT_CV_                                                        
+XISOMIN=-4
+XISOMAX=4
+XDIAINT=0.2
+THT_CV__MINUS_LSTHM_CV_                                                         
+WT_CV_                                                                          
+quit
+                                                               

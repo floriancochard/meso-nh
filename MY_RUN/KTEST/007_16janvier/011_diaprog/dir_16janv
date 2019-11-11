@@ -1,0 +1,24 @@
+LINVWB=T NIGRNC=5 nhi=0 lminmax=t xsizel=0.015                                  
+NISKIP=4 XVRL=0.1                                                               
+_file1_'16JAN.1.12B18.001cv'                                                      
+_file2_'16JAN.2.12B18.001cv'      
+visu
+print groups                                                                    
+LCOLINE=T                                                                       
+_file1_
+ZS                                                                              
+LCOLAREA=T LISO=F                                                               
+LCOLZERO=T NCOLZERO=1                                                           
+LCOLZERO=F
+NIMNMX=0 XDIAINT_THT=1.                                                         
+THT_PR_850_ON_UTVT_PR_850                                                       
+NIMNMX=-1                                                                       
+RVT(*1000)_PR_700                                                               
+PABST_Z_9000_ON_UTVT_Z_9000                                                     
+_file2_
+NIMNMX=0 XDIAINT_THT=1.                                                         
+THT_PR_850_ON_UTVT_PR_850                                                       
+NIMNMX=-1                                                                       
+RVT(*1000)_PR_700                                                               
+PABST_Z_9000_ON_UTVT_Z_9000                                                     
+quit                           

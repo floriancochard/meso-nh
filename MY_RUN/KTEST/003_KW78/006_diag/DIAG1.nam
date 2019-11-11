@@ -1,0 +1,12 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_CONFZ
+ ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=1
+/
+&NAM_DIAG             
+  LCLSTR=T, 
+  LBOTUP=T,
+  CFIELD='W',
+  XTHRES=10. /
+&NAM_DIAG_FILE      YINIFILE(1) = "KWRAI.1.SEG01.004" ,
+                    YSUFFIX='dia' /
+

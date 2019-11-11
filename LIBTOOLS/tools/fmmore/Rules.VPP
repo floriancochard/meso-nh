@@ -1,0 +1,6 @@
+ifeq ($(B),64)
+F90FLAGS += -Ad
+endif
+CPPFLAGS += -DFUJI
+LDFLAGS  += 
+

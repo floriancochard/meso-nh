@@ -1,0 +1,66 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#{JOBMONO}
+${JOBMULTI}
+
+set -x
+
+#
+# init env
+#
+[ "x\$XYZ" = "x" ] && . ${SRC_MESONH}/conf/profile_mesonh${XYZ}
+
+#set -e
+mkdir -p ${EXECDIR}
+cd ${EXECDIR}
+
+${MNHENV}
+export MPIRUN="${MPIRUN}"
+
+#
+# Remove old files
+#
+rm -f ${CPGDFILE}*.??? OUTPUT_LISTING? pipe* *.tex
+
+ln -sf ${PREP_PGD_FILES}/*.??? .
+
+#cp ${SUBDIR}/PRE_PGD1.nam.MED_ATL PRE_PGD1.nam
+cat > PRE_PGD1.nam << EOF
+&NAM_CONFZ
+ NZ_PROC=2 ,
+ NZ_SPLITTING=10 , ! 1
+ NB_PROCIO_W=${NB_PROCIO_W_PGD} ,
+ MPI_BUFFER_SIZE=1000
+/
+
+&NAM_PGDFILE CPGDFILE="${CPGDFILE}" /
+&NAM_PGD_SCHEMES CNATURE='ISBA  ', CSEA='SEAFLX', CTOWN='TEB   ', CWATER='WATFLX' /
+&NAM_PGD_GRID CGRID='CONF PROJ'/
+&NAM_CONF_PROJ XLAT0=${XLAT0}, XLON0=${XLON0}, XRPK=1., XBETA=0. /
+&NAM_CONF_PROJ_GRID XLATCEN=${XLAT0},  XLONCEN=${XLON0}, NIMAX=${NIMAX}, NJMAX=${NJMAX},
+                    XDX=${XDX}, XDY=${XDY} /
+&NAM_COVER     YCOVER='ecoclimats_v2', YFILETYPE='DIRECT' /
+&NAM_ZS        YZS='gtopo30', YFILETYPE='DIRECT' /
+&NAM_ISBA  YCLAY='clay_fao', YCLAYFILETYPE='DIRECT',
+           YSAND='sand_fao', YSANDFILETYPE='DIRECT' /
+&NAM_DUMMY_PGD /
+EOF
+
+time \${MPIRUN} ${SRC_MESONH}/exe/PREP_PGD${XYZ}
+
+${JOBSTAT}
+
+cat OUTPUT_LISTING0
+cp OUTPUT_LISTING0 ${SUBDIR}/OUTPUT_LISTING0.\$\$
+
+exit
+#
+# Postprocessing
+#
+rm -f ${CPGDFILE}.cv.??? 
+conv2dia < dir_conv2dia
+
+rm -f gmeta
+diaprog < dir_diaprog

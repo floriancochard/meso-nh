@@ -1,0 +1,37 @@
+###############################################################
+#  Import Global Variables                                    #
+###############################################################
+. ../confdollar_${CONFEXP}
+
+##############################################################
+## Run Parameters                                            #
+##############################################################
+
+## job parameters
+export NBP=1
+export TIME=3600
+#export MEM="3gb"
+
+## Next Step , in RMSHELL put a "#" before commande to inhibit !!!
+#export RMSHELL="# "
+export NEXTDIR="\${SUBDIR}/../../005_spa_mod1_mod2"
+export NEXTRUN="run_spawning_xyz "
+
+###############################################################
+# INTERFACE :: Input  Files/Parameters                        #
+###############################################################
+
+## input files
+export INDIR_HATMFILE="${SRC_MESONH}/MY_RUN/KTEST/007_16janvier/004_arp2lfi"
+export INP_HATMFILE=${HATMFILE1} SUF=""
+
+export INP_HPGDFILE=${HPGDFILE1} 
+export INP_CFILE=""
+export LISTGET="${INP_HPGDFILE} ${INP_CFILE}"
+
+###############################################################
+# INTERFACE :: Output Files                                   #
+###############################################################
+
+## output files
+export OUT_CINIFILE=${CINIFILE1}               

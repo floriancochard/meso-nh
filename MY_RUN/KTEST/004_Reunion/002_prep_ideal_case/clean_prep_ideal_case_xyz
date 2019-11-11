@@ -1,0 +1,2 @@
+set -x
+rm -f REUNION_PGD_1km5* REUNION_IDEA* OUTPUT_LISTING* pipe* *.tex file_for_xtransfer

@@ -1,0 +1,4 @@
+
+LIBS += -L$(MESONH)/binaries -lbidon
+
+CPPFLAGS += -DFUJI

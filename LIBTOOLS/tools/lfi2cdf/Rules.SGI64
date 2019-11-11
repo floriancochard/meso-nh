@@ -1,0 +1,8 @@
+NETCDFHOME=/usr/local/pub
+DIR_CDF = $(NETCDFHOME)/lib64
+LIBCDF = $(DIR_CDF)/libnetcdf.a
+###################################
+
+CPPFLAGS += -DLOWMEM
+INC      += -I$(NETCDFHOME)/include
+F90FLAGS += -r8 -O2

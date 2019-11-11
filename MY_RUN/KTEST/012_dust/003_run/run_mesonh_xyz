@@ -1,0 +1,8 @@
+#!/bin/sh
+set -x
+set -e
+rm -f DUST* OUT*  
+ln -sf  ../002_ecmwf2lfi/S702000092*.{des,lfi,nc} .
+ln -sf  ../001_pgd1/pgd_dust_30km.{des,lfi,nc} .
+time ${MPIRUN} MESONH${XYZ}
+

@@ -1,0 +1,7 @@
+#F77FLAGS +=  -g -O0 -save -r8
+F77FLAGS +=  -O0 -r8
+#F90FLAGS +=  -g -O0 -save -r8
+F90FLAGS +=  -O0 -r8
+CPPFLAGS = 
+SPL = cat 
+

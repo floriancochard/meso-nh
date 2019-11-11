@@ -1,0 +1,95 @@
+Description of namelist variables used to run mesonh simulation
+###############################################################
+
+For further details see the MesoNH User's Guide available from http://mesonh.aero.obs-mip.fr/mesonh/
+######################################################################################################
+
+&NAM_LUNITn  
+CINIFILE 	= "KWRAIN.48"	; name of the initial file produced by PREP_IDEAL_CASE
+
+&NAM_CONFn  
+LUSERV 		= T 		; switch to use vapor water (prognostic variable)
+LUSERC 		= T 		; switch to use cloud water 
+LUSERR 		= T 		; switch to use rain 
+
+&NAM_DYNn 
+XTSTEP 		= 10.0 		; time step (in second) 
+CPRESOPT 	= "RICHA" 	; type of pressure solver used for the elliptic equation
+                                        ('RICHA', 'CGRAD', 'CRESI')
+NITR 		= 4 		; number of iterations
+XRELAX 		= 1.
+LHORELAX_UVWTH 	= T 		; switch to apply the horizontal relaxation on the outermost verticals of the model 
+					for U,V,W TH variables. 
+LHORELAX_RV 	= T 		; switch to apply the horizontal relaxation on the outermost verticals of the model
+                                        for RV variable.
+LVE_RELAX 	= F		; switch to apply the vertical relaxation on the outermost verticals of the model
+NRIMX 		= 6 		; number of points in the lateral relaxation area in the x direction
+NRIMY 		= 6 		; number of points in the lateral relaxation area in the y direction
+XRIMKMAX 	= .005	 	; maximum value (in s-1) of the relaxation coefficient for the lateral relaxation area
+XT4DIFU 	= 75. 		; e-folding time for the numerical diffusion of fourth order for momentum (in second)
+
+&NAM_ADVn 	(scalar advection)
+CMET_ADV_SCHEME	="CEN2ND" 	; Advection scheme used for temperature, water substances and TKE variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+				 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+				 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+				 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+				 'PPM_00' PPM advection scheme without constraint 
+				 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+CSV_ADV_SCHEME	="CEN2ND" 	;Advection scheme used for the tracer variables
+				('CEN2ND' 2nd order advection scheme centred on space and time - no sign preservation
+                                 'CEN4TH' 4th order advection scheme centred on space and time - no sign preservation
+                                 'FCT2ND' 2nd order advection scheme centred on space and time - POSITIVE definite
+                                 'MPDATA' 2nd order advection scheme uncentred on space and time - Positive definite
+                                 'PPM_00' PPM advection scheme without constraint
+                                 'PPM_01' Monotonic version of PPM - POSITIVE definite)
+
+&NAM_PARAMn  (parametrizations)
+CCLOUD 		= "KESS" 	; microphysical scheme
+				( 'NONE' no microphysical scheme
+				  'REVE' only the saturation adjustment is performed
+				  'KESS' a warm Kessler microphysical scheme
+				  'C2R2' a 2-moment warm microphysical scheme according to Cohard and Pinty (2000)
+				  'KHKO' a 2-moment warm microphysical scheme according to Khairoudinov and Kogan (2000)
+				  'ICE3' a mixed microphysical scheme (ice, snow, and graupel: 6 classes of hydrometeors)
+				  'ICE4' ICE3 with hail (7 classes of hydrometeors)
+
+&NAM_LBCn 
+CLBCX 		= 2*"OPEN" 	; type of lateral boundary condition at the left and right boundaries along x
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+CLBCY 		= 2*"CYCL" 	; type of lateral boundary condition at the left and right boundaries along y
+                                        ("CYCL" for cyclic boundary conditions
+                                        "OPEN" for open boundqary conditions
+                                        "WALL" for rigid boundary conditions)
+
+&NAM_CONF 
+CCONF 		= "START" 	; configuration of all models
+					('START' or 'RESTA' for a restart)
+NMODEL 		= 1 		; number of nested models
+LFLAT		= T		; switch for zero ororography
+NVERB 		= 5		; verbosity level       (0 for minimum of prints
+                                                        5 for intermediate level of prints
+                                                        10 for maximum of prints)
+CEXP 		= "KWRAI" 	; experiment name (5 characters, no blank)
+CSEG 		= "SEG48" 	; segment name (5 characters, no blank)
+CSPLIT		= 'BSPLITTING'	; type of domain splitting for parallel distribution
+				 ( 'BSPLITTING' the domain is decomposed in Box along X and Y
+				   'XSPLITTING' the X direction is splitted in stripes along Y
+				   'YSPLITTING' the Y direction is splitted in stripes along X )
+
+&NAM_DYN 
+XSEGLEN 	=1800. 		; segment length (in second)
+XASSELIN 	= 0.2 		; amplitude of the Asselin temporal filter for meteorological variables
+LCORIO 		= F 		; switch for the Coriolis parameters
+				  (.FALSE. the Earth rotation effects are neglected
+				   .TRUE. the Earth rotation is taken into account )
+LNUMDIFU 	=.T. 		; switch to activate the numerical diffusion for momentum
+
+&NAM_BACKUP 
+XBAK_TIME(1,1) 	= 450.		; an array of increments (in second) from the beginning of the segment 
+				to the instant where the i-th fields output on FM-files is realized by model "m" 
+XBAK_TIME(1,2) 	= 900. 
+XBAK_TIME(1,3) 	= 1350. 
+XBAK_TIME(1,4) 	= 1800. 

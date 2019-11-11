@@ -1,0 +1,5 @@
+set -x
+
+rm -f ICART* CPLCH* OUTPUT_LISTING* pipe* file_for_xtransfer 
+rm -f  ecmwf.OD.20040810.18-V2 mocage.GLOB22.20040810.18
+

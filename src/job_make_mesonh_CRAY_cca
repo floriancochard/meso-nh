@@ -1,0 +1,29 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+#PBS -N Sortie_cray
+#PBS -q nf
+# CPUs number (on all nodes) 
+#PBS -l EC_total_tasks=1  
+# CPUs number by node 
+#PBS -l EC_tasks_per_node=1
+#PBS -l EC_threads_per_task=4 
+#PBS -j oe
+# time limit
+#PBS -l walltime=7200
+
+set -x
+# On va lancer la compilation dans le répertoire de lancement du job
+cd ${PBS_O_WORKDIR}
+pwd
+
+ARCH=LXifort
+#ARCH=LXcray
+. ../conf/profile_mesonh-${ARCH}-R8I4-MNH-V5-4-2-MPICRAY-O2
+
+time gmake -j 4 2>&1 | tee sortie_compile_${ARCH}.$$
+time gmake -j 4 2>&1 | tee sortie_compile_${ARCH}2.$$
+time gmake -j 1 installmaster  2>&1 | tee sortie_install_${ARCH}2.$$
+

@@ -1,0 +1,68 @@
+\section{Conversion to NetCDF files}
+
+\subsection{{\tt lfi2cdf} tool}
+
+The \texttt{lfi2cdf} tool converts the binary part (or LFI file) of a
+FM file (synchronous or diachronic) into a NetCDF file.  All the fields
+(or more precisely all the LFI articles) contained in the input LFI file
+are copied to the NetCDF output file with their values unchanged. As
+a LFI article does not hold any information on the variable, the tool
+tries to describe the corresponding NetCDF variable by using~:
+
+\begin{itemize}
+\item 3 LFI articles: \texttt{IMAX, JMAX,} and \texttt{KMAX}
+  if they are available in the LFI input file. These articles may
+  provide the NetCDF dimensions \texttt{DIMX, DIMY,} and \texttt{DIMZ}
+  of an array variable. If these variables are not available in the
+  input file, the tool treats each array variable as a 1D array.
+\item a small database implemented as a structure array in the
+  \texttt{lfi2cdf} source file \texttt{fieldtype.f90}. This array
+  holds the type (\texttt{REAL, INTEGER, LOGICAL}\ldots) of every
+  common LFI article. When an article is not present in this database,
+  its name is displayed on \texttt{stdout} by the running tool, and
+  the corresponding values are always considered as \texttt{REAL}
+  values. A new LFI article type description can be easily added in
+  the \texttt{fieldtype.f90} source file and the tool must be then
+  recompiled.
+\end{itemize}
+
+\subsubsection{Usage}
+The binary part of the FM file is required in the current directory.
+The following commands convert a file \texttt{myfile.lfi} from LFI to NetCDF:
+
+\begin{verbatim}
+lfi2cdf myfile.lfi
+\end{verbatim} 
+or
+\begin{verbatim}
+lfi2cdf myfile
+\end{verbatim}
+
+\noindent The output NetCDF file is named:
+\texttt{myfile.cdf}. 
+%myfile{\bf .cdf}. 
+It can easily be manipulated by NetCDF tools\footnote{see
+freely available NetCDF software at  http://www.unidata.ucar.edu/packages/netcdf/software.html} like
+\texttt{ncdump}, \texttt{ncview}, or \texttt{NCO} operators.\\
+
+\noindent In the same way, you will convert a NetCDF
+file \texttt{myfile.cdf} back to LFI format by typing:
+
+\begin{verbatim}
+cdf2lfi myfile.cdf
+\end{verbatim}
+or
+\begin{verbatim}
+cdf2lfi myfile
+\end{verbatim}
+The output LFI file is then named: \texttt{myfile.lfi}
+
+
+\subsection{{\tt extractdia} tool}
+The \texttt{extractdia} tool converts a diachronic FM file into a NetCDF file after an extraction of a list of fields and an optional extraction of a sub-domain.  See the section \ref{extractdia}.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "tools"
+%%% End: 

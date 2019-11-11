@@ -1,0 +1,6 @@
+F77LAGS  +=
+F90FLAGS += -O2
+CFLAGS   +=
+CPPFLAGS += -DBIG_endian
+
+OBJS = ieee_is_nan.o comppar.o compress.o decompress.o nearestpow2.o searchgrp.o bitbuff.o

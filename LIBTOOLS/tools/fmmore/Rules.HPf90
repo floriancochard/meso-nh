@@ -1,0 +1,10 @@
+
+CPPFLAGS += -DHP -DF90HP
+F77FLAGS += -O2 +Oinfo +Olimit
+F90FLAGS += -O2 +Oinfo +Olimit
+ifeq ($(B),64)
+F90FLAGS += +r8
+endif
+LDFLAGS  += 
+OBJS2=
+

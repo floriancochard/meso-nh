@@ -1,0 +1,7 @@
+#
+# Don't forget -DLITTLE flag for little-endian architecture
+#
+
+#CFLAGS += -DUNDERSCORE -DVPP
+CFLAGS += -DUNDERSCORE -DLITTLE
+

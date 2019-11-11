@@ -1,0 +1,41 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+${JOBMULTI}
+
+set -x
+
+#
+# init env
+#
+[ "x\$XYZ" = "x" ] && . $SRC_MESONH/conf/profile_mesonh${XYZ}
+
+set -e
+cd ${SUBDIR}
+
+ulimit -c 0
+export MPIRUN="${MPIRUN}"
+
+#
+# Link input data
+#
+ln -fs ../../001_prep_ideal_case/${CONFEXP}/${CINIFILE}.??? .
+#
+# First  run:: 1 step --> XSEGLEN=XTSTEP
+#
+sed -e s"/XSEGLEN=STEPLEN/XSEGLEN=${XTSTEP}/g" EXSEG1_NSTEP.nam > EXSEG1.nam      
+rm -f ${CEXP}.?.${CSEG}.???.??? OUTPUT_LISTING? 
+#
+time \${MPIRUN} ${SRC_MESONH}/exe/MESONH${XYZ}
+cp OUTPUT_LISTING1 OUTPUT_LISTING1_1STEP_${MODE}
+cat OUTPUT_LISTING1
+#
+# Second run:: N step --> XSEGLEN=XTSTEP*NSTEP
+#
+sed -e s"/XSEGLEN=STEPLEN/XSEGLEN=${XSEGLEN}/g" EXSEG1_NSTEP.nam > EXSEG1.nam      
+rm -f ${CEXP}.?.${CSEG}.???.??? OUTPUT_LISTING? 
+#
+time \${MPIRUN} ${SRC_MESONH}/exe/MESONH${XYZ}
+cp OUTPUT_LISTING1 OUTPUT_LISTING1_${NSTEP}STEP_${MODE}
+cat OUTPUT_LISTING1

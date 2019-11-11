@@ -1,0 +1,630 @@
+\section{Conversion to GRIB or Vis5D files}
+
+\subsection{Presentation}
+FM synchronous file can be convert into \underline{GRIB} 
+or \underline{Vis5D} format.
+This section aims at describ how the converter works and how use it.
+
+The GRIB (GRId in Binary) format is a standard meteorological one, defined 
+by the WMO. GRIB files can be plotted with METVIEW
+%\footnote{available on {\tt xdata} workstation in CNRM}
+graphic interface (developped at ECMWF), or 
+R2\footnote{used in the GMME/MICADO team at CNRM} software.
+
+The Vis5D format is specified for using Vis5D\footnote{home page 
+{\tt http://www.ssec.wisc.edu/\~ billh/vis5d.html}}
+software (following the GNU General Public License): 3 spatial
+dimensions, time dimension, 5$^{th}$ dimension for enumeration of variables.
+It is rather designed for animation of 3D plotting.
+
+Choice was made to put together the two file formats in a same conversion
+program because in both cases specificities of Meso-NH grids have to be
+treated in the same way (horizontally: Arakawa C-grid, vertically: Gal-Chen
+coordinate $\hat z$ following terrain). However, the user has to choose one 
+of the two formats available when running the tool
+(see section \ref{s:execution}).
+
+
+\subsection{Usage} \label{s:execution}
+The interactive tool is
+called {\tt lfi2grb} or {\tt lfi2v5d} according the wanted output
+file format, but it runs the same program. Some questions are to be
+answered to indicate the number and type of vertical levels, the type of
+horizontal domain,
+and the name of the variables to write into the output file.
+All that is typed on keyboard is saved in {\tt dirconv.grb} or {\tt dirconv.v5d}
+file, it can be appended and used as input (after renaming it) for the next call
+of the tool (e.g. {\tt mv dirconv.grb dirgrb ; lfi2grb < dirgrb}).
+
+For historical reasons, a program with the same goal of conversion to GRIB or 
+Vis5d has been first developped as a main program
+of MesoNH, as DIAG program is. This program called {\bf CONVLFI} runs with
+the MesoNH procedure {\bf prepmodel} and
+a namelist file {\tt CONVLFI1.nam} (see \ref{ss:convlfi}). 
+
+To use the converter after a {\bf DIAG prepmodel} job, the Meso-NH file must
+remain a synchronous file, not transformed onto a diachronic file:
+in {\bf prepmodelrc} specify {\tt OUTFILE\_TOOLS='fm'} 
+(default is 'conv2dia' to convert with {\tt conv2dia}).
+
+
+\subsubsection{{\tt lfi2grb} tool}
+When {\tt lfi2grb} tool is invoked, you must indicate, 
+after the name of the input file, first 
+the horizontal grid (type, eventually type of interpolation and domain),
+the vertical grid (type and levels), 
+then the list of the 3-dimensional fields to convert, 
+and the list of the 2-dimensional ones.
+
+For the \underline{horizontal grid}, you can either keep the one of MesoNH file
+(cartesien or conformal projection) or interpolate onto a lat-lon regular grid.
+In the first case, you can replace all the fields on mass points (A-grid)
+or keep the native grid (C-grid).
+In the second case, you have to indicate
+the bounds of the domain with north and south latitudes and west and east
+longitudes, as well as the type of horizontal interpolation:
+nearest-neighbour value or bilinear interpolation with the 4 surrounding values.
+The resolution of the lat.-lon. grid is automatically initialized 
+with the equivalent value of the grid-mesh where the map scale is minimum. 
+The program also indicates the number of grid points of the Meso-NH domain 
+inside the prescribed lat-lon domain. If there are points of lat-lon domain
+outside Meso-NH one, the value of the interpolated fields at these points
+will be a missing one.
+
+The \underline{vertical grid} can be either the native K levels or pressure
+levels. 
+In the first case ({\tt K}), all levels are kept and no interpolation is done:
+the height specified in the GRIB header is the one of the grid without orography.
+In the second case ({\tt P}), the list of pressure levels is either specified
+manually or computed using a linear function from user-specified
+minimum, maximum and increment values. If a prescribed level is below the lower
+Meso-NH level or above the upper MesoNH level, the value of the field at this 
+level will be a missing one. Otherwise, the value is computed from
+a linear interpolation in log(P).
+
+The \underline{3-dimensional fields} to convert are specified as follows: 
+one field per line with first the name of the record in the input file
+following by its grib code (tabular character is allowed). Note that no test
+is done on the value of grib code (GRIB header {\sf ISEC1(6)}): you choose it
+to easily identify the field with the software used after the conversion.
+The end of the list is indicated by the keyword {\tt END}.
+
+The \underline{2-dimensional fields} to convert are specified as follows:
+one field per line with first the name of the record in the input file
+(it can be a K-level of a 3-dimensional field too),
+following by its grib code and possibly level indicator and level value
+(tabular character is allowed).
+Note that the value of the level indicator ({\sf ISEC1(7)}) is optional 
+(the default value is 105: {\sf 'specified height above ground'}).
+So is the level value ({\sf ISEC1(8)}), the default value is the altitude of 
+the first mass point of the K-levels.
+The end of the list is indicated by the keyword {\tt END}.
+
+\subsubsection{Example of {\tt lfi2grb} use}
+\begin{itemize}
+\item to convert onto a GRIB file with horizontal and vertical interpolations in P levels:\\
+(all that is typed on keyboard (in {\it italic} in the example below)
+is saved in {\tt dirconv.grb})
+\end{itemize}
+\small
+{\tt - ENTER FM synchronous FILE NAME (without .lfi) ?}  \\
+{\tt\it CEXP.1.CSEG.001d } \hspace{3.5cm} $<$- the input file must be splitted in .des and .lfi \\
+{\tt - Horizontal interpolation to lat-lon regular grid? (Y/y/O/o/N/n)}\\
+{\tt\it y }  \\
+{\tt - Type of interpolation? NEARest-neighbour (default) or BILInear }\\
+{\tt\it NEAR }  \\
+{\tt  - NSWE target domain bounds (in degrees)? }\\
+{\tt\it 55. 35. -20. 10. }  \\
+{\tt - Vertical grid: type K or P ? }\\
+{\tt\it P }  \\
+{\tt - Type of vertical grid: given by linear FUNCTN (default) or MANUALly ?}\\
+{\tt\it FUNCTN }  \\
+{\tt - Enter number of P levels ?} \\
+{\tt\it 5 }  \\
+{\tt - Values of the  5  P levels (hPa, from bottom to top):} \\
+{\tt\it 1000. 850. 700. 500. 300. }  \\
+{\tt - Enter 3D variables to CONVERT (1/1 line, end by END): }\\
+{\tt  MesoNH field name, grib parameter indicator }\\
+{\tt\it UM  33 }\\
+{\tt - next 3D field or END ? }\\
+{\tt\it VM  34 }\\
+{\tt - next 3D field or END ? }\\
+{\tt\it END }\\
+{\tt - Enter 2D variables to CONVERT (1/1 line, end by END): }\\
+{\tt  MesoNH field name, grib parameter indicator, eventually level indicator and level value}\\
+{\tt\it T2M  13  105  2}\\
+{\tt - next 2D field or END ? }\\
+{\tt\it THM\_K\_2  13}\\
+{\tt - next 2D field or END ? }\\
+{\tt\it END}\\
+{\tt 2 fields (3D), and   2 fields (2D) written in CEXP.1.CSEG.001d.GRB }\\
+ 
+\normalsize
+\subsubsection{{\tt lfi2v5d} tool}
+When {\tt lfi2v5d} tool is invoked, you must indicate, 
+after the name of the input file, first 
+the vertical grid (type and levels), 
+then the list of the 3-dimensional fields to convert, 
+and the list of the 2-dimensional ones.
+
+No horizontal interpolation is available for the Vis5D format output: all the
+converted fields are replaced on mass points (A-grid) of the MesoNH grid
+(cartesien or conformal projection).
+
+The \underline{vertical grid} can be either the native K levels, altitude
+levels or pressure levels. 
+In the first case ({\tt K}), all levels are kept and the fields are interpolated
+on the levels of the lowest point of the domain.
+In the second and third cases ({\tt Z} and {\tt P}), the list of levels is
+either specified
+manually or computed using a linear function from user-specified
+minimum, maximum and increment values. The value of the field is computed from
+a linear interpolation in Z or in log(P).
+
+The \underline{3-dimensional fields} to convert are specified with 
+one record name per line.
+The end of the list is indicated by the keyword {\tt END}.
+
+Then the \underline{2-dimensional fields},
+or a K-level of 3-dimensional fields,
+to convert are specified in the same way.
+
+\subsubsection{Example of {\tt lfi2v5d} use}
+\begin{itemize}
+\item to convert onto a Vis5D file with vertical interpolation in Z levels:\\
+(all that is typed on keyboard (in {\it italic} in the example below)
+is saved in {\tt dirconv.v5d})
+\end{itemize}
+\small
+{\tt - ENTER FM synchronous FILE NAME (without .lfi) ?}  \\
+{\tt\it CEXP.1.CSEG.001 } \hspace{3.5cm} $<$- the input file must be splitted in .des and .lfi \\
+{\tt - Verbosity level ?}  \\
+{\tt\it 5 }  \\
+{\tt - File 2D (xz): L2D=T or F ?}  \\
+{\tt\it F }  \\
+{\tt - Vertical grid: type K,Z or P ?}  \\
+{\tt\it Z }  \\
+{\tt - Type of vertical grid: given by linear FUNCTN (default) or MANUALly ?} \\
+{\tt\it FUNCTN }  \\
+{\tt - Vertical grid: min, max, int (m for Z, hPa for P)?} \\
+{\tt\it 1500 9000 3000 }  \\
+{\tt - Enter 3D variables to CONVERT (1/1 line, end by END): }\\
+{\tt\it THM }  \\
+{\tt - next 3D field or END ? }\\
+{\tt\it POVOM }  \\
+{\tt - next 3D field or END ? }\\
+{\tt\it END }\\
+{\tt - Enter 2D variables to CONVERT (1/1 line, end by END): }\\
+{\tt\it ZS }  \\
+{\tt - next 2D field or END ? }\\
+{\tt\it END }\\
+{\tt 2 fields (3D), and   1 fields (2D) written in CEXP.1.CSEG.001d.V5D }\\
+
+\subsubsection{{\bf CONVLFI} program} \label{ss:convlfi}
+The MesoNH program {\bf CONVLFI} allows conversion onto GRIB 
+(the horizontal grid is either the native 
+MesoNH grid (Arakawa C-grid) of the field, the MesoNH mass grid
+(Arakawa A-grid),
+the vertical grid is either the native K levels or pressure levels), or
+conversion onto Vis5D (the horizontal grid is the MesoNH mass grid
+(A-grid), the vertical grid is either the native K levels without orography,
+altitude or pressure levels).
+
+The conversion is done with the Meso--NH procedure {\bf prepmodel} used with 
+the {\bf CONVLFI} program and the {\tt CONVLFI1.nam} namelist file.
+Up to 24 FM files can be treated identically in a single prepmodel job.
+\\
+
+A) In the file \underline{\bf prepmodelrc}, the input and output host, directories
+and login control variables refer to the input and output files as usual.
+The other control variables to initialize specifically in this file are:
+\begin{itemize}
+\item MAINPROG=CONVLFI
+\item LOAD\_OPT='location\_of\_v5d\_library'
+\item OUTHOST=name\_workstation  (for example) \\
+this allows future use of {\tt vis5d} or {\tt metview} on your local host.
+\end{itemize}
+
+B) In the \underline{\tt CONVLFI1.nam} namelist file, the user must indicate
+the format type wanted, the number and type of vertical levels, 
+the type of horizontal interpolation on a lat/lon domain 
+as well as the name of the variables to write into the output file:
+\begin{enumerate}
+\item\underline{Namelist NAM\_OUTFILE}: 
+
+\begin{center}
+\begin{tabular} {|l|l|l|}
+\hline
+Fortran name & Fortran type & default value\\
+\hline
+\hline
+CMNHFILE     & array of character (len=28)  & none   \\
+COUTFILETYPE & character (len=3)   & none   \\
+NVERB        & integer    & 5  \\
+LAGRID       & logical    & .TRUE.  \\
+CLEVTYPE     & character (len=1)   & 'P' if COUTFILETYPE='GRB'   \\
+             &                     & 'K' if COUTFILETYPE='V5D'   \\
+CLEVLIST     & character (len=6)   & 'FUNCTN'   \\
+XVLMIN       & real    & 10000.  if COUTFILETYPE='GRB'  \\
+XVLMAX       & real    & 100000. if COUTFILETYPE='GRB'  \\
+XVLINT       & real    & 10000.  if COUTFILETYPE='GRB'  \\
+LLMULTI      & logical    & .TRUE. \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+\item CMNHFILE: name of the input FM file (from an initialization sequence, or
+a model simulation, or after diagnostics computation).
+\index{CMNHFILE!\innam{NAM\_OUTFILE}}
+\item COUTFILETYPE: type of the output file, appended
+to CMNHFILE to generate the name of the output file.
+\begin{itemize}
+\item 'V5D'
+\item 'GRB'
+\end{itemize}
+\index{COUTFILETYPE!\innam{NAM\_OUTFILE}}
+\item NVERB: verbosity level 
+\begin{itemize}
+\item  0 for minimum of prints
+\item  5 for intermediate level of prints
+\item  10 for maximum of prints.
+\end{itemize}
+\index{NVERB!\innam{NAM\_OUTFILE}}
+\item LAGRID: switch to interpolate fields on an Arakawa A-grid (mass grid),
+\subitem forced to .TRUE. if Vis5D file or horizontal interpolation.
+\index{LAGRID!\innam{NAM\_OUTFILE}}
+\item CLEVTYPE: type of vertical levels in output file,
+\index{CLEVTYPE!\innam{NAM\_OUTVER}}
+\begin{itemize}
+\item 'P' pressure levels
+\item 'Z' z levels (only used for COUTFILETYPE='V5D')
+\item 'K' 
+\subitem if COUTFILETYPE='GRB': native vertical grid of Meso-NH (no
+interpolation, height specified in GRIB message is the one of the grid 
+without orography),
+\subitem if COUTFILETYPE='V5D': native vertical grid of Meso-NH (fields are
+interpolated on the levels of the lowest point of the domain).
+\end{itemize}
+\item CLEVLIST: how vertical levels are specified
+\begin{itemize}
+\item 'MANUAL' number and list of levels specified in the 1$^{st}$ free-format
+part,
+\item 'FUNCTN' using a linear function, with the next 3 parameters. 
+\end{itemize}
+\index{CLEVLIST!\innam{NAM\_OUTVER}}
+\item XVLMIN: minimum value for the vertical grid 
+\subitem (in m for CLEVTYPE = 'Z', in Pa for CLEVTYPE = 'P'),
+\item XVLMAX: maximum value for the vertical grid (`'),
+\item XVLINT: increment value for the vertical grid (`').
+\item LLMULTI: switch to produce a multigrib file (.T.) or monogrib files (.F.),
+only used for COUTFILETYPE='GRB' (each monogrib file name is composed with the
+date, the variable name and the level).
+\index{LLMULTI!\innam{NAM\_OUTFILE}}
+
+\end{itemize}
+
+\item\underline{Free-format part}: (number and list of vertical levels) \\
+This part is only used if CLEVLIST='MANUAL':
+\begin{enumerate}
+\item first the number of vertical levels,
+\item then the list of levels, by increasing values in m if CLEVTYPE = 'Z', or decreasing
+values in Pa if CLEVTYPE = 'P'
+\end{enumerate}
+
+\item\underline{Free-format part}: (variable names)
+This part indicates the record name of the variables of the input file to
+write in the output file. It is specified in two parts:
+\begin{enumerate}
+\item between the keywords BEGIN\_3D and END\_3D: the name of the 3D fields,
+following by their grib code if COUTFILETYPE='GRB' (separed by tabular 
+character).
+\item between the keywords BEGIN\_2D and END\_2D: the name of the 2D fields,
+following by their grib code, and possibly level indicator and level value
+if COUTFILETYPE='GRB' (separed by tabular character).
+\end{enumerate}
+{\bf N.B.:} do not forget the comment line after the keyword BEGIN\_3D
+and BEGIN\_2D.
+
+
+\end{enumerate}
+
+\underline{C) Example of namelist file CONVLFI1.nam}
+\begin{itemize}
+\item
+to convert into a Vis5d file:
+\end{itemize}
+
+\begin{verbatim}
+&NAM_OUTFILE  CMNHFILE(1)='T1E20.2.09B24.002',
+              CMNHFILE(2)='T1E20.2.09B24.003',
+              COUTFILETYPE='V5D',
+              CLEVTYPE='Z', CLEVLIST='MANUAL',
+              LAGRID=T, NVERB=10 /
+15
+30.
+100.
+250.
+500.
+1000.
+1500.
+2000.
+2500.
+3000.
+3500.
+4000.
+4500.
+5000.
+6000.
+8000.
+
+BEGIN_3D
+#variables 3D (MesoNH field name)
+UM
+VM
+WM
+THM
+END_3D
+BEGIN_2D
+#variables 2D (MesoNH field name)
+ZS
+END_2D
+\end{verbatim}
+
+\begin{itemize}
+\item
+to convert into a GRIB file:
+\end{itemize}
+\begin{verbatim}
+&NAM_OUTFILE  CMNHFILE(1)='T1E20.2.09B24.002',
+              CMNHFILE(2)='T1E20.2.09B24.003',
+              COUTFILETYPE='GRB', 
+              CLEVTYPE='P', CLEVLIST='FUNCTN',
+              XVLMAX=100000., XVLMIN=10000., XVLINT=10000.,
+              LAGRID=T, NVERB=5 /
+
+BEGIN_3D
+#variables 3D (MesoNH field name, grib parameter indicator)
+UM  33
+VM  34
+WM  40
+THM 13
+END_3D
+BEGIN_2D
+#variables 2D (MesoNH field name, grib parameter indicator)
+ZS 8
+END_2D
+next lines are ignored
+codes example:
+MSLP    1  
+ACPRR   61 
+INPRR   59 
+PABSM   1
+ALT 6
+TEMP    11
+REHU    52
+RVM 53
+RCM 153
+RRM 170
+RIM 178
+RSM 171
+RGM 179
+RHM 226
+RARE    230
+HHRE    231
+VVRE    232
+VDOP    233
+POVOM   234
+\end{verbatim}
+
+
+\normalsize
+\subsection{Short description of the program}
+Two main tasks are performed by the program: 
+\begin{enumerate}
+ \item \subitem After the specification of the name of the input file, a `light'
+initialization subroutine {\tt init\_for\_convlfi.f90 } is called to initialize
+the I/O interface, the geometry, dimensions, grids, metric coefficients, times,
+and to read pressure field.
+ \subitem According the output grids choosen, extra arrays are allocated for 
+interpolations. 
+\ignore{
+If horizontal interpolation is required, the equivalent 
+resolution and the number of usefull points are computed by the subroutine 
+{\tt ini2lalo.f90}.
+}%ignore
+ \item Then fields are treated one after another: first 3D fields, then 
+2D fields. 
+ \subitem In the case of GRIB conversion, fields are interpolated and written
+one after another (subroutine {\tt code\_and\_write\_grib.f90 } called for each
+horizontal level of each field). 
+ \subitem For Vis5D conversion, fields are interpolated and written
+all together (subroutine \newline {\tt code\_and\_write\_vis5d.f90 } called at the end).
+\end{enumerate}
+Using a `light' initialization routine and reading fields name from standard
+input allows the conversion program not to be dependant of a MesoNH version 
+or program.
+
+
+\subsection{Some tips to use Vis5D}
+See the complete guide for using Vis5D: file README.ps in the Vis5D package.
+
+\subsubsection{Utilities} (section 5 of README.ps)
+\begin{itemize}
+\item
+{\tt v5dinfo filename}: shows summary of the v5d file: number and name of
+the variables, size of the 3-D grid, number of time steps, vertical
+grid definition and projection definition.
+\item
+{\tt v5dstats filename}: shows statistics of the v5d file:
+minimum value, maximum value, mean value, standard deviation of
+ each variable.
+\item
+{\tt v5dedit filename}: edits the header of the v5d file and allows to change
+it: variables names, variables units, times and dates, projection, vertical
+coordinate system, low levels. \\
+{\it Useful to set the variable's units since they are not set by the program
+ CONVLFI.}
+\item
+{\tt v5dappend [-var] filename1 ... targetfile}: joins v5d files together: 
+{\it useful since the {\bf prepmodel} job generates a separate v5d file for each
+ timestep}, {\tt var} indicates list of variables to omit in the target file,
+the dimensions of 3-D grids must be the same in each input file.
+\end{itemize}
+
+\subsubsection{Options} \label{ss:opt} (section 6.1 of README.ps) \\
+
+To call Vis5D: {\tt vis5d file1 [options] file2 [options] ...} \\
+Options can be be specified here when calling, or by pressing the {\sf DISPLAY}
+button of the main control panel and then the 'Options' menu.
+
+Options useful to set when calling: \\
+{\tt [-date]} use 'dd month yy' instead of julian 'yyddd' date, \\
+{\tt [-box x y z]} specify the aspect ratio of the 3-D box (default is 2 2 1), \\
+{\tt [-mbs n]} override the assumed system memory size of 32 megabytes (Vis5D
+tells you value to specify if not enough), \\
+{\tt [-topo file]} use a topography file other than the default EARTH.TOPO
+
+
+\subsubsection{Control panel} (section 6.2 of README.ps) \\
+The top buttons control primary functions of Vis5D (see section
+\ref{sss:funct}). \\
+The middle ones control the viewing modes (see section \ref{sss:viewing}).\\
+The bottom 2-D matrix of buttons contains physical variables on the rows, and
+types of graphic representation on the columns. To control any type of graphic,
+click on the button with the left mouse button. 
+A pop-up window appears when clicking with the middle mouse button, and
+one window to modify colors with the right button  
+(see section \ref{sss:graph}).
+\\
+
+\underline{\bf Primary functions} \label{sss:funct}(section 6.3 of README.ps)
+\begin{itemize}
+\item{\sf SAVE PIC} to save the image in a file: first toggle the {\sf REVERSE}
+button to reverse black and white, then toggle the {\sf SAVE PIC} button and
+choose {\tt xwd} (X Window Dump) format. The file can be visualised with
+ {\tt xv} utility and transformed into {\tt postscript} format.
+
+\item{\sf GRID\#s} to display the grid indices instead of latitude, longitude and
+vertical units along the edges of the box.
+
+\item{\sf CONT\#s, LEGENDS} to toggle on or off the isoline values, the colorbar
+legends.
+
+\item{\sf BOX, CLOCK} to toggle on or off the display of the box and the clock.
+
+\item{\sf TOP, SOUTH, WEST} to set a top (or bottom), a south (or north), a west
+(or east) view.
+{\it Select} {\sf SOUTH} {\it to visualise 2D file.}
+
+\item{\sf SAVE, RESTORE, SCRIPT} to save and restore isolines, colors, labels,
+view (write and read a Tcl script).
+
+\item{\sf UVW VARS} to specify the names of the variables to use to display wind
+slices and trajectories, several triplets of variables can be used.
+
+\item{\sf NEW VAR..} to duplicate variables or create new ones by specifying
+mathematical expressions (formulas use names of existing variables, numbers,
+arithmetic operations, functions such as $SQRT,EXP,LOG,SIN,COS,TAN,ABS,MIN,MAX$,
+ex: horizontal wind speed, $spd=SQRT(UM*UM+VM*VM)$
+see section 6.13 of README.ps).
+
+\item{\sf ANIMATE} when several time steps: left mouse button: forward,
+right button: backward, S key: slower, F key: faster.
+
+\item{\sf STEP} when several time steps: left mouse button: one step ahead,
+ middle button: first step, right button: one step back.
+
+\item{\sf DISPLAY} to change the number of displays, the display options
+(see section \ref{ss:opt}), the display parameters (as with the {\tt v5dedit}
+utility).
+
+\end{itemize}
+
+\underline{\bf Viewing modes} \label{sss:viewing}(section 6.4 of README.ps) \\
+The underlined modes are the most useful (the others are much better displayed
+with {\tt diaprog} Meso-NH graphics).
+\begin{itemize}
+\item\underline{\sf Normal} 
+ to rotate, zoom and translate the graphics in the 3D window.
+
+%\item{\sf Trajectory}
+% to create and display wind trajectories.
+%
+\item\underline{\sf Slice}
+ to reposition horizontal and vertical slices.
+
+\item\underline{\sf Label}
+ to create and edit text labels in the 3D window.
+
+\item{\sf Probe}
+ to inspect individual grid values with a cursor moving through the 3D grid.
+
+\item{\sf Sounding}
+ to display a vertical sounding at the location of the moveable cursor.
+
+\item{\sf Clipping}
+ to reposition the six bounding planes of the 3-D box. Select one plane (top, bottom,
+ north, south, west or east) with the middle mouse button, and reposition it
+ with the right mouse button.
+
+\end{itemize}
+
+\underline{\bf Types of graphic representations} \label{sss:graph}(sections 6.5 to 6.9 of README.ps) \\
+The underlined types are the most useful (the others are much better displayed
+with {\tt diaprog} Meso-NH graphics).
+\begin{itemize}
+\item\underline{\sf Isosurfaces}: 
+ A 3-D contour surface showing the volume bounding by a particular value of the
+field (set with the left mouse button). The isosurface is either monocolor
+or colored according to the values of another variable (right mouse button). 
+
+\item\underline{\sf Slices}: 
+Planar cross section (horizontally or vertically) can be moved in this mode.
+To replace geographic coordinates by grid
+coordinates, press the {\sf "GRID \#s"} button on the control panel.
+
+\subitem contour line: interval can be changed
+and min/max values specified in the pop-up window. {\tt -10 (-30,20)} will
+plot values between -30 and 20 at intervals 10 with negative values dashed.
+Color can be changed with the right mouse button.
+
+\subitem colored slice: colors can be changed in the pop-up window 
+(with the mouse buttons or arrow keys). Color table is displayed in the
+3-D window if the {\sf "LEGEND \#s"} button is selected. 
+%Transparency can be changed by pressing the SHIFT key while using mouse.
+To change limits of plotted values, use the keyboard array buttons when in 
+the variable control panel (left and right for limits in the extend of the 
+variable values, up and down for colors inside it).
+
+\subitem wind vector slice: (buttons {\sf Hwind1, Vwind1, Hwind2, Vwind2})
+the scale parameter multiplies the length of vectors drawn
+(double: 2, half: 0.5), the density parameter controls the number of vectors
+(between zero and one, 0.5 for one vector of two, 0.25 for one of four).
+
+\subitem wind stream slice: (buttons {\sf HStream, VStream})
+the density parameter controls the number of streamlines
+(between zero and two).
+
+\item\underline{\sf Volume rendering}: {\it for powerful workstations..}
+ 
+\end{itemize}
+
+
+\subsubsection{Advanced use}
+
+\begin{itemize}
+\item generate your own topography file, with the {\tt maketopo.c} program
+in the {\tt util} directory (see 5 of README.ps).
+
+\item Tcl language, to write script (button {\sf SCRIPT}) or
+interactively (button {\sf INTERP..}) (see 6.16 of README.ps).
+
+\item external analysis functions written in Fortran,
+in {\tt userfuncs} directory (see 6.13.3 of README.ps).
+
+\end{itemize}
+
+\subsection{State of art}
+The converter only runs on Linux and VPP.
+In HP, right compilation options have to be found to use the external library...

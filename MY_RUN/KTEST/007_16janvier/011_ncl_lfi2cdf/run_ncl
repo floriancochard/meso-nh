@@ -1,0 +1,30 @@
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
+set -x
+#### Get highres coastline data for ncl
+./get_ncl_highres_files
+#### MNH file to convert in netcdf
+ln -sf ../008_run2/16JAN.1.12B18.001.lfi .
+#### Conversion to netcdf using lfi2cdf
+lfi2cdf 16JAN.1.12B18.001
+#### Initilizing variables for ncl
+path_ncl=`which ncl`
+if [ "$path_ncl" == "" ]
+then
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!   ERROR: NCL is not installed of the path to   !"
+echo "!     ncl binary is not set correctly            !"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+exit
+fi
+export NCARG_ROOT=${path_ncl%%/bin/ncl}
+export PATH=$NCARG_ROOT/bin:$PATH
+export NCARG_RANGS=.
+#### Running  ncl scripts 
+ncl mnh_BasicMap2.ncl
+ncl mnh_ModelLevels2.ncl
+ncl mnh_Cloud2.ncl
+ncl mnh_CrossSection2.ncl
+ncl mnh_PressureLevel2.ncl

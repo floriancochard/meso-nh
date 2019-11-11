@@ -1,0 +1,17 @@
+#F77FLAGS +=  -g -O0 -save -r8
+F77FLAGS +=  -O2 -r8
+#F90FLAGS +=  -g -O0 -save -r8
+F90FLAGS +=  -r8
+CPPFLAGS = 
+SPL = cat 
+
+OBJS0 = rrtm_kgb1.o rrtm_kgb14.o rrtm_kgb3_a.o rrtm_kgb4_b.o \
+        rrtm_kgb5_c.o rrtm_kgb10.o rrtm_kgb15.o rrtm_kgb3_b.o \
+        rrtm_kgb4_c.o rrtm_kgb6.o rrtm_kgb11.o rrtm_kgb16.o \
+        rrtm_kgb3_c.o rrtm_kgb5.o rrtm_kgb7.o rrtm_kgb12.o \
+        rrtm_kgb2.o rrtm_kgb4.o rrtm_kgb5_a.o rrtm_kgb8.o \
+        rrtm_kgb13.o rrtm_kgb3.o rrtm_kgb4_a.o rrtm_kgb5_b.o \
+        rrtm_kgb9.o read_xker_raccs.o read_xker_rdryg.o read_xker_sdryg.o
+
+$(OBJS0) : F90FLAGS +=  -O0 
+

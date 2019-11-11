@@ -1,0 +1,19 @@
+#
+#   Configuration file for PGF (64-bit reals).
+#
+AR      = ar
+ARFLAGS = rv
+#
+CC      = gcc
+CFLAGS  = -O2 -D__hpux -DREAL_8 -DREAL_BIGGER_THAN_INTEGER
+FASTCFLAGS = 
+#
+FC      = gfortran
+VECTFFLAGS =
+CPPFLAGS = -D__hpux -DREAL_8 -DREAL_BIGGER_THAN_INTEGER -Dextend2o -Dg95
+FFLAGS = -w -g -O2 -fdefault-real-8
+#
+LDFLAGS = -L . -l emos$(R64)
+RANLIB  = /bin/true
+CT      = /bin/true
+NPROC   = 1

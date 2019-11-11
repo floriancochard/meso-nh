@@ -1,0 +1,20 @@
+NCARG_RANGS=`pwd`
+export NCARG_RANGS
+echo 
+[ -f ~/.hluresfile ] || ( wget -c -nd http://www.ncl.ucar.edu/Document/Graphics/hluresfile ; mv hluresfile ~/.hluresfile )
+echo "You will download high resolution coastline files for NCL"
+echo "in this directory:"
+echo NCL_HIGHRES_FILES=$NCARG_RANGS 
+echo 
+set -x
+cd $NCARG_RANGS
+NCL_HIGHRES_URL="http://www2008.io-warnemuende.de/homepages/rfeistel/download"
+export NCL_HIGHRES_URL
+for file in rangs\(0\) rangs\(1\) rangs\(2\) \
+            rangs\(3\) rangs\(4\)  \
+            gshhs\(0\) gshhs\(1\) gshhs\(2\) \
+            gshhs\(3\) gshhs\(4\)
+do
+[ -f $file.zip ] || ( wget -c -nd $NCL_HIGHRES_URL/$file.zip ; unzip $file.zip ; ) 
+done
+

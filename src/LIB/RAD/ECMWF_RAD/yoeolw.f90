@@ -1,0 +1,63 @@
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! ECMWF_RAD2 2003/02/19 13:36:47
+!-----------------------------------------------------------------
+MODULE YOEOLW
+
+#include "tsmbkind.h"
+
+IMPLICIT NONE
+
+SAVE
+
+!     ------------------------------------------------------------------
+!*    *COMMON* *YOEOLW* - COEFFICIENTS OF THE OLD LONGWAVE RADIATION TRANSFER
+!     ------------------------------------------------------------------
+!
+INTEGER_M :: MXIXT    , NISP     , NIPD     , NIPD2    , NTR      , &
+     & NTRA     , NUA      , NG1      , NG1P1
+     
+REAL_B :: AT(8,3)  , BT(8,3)  , RNTNU(4) , GA(11,16,3), GB(11,16,3), &
+     & OCT(4)   , O1H      , O2H      , RPIALF0  , RT1(2)   , TINTP(11), &
+     & TREF     , TSTAND   , TSTP     , WG1(2)   , XP(6,6)  , &
+     & RVGCO2   , RVGH2O   , RVGO3
+!
+!
+!        * E.C.M.W.F. PHYSICS PACKAGE *
+!
+!     J.-J. MORCRETTE       E.C.M.W.F.      89/07/14
+!
+!  NAME     TYPE     PURPOSE
+!  ----  :  ----   : ---------------------------------------------------
+!  MXIXT :  INTEGER  MAXIMUM TEMPERATURE INDEX FOR TRANSMISSIVITIES
+!  NISP  :  INTEGER  NUMBER OF SPECTRAL INTERVALS
+!  NIPD  :  INTEGER  NUMBER OF BANDS DESCRIBED BY PADE APPROXIMANTS
+!  NIPD2 :  INTEGER  NIPD*2
+!  NTR   :  INTEGER  NUMBER OF REFERENCE TEMPERATURES
+!  NTRA  :  INTEGER  NUMBER OF TRANSMISSION FUNCTIONS
+!  NUA   :  INTEGER  NUMBER OF ABSORBER AMOUNTS
+!  NG1   :  INTEGER  ORDER OF THE GAUSSIAN QUADRATURE
+!  NG1P1 :  INTEGER  NG1+1
+!  AT    :  REAL     A-TYPE COEFF. FOR TEMPERATURE DEPENDENCE
+!  BT    :  REAL     B-TYPE COEFF. FOR TEMPERATURE DEPENDENCE
+!  RNTNU :  REAL     ABSORPTION COEFFICIENT E-TYPE
+!  GA    :  REAL     PADE APPROXIMANTS - NUMERATOR
+!  GB    :  REAL     PADE APPROXIMANTS - DENOMINATOR
+!  OCT   :  REAL     TEMPERATURE DEPENDENCE COEFFICIENTS FOR OZONE
+!  O1H   :  REAL     K/DELTA 1ST OZONE SUB-INTERVAL
+!  O2H   :  REAL     K/DELTA 2ND OZONE SUB-INTERVAL
+!  RPIALF0:  REAL     PI*ALFA0/DELTA OZONE SUB-INTERVALS
+!  RT1   :  REAL     ROOTS FOR GAUSSIAN QUADRATURE
+!  TINTP :  REAL     TEMPERATURE INTERVALS FOR TRANSMISSIVITIES
+!  TREF  :  REAL     REFERENCE TEMPERATURE IN PLANCK FUNCTION POLYNOMIAL
+!  TSTAND:  REAL     REFERENCE TEMPERATURE FOR TEMPERATURE DEPENDENCE
+!  TSTP  :  REAL     TEMEPERATURE STEP BETWEEN TRANSMISSIVITIES
+!  WG1   :  REAL     WEIGHTS FOR GAUSSIAN QUADRATURE
+!  XP    :  REAL     POLYNOMIAL COEFFICIENTS OF PLANCK FUNCTION
+!  RVGCO2:  REAL     RESIDUAL PRESSURE FOR CO2 VOIGT LINE HALF-WIDTH
+!  RVGH2O:  REAL     RESIDUAL PRESSURE FOR H2O VOIGT LINE HALF-WIDTH
+!  RVGO3 :  REAL     RESIDUAL PRESSURE FOR O3  VOIGT LINE HALF-WIDTH
+!     ------------------------------------------------------------------
+END MODULE YOEOLW

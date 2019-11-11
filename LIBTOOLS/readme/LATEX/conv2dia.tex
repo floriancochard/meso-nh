@@ -1,0 +1,102 @@
+\section{Conversion of FM synchronous file to diachronic format}
+Short description is given here, readers must refer to the original documentation on the Meso-NH web site:
+``{\sc traitement graphique des fichiers synchrones produits par le mod\`ele
+mesonh}, J. Duron''. 
+
+\subsection{Synchronous and diachronic formats} \label{diachro_file}
+The Meso-NH graphic utility ({\tt diaprog}) works on FM files which are on
+diachronic format. A diachronic FM file is either
+\begin{itemize}
+\item
+a file produced during the simulation 
+which contain time series of self-documented informations
+(e.g. file with name CEXP.1.CSEG.000).
+An information is one of the following: 
+\subitem - a
+3-dimensional, 2-dimensional, 1-dimensional or 0-dimensional field (eventually
+time-averaged, or compressed in one direction): type {\sc cart}, 
+\subitem - a set of vertical profiles at points checking some criteria:
+type {\sc mask}, 
+\subitem - spectral coefficients obtained by FFT along the X or Y direction:
+type {\sc spxy},
+\subitem - pseudo-observations (ground station: type {\sc ssol};
+dropsonde: type {\sc drst}; radiosonde: type {\sc rspl};
+airborne radar: type {\sc rapl}).
+ \\
+A diachronic file can contains informations of one or several previous types
+stored at different time frequency.
+For a whole description about the diachronic file type, reader must refer
+to the original documentation on the Meso-NH web site:
+``{\sc cr\'eation et exploitation de fichiers diachroniques}, J. Duron''. 
+\end{itemize}
+or
+\begin{itemize}
+\item a `pseudo'-diachronic file resulting of the conversion of a synchronous
+file (e.g. with name CEXP.1.CSEG.00n where n$>$0).
+Recall that such a file contains all the pronostic fields of the model at one 
+instant (initial or during the simulation).
+When converted it is a 'pseudo'-diachronic file, because it contains only one 
+instant and one type of diachronic information ({\sc cart}).
+The next subsection presents the conversion tool (named \texttt{conv2dia})
+to apply to synchronous files, necessary step to use \texttt{diaprog} graphic
+tool.
+\end{itemize}
+
+\subsection{{\tt conv2dia} tool}
+The conversion tool works on files produced by
+the initialisation programs ({\sc prep\_pgd, prep\_ideal\_case,
+prep\_real\_case}), the model simulation, or the post-processing program
+({\tt\sc diag}). It allows to convert one synchronous file onto one diachronic 
+file, as well as merge several synchronous files with chronological times
+(outputs of one run, or files initialised from large-scale model)
+onto one diachronic file.
+
+With {\tt conv2dia.elim} tool, you can choose not to convert all the fields of
+the input file(s). The pronostic fields at $t-dt$ instant, or at $t$ instant,
+or any other fields can be eliminated.
+With {\tt conv2dia.select} tool, you have to indicate the fields to select
+for conversion.
+This is done to reduce the size of the output file.
+
+The output file contains informations whose type is {\sc cart} stored in arrays
+with size of {\tt (IIU*IJU*IKU), (IIU*IJU), (IIU*IKU),} or 1.
+
+
+\subsection{Example}
+
+Only the binary (\textsc{LFI}) part of the input FM files is required
+in the current directory (split the FM file with the {\tt fm2deslfi} 
+script if not).
+
+All characters typed on keyboard are saved in {\tt dirconv.elim} or 
+{\tt dirconv.select} file, it can be appended and used as input (after being 
+renamed) for the next call of the tool
+\newline (e.g.  {\tt conv2dia.elim < dirconv.elim.ex}).
+
+Below is the example of questions when {\tt conv2dia.elim} is invoked.
+
+\small
+\begin{tabular}{l}
+\\
+\\
+{\tt ENTER NUMBER OF INPUT FM FILES}  \\
+{\tt\it 2 }  \\
+{\tt ENTER FM FILE NAME}  \\
+{\tt\it CEXP.1.CSEG.001}  \\
+{\tt ENTER FM FILE NAME}  \\
+{\tt\it CEXP.1.CSEG.002}  \\
+{\tt ENTER DIACHRONIC FILE NAME}  \\
+{\tt\it CEXP.1.CSEG.1-2.dia}  \\
+{\tt DELETION OF PARAMETERS AT TIME t-dt ? (enter 1) } \\
+{\tt DELETION OF PARAMETERS AT TIME t    ? (enter 2) } \\
+{\tt NO DELETION                         ? (enter 0) } \\
+{\tt\it 2 }  \\
+{\tt Do you want to suppress others parameters ? (y/n) }\\
+{\tt\it y }  \\
+{\tt Enter their names in UPPERCASE  (1/1 line) }\\
+{\tt End by END}\\
+{\tt\it DTHCONV }  \\
+{\tt\it DRVCONV }  \\
+{\tt\it END }  \\
+\end{tabular}
+\normalsize

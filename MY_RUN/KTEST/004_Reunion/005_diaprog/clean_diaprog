@@ -1,0 +1,2 @@
+set -x
+rm -f dir.* gmeta* REUNI.1.00A20.00* OUT_DIA

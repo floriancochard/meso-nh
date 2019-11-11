@@ -1,0 +1,64 @@
+#!/bin/bash
+#SBATCH -J Examples
+#SBATCH -N 2            # nodes number
+#SBATCH -n 4            # CPUs number (on all nodes) 
+#SBATCH --exclusive           
+#SBATCH -o Examples.eo%j   #
+#SBATCH -e Examples.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+#SBATCH --export=NONE
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+#set -e
+set -x
+# Nom de la machine
+hostname 
+
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-4-2-MPIINTEL-O2
+export MONORUN="mpirun -prepend-rank -np 1 "
+export MPIRUN="mpirun -prepend-rank -np 4 "
+export POSTRUN="time "
+
+cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/001_2Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/002_3Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+
+cd $SRC_MESONH/MY_RUN/KTEST/004_Reunion
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/014_LIMA 
+make -k
+

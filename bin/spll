@@ -1,0 +1,168 @@
+#!/bin/bash
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+#MNH_LIC for details. version 1.
+#set -x
+if [ $# -ne 2 ]
+then
+echo ERROR USAGE :: spll NSOURCE file
+exit 1
+fi
+NSOURCE=$1
+file=$2
+DIRNAME=`dirname $file`
+BASENAME=`basename $file`
+SUF=`echo $BASENAME | awk -F'.' '{print$2}'`
+BASENAME2=`basename $BASENAME .$SUF`
+LOCAL=$PWD
+TOCASE=${TOCASE-"tolower"}
+#
+export PERL5LIB=$SRC_MESONH/bin
+export FILE_WITHOUT_INTERFACE_NEDEED="\
+rttov.*.F90|rttvi.F90|tstrad.*.F90|\
+ch_f77.fx90|nband_model.fx90|BASIC.f90|mode_tmat.f90|\
+ini_cmfshall.f90|mode_double_double.f90|mode_fgau.f90|\
+extern_usersurc_ll.f90|\
+extern_userio.f90|fmreadwrit.f90|fm_read_ll.f90|poub.f90|\
+mode_glt.*.F90|\
+rrtm_.*.F90|srtm_.*.F90|\
+libs4py.f90"
+#
+
+if [ "$SUF" = "f" ]
+then
+
+echo "!depfile:$BASENAME2.D" > $DIRNAME/spll_$BASENAME
+cat $file                   >> $DIRNAME/spll_$BASENAME
+echo "#" $file > $DIRNAME/$BASENAME2.D
+
+else
+
+TMP=/tmp/split.${USER}.$$
+mkdir $TMP 
+trap "[ -d $TMP ] && rm -rf $TMP" 0
+
+export LOC_INTFBDIR=$TMP
+export INTFBDIR=$TMP
+
+#cp $file $TMP/fichier_a_split.f90
+cp  $file $TMP/$BASENAME
+echo DIRNAME=$DIRNAME BASENAME=$BASENAME
+
+#
+# Split des sources  
+#
+( 
+cd $TMP 
+spl ${BASENAME} > liste_file
+)
+#
+#generation de l'interface
+#
+(
+cd $TMP
+if [ "`ls  modi_* 2>/dev/null`" = ""  ] 
+then
+if [ "`echo $BASENAME | egrep  -i $FILE_WITHOUT_INTERFACE_NEDEED `" = "" ]
+then
+    for sfile in `cat liste_file`
+    do 
+	if [ "`egrep -i '^ *module|^ *program' $sfile`" = "" ]
+        then
+	if [ "$SUF" = "f90" ]
+	then
+	    if [ "${CHECK_MODI}" != "" ] 
+            then
+	    #echo "HELLO JUAN OK :: $sfile " 
+	    BASENAME_MODI=$( basename $sfile .$SUF )
+	    echo "!auto_modi_in_contains" > $sfile.tmp
+	    echo "module modi_${BASENAME_MODI}" >> $sfile.tmp
+	    echo " contains " >>  $sfile.tmp
+            cat $sfile >> $sfile.tmp
+	    echo "end module modi_${BASENAME_MODI}" >> $sfile.tmp
+	    mv $sfile.tmp $sfile
+            else
+	    make_intfbl_f90.pl $sfile
+            fi
+	elif [ "$SUF" = "fx90" ]
+	then
+	    make_intfbl_f77.pl $sfile
+	fi
+        fi
+    done
+fi
+fi
+ls -1 $TMP > liste_file
+egrep -v "liste_file"  liste_file > liste_file2
+)
+#
+# génération des dependances
+#
+( 
+cd $TMP 
+echo "#===========  $BASENAME2.$SUF dependence ==========================" > $DIRNAME/$BASENAME2.D
+
+for sfile in `cat liste_file2`
+do 
+#
+# preparation of splitted file 
+#
+base=`echo $sfile | awk -F'.' '{print$1}'`
+spllbase="spll_$base"
+spllfile="$spllbase.$SUF"
+echo "#---------------------- splitted $spllfile dependence -----------" >> $DIRNAME/$BASENAME2.D
+#
+echo "!depfile:$BASENAME2.D" > $spllfile
+#
+    if [ "`grep -l '^[^\!]*\$n' $sfile`" != "" ]  
+    then 
+#   clonage of "$n" file 
+	let iloop=0
+        while [ $iloop -lt $NSOURCE ] 
+        do 
+            let iloop=iloop+1
+	    sed -e 's/$n/'$iloop'/g' $sfile >> $spllfile
+        done 
+    else
+    cat $sfile >> $spllfile
+    fi 
+#
+# if splitted file differente of old one, update ...
+# 
+
+if [ "`diff $spllfile $DIRNAME/$spllfile 2>&1 `" != "" ]
+then
+  cp $spllfile $DIRNAME/$spllfile
+  touch $DIRNAME/$BASENAME2.D
+fi 
+dep=`egrep -i "^[[:space:]]*use "    $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u `
+mod=`egrep -i "^[[:space:]]*module " $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u | grep -iv procedure `
+
+echo $mod        : $spllbase.o    >> $DIRNAME/$BASENAME2.D
+echo $spllbase.o : $spllfile $dep >> $DIRNAME/$BASENAME2.D
+
+if [ "$SUF" = "f90" ]
+then
+echo "	"' $(F90) -I$(OBJDIR)/MOD  $(INC) -c $(F90FLAGS) $<' >> $DIRNAME/$BASENAME2.D
+else
+echo "	"' cp $< $(OBJDIR)/$(*F).f ' >> $DIRNAME/$BASENAME2.D
+echo "	"' $(FX90) -I$(OBJDIR)/MOD $(INC) -c $(FX90FLAGS) $(OBJDIR)/$(*F).f ' >> $DIRNAME/$BASENAME2.D
+echo "	"' rm $(OBJDIR)/$(*F).f '    >> $DIRNAME/$BASENAME2.D
+fi
+echo "	 -mv  $spllbase.o"' $(OBJDIR)/. || '"echo OK $spllbase.o " >> $DIRNAME/$BASENAME2.D
+for filemod in $mod
+do
+echo "	 -mv  $filemod "' $(OBJDIR)/MOD/. || '"echo OK $filemod " >> $DIRNAME/$BASENAME2.D
+done
+
+unset dep mod
+
+done
+touch $DIRNAME/$BASENAME2.D
+
+)
+rm -fr $TMP
+
+fi
+

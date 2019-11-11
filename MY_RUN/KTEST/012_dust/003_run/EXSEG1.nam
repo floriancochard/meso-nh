@@ -1,0 +1,91 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
+&NAM_LUNITn 
+            CINIFILE = "S7020000924.00",
+            CINIFILEPGD = "pgd_dust_30km" 
+            CCPLFILE(1) = "S7020000924.12" 
+            /
+&NAM_DYNn   
+            XTSTEP = 40.,
+            CPRESOPT = "CRESI",
+            NITR = 12,
+            LITRADJ=T,
+            XRELAX = 1.,
+            LHORELAX_UVWTH = T,
+            LHORELAX_RV = T,
+            LVE_RELAX = T,
+            NRIMX = 5,
+            NRIMY = 5,
+            XRIMKMAX = 0.0005,
+            XT4DIFU = 4000.  /
+&NAM_ADVn   
+            CUVW_ADV_SCHEME ="CEN4TH", 
+            CMET_ADV_SCHEME = "PPM_01",
+            CSV_ADV_SCHEME = "PPM_01",
+            CTEMP_SCHEME="LEFR" /
+&NAM_PARAMn 
+            CTURB = "TKEL",
+            CRAD = "ECMW",
+            CCLOUD = "ICE3", 
+            CDCONV = "KAFR",
+            CSCONV="KAFR"  /
+&NAM_PARAM_RADn  
+            XDTRAD = 3600.,
+            XDTRAD_CLONLY = 1200., 
+            NRAD_COLNBR = 400 ,
+            CLW = 'RRTM',
+            CAER = 'TANR',
+            CAOP='EXPL' /
+&NAM_PARAM_KAFRn  
+            XDTCONV = 300.,
+            NICE = 1,
+            LREFRESH_ALL = T,
+            LDOWN = T,
+            LCHTRANS = T /
+&NAM_LBCn  
+            CLBCX = 2*"OPEN",
+            CLBCY = 2*"OPEN" /
+&NAM_TURBn 
+            CTURBLEN = "BL89",
+            CTURBDIM = "1DIM",
+            LTURB_FLX=T /
+&NAM_CONF 
+            CCONF = "START",
+            LFLAT = F,
+            CEQNSYS = "DUR",
+            NMODEL = 1, 
+            NVERB = 5,
+            CEXP = "DUST7",
+            CSEG = "SEG01" 
+            !JPHEXT=3 , NHALO=3 
+            /
+&NAM_DYN 
+            XSEGLEN = 43200,
+            XASSELIN = 0.2,
+            LCORIO = T,
+            LNUMDIFU = T,
+            XALKTOP = 0.001, 
+            XALZBOT = 16000. /
+&NAM_BACKUP 
+            XBAK_TIME(1,1)=10800. ,
+            XBAK_TIME(1,2)=21600. ,
+            XBAK_TIME(1,3)=32400. ,
+            XBAK_TIME(1,4)=43200. /
+&NAM_CH_MNHCn     
+            LUSECHEM=.FALSE.,
+            LCH_CONV_SCAV = .TRUE. / 
+&NAM_DUST
+            LDUST = .TRUE.,
+            LVARSIG    = .FALSE.,
+            LSEDIMDUST = .TRUE.,
+            NMODE_DST=3 / 
+&NAM_PARAM_C2R2
+            LSEDC=.FALSE.,
+            HPARAM_CCN='CPB',
+            HINI_CCN='CCN',
+            HTYPE_CCN='',
+            XCHEN=2.01E+11, 
+            XKHEN=3.50,
+            XMUHEN=3.76, 
+            XBETAHEN=44.1 /
+&NAM_SURF_DST 
+            CEMISPARAM_DST='Dal87'/

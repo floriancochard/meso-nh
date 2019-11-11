@@ -1,0 +1,277 @@
+B ?= 64
+DIR_OBJ=./$(ARCH)_$(B)
+
+ifeq ($(strip $(VERSION)),)
+VPATH=src/BUG:src/MOD:src/mesonh_MOD:src/FM2DIA:src/TOOL:src/mesonh:src/FM:$(DIR_OBJ)
+else                            # string VERSION not empty
+VPATH=src/$(VERSION):src/BUG:src/MOD:src/mesonh_MOD:src/FM2DIA:src/TOOL:src/mesonh:src/FM:$(DIR_OBJ)
+endif
+
+ifeq ($(origin MNH_LIBTOOLS), undefined)
+include ../where.Libs
+else
+include $(MNH_LIBTOOLS)/tools/where.Libs
+endif
+
+
+INC = -I src/FM2DIA -I $(DIR_OBJ) 
+
+ifeq ($(VERSION),M45)
+PROG=
+PROG1 = conv2dia.elim
+PROG2 = conv2dia.select
+else
+PROG  = conv2dia
+PROG1 = 
+PROG2 = 
+endif
+
+OBJS = fmattr.o fmclos.o fmfree.o fmlook.o fmopen.o \
+	ini_cst.o jdlfilaf_fuji.o menu_diachro.o modd_conf.o modd_diachro.o \
+	modd_dimgrid_fordiachro.o modd_out_dia.o modd_rea_lfi.o modd_time.o \
+	modd_type_date.o read_dimgridref_fm2dia.o write_othersfields.o \
+	alloc_fordiachro.o elim.o fminit.o fmread.o \
+	fmwrit.o modd_alloc_fordiachro.o modd_cst.o modd_dim1.o \
+	modd_fmdeclar.o modd_fmmulti.o \
+	modd_grid1.o modd_grid.o modd_parameters.o \
+	modd_resolvcar.o modd_time1.o modd_type_and_lh.o read_diachro.o \
+	resolv_units.o set_dim.o set_light_grid.o temporal_dist.o \
+	write_diachro.o write_dimgridref.o fm_read.o fm_writ.o \
+	modd_nesting.o mode_gridcart.o modd_lunit1.o modd_param1.o \
+	mode_gridproj.o write_lfifm1_fordiachro_cv.o vert_coord.o writedir.o \
+
+OBJDIA = fmattr.o fmclos.o fmfree.o fmlook.o fmopen.o \
+	ini_cst.o menu_diachro.o modd_conf.o modd_diachro.o \
+	modd_dimgrid_fordiachro.o modd_out_dia.o modd_rea_lfi.o modd_time.o \
+	modd_type_date.o read_dimgridref_fm2dia.o \
+	alloc_fordiachro.o elim.o fminit.o fmread.o \
+	fmwrit.o modd_alloc_fordiachro.o modd_cst.o modd_dim1.o \
+	modd_fmdeclar.o modd_fmmulti.o \
+	modd_grid1.o modd_grid.o modd_parameters.o \
+	modd_resolvcar.o modd_time1.o modd_type_and_lh.o read_diachro.o \
+	resolv_units.o set_dim.o set_light_grid.o temporal_dist.o \
+	write_diachro.o write_dimgridref.o fm_read.o fm_writ.o \
+	modd_nesting.o mode_gridcart.o modd_lunit1.o modd_param1.o\
+	mode_gridproj.o write_lfifm1_fordiachro_cv.o vert_coord.o writedir.o \
+
+include $(DIR_CONF)/config.$(ARCH)
+include $(MNH_LIBTOOLS)/tools/diachro/Rules.$(ARCH)
+
+
+%.o:%.f90 $(DIR_OBJ)/.dummy
+	$(CPP) $(INC) $(CPPFLAGS) $< >  $(DIR_OBJ)/cpp_$(*F).f90 
+	$(F90) $(INC) -c $(F90FLAGS) $(DIR_OBJ)/cpp_$(*F).f90 -o $(DIR_OBJ)/$(*F).o
+	-@mv  *.mod $(DIR_OBJ)/. 2> /dev/null || echo pas de module dans $*.f90
+
+%.o:%.f $(DIR_OBJ)/.dummy  
+	$(CPP)  $(INC) $(CPPFLAGS) -Df77 $< > $(DIR_OBJ)/cpp_$(*F).f
+	$(F77) $(INC) -c $(F77FLAGS) $(DIR_OBJ)/cpp_$(*F).f -o $(DIR_OBJ)/$(*F).o
+
+ifeq ($(B),64)
+all: $(PROG1) $(PROG2) $(PROG) $(LIBDIA)
+else
+all: $(LIBDIA)
+endif
+
+$(PROG): $(PROG).o $(OBJS) $(LIBLFI) $(LIBCOMP)
+	cd $(DIR_OBJ);$(F90) $(LDFLAGS) -o $@ $(patsubst $(DIR_OBJ)/%,%,$^) $(LIBS)
+	@echo $@ available under $(DIR_OBJ)
+
+$(PROG1): $(PROG1).o $(OBJS) $(LIBLFI) $(LIBCOMP)
+	cd $(DIR_OBJ);$(F90) $(LDFLAGS) -o $@ $(patsubst $(DIR_OBJ)/%,%,$^) $(LIBS)
+	@echo $@ available under $(DIR_OBJ)
+
+$(PROG2): $(PROG2).o $(OBJS) $(LIBLFI) $(LIBCOMP)
+	cd $(DIR_OBJ);$(F90) $(LDFLAGS) -o $@ $(patsubst $(DIR_OBJ)/%,%,$^) $(LIBS)
+	@echo $@ available under $(DIR_OBJ)
+
+$(DIR_OBJ)/.dummy :
+	mkdir $(DIR_OBJ)
+	@touch $(DIR_OBJ)/.dummy
+
+$(LIBLFI):
+	$(MAKE) -C $(DIR_LFI)
+	#$(MAKE) -C $(DIR_LFI) DIR_CONF=$(DIR_CONF)
+
+$(LIBCOMP):
+	$(MAKE) -C $(DIR_COMP)
+
+
+ifeq ($(strip $(VERSION)),)
+$(LIBDIA): $(OBJDIA)
+	cd $(DIR_OBJ) ; $(AR) rv $@ $(OBJDIA)
+	ls -l $(DIR_OBJ)/$@
+else                            # string VERSION not empty
+$(LIBDIA): $(OBJDIA)
+	@echo '***' if libxxx_$(VERSION).a does not exist, cp libxxx.a libxxx_$(VERSION).a
+	#ls -l $(DIR_OBJ)/$@
+	cd $(DIR_OBJ) ; $(AR) rv $@ $(OBJDIA)
+	ls -l $(DIR_OBJ)/$@
+endif
+
+
+clean:
+	(if [ -d $(DIR_OBJ) ] ; then cd $(DIR_OBJ); rm -f cpp_*.f90 cpp_*.f *.o *.mod ; fi)
+
+distclean: clean
+	(if [ -d $(DIR_OBJ) ] ; then rm -rf $(DIR_OBJ); fi)
+
+
+# nombre de passe = 1
+conv2dia.o: conv2dia.f90 ini_cst.o \
+	menu_diachro.o modd_conf.o modd_diachro.o modd_dim1.o modd_grid.o \
+	modd_grid1.o modd_dimgrid_fordiachro.o modd_out_dia.o modd_rea_lfi.o \
+	modd_time1.o read_dimgridref_fm2dia.o \
+	write_dimgridref.o write_othersfields.o writedir.o 
+
+conv2dia.elim.o: conv2dia.elim.f90 ini_cst.o \
+	menu_diachro.o modd_conf.o modd_diachro.o modd_dim1.o modd_grid.o \
+	modd_grid1.o modd_dimgrid_fordiachro.o modd_out_dia.o modd_rea_lfi.o \
+	modd_time1.o read_dimgridref_fm2dia.o \
+	write_dimgridref.o write_othersfields.o 
+
+conv2dia.select.o: conv2dia.select.f90 ini_cst.o \
+	menu_diachro.o modd_conf.o modd_diachro.o modd_dim1.o modd_grid.o \
+	modd_grid1.o modd_dimgrid_fordiachro.o modd_out_dia.o modd_rea_lfi.o \
+	modd_time1.o read_dimgridref_fm2dia.o \
+	write_dimgridref.o write_othersfields.o 
+
+# nombre de passe = 2
+fmattr.o: fmattr.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+fmclos.o: fmclos.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+fmfree.o: fmfree.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+fmlook.o: fmlook.f90 modd_fmdeclar.o 
+
+fmopen.o: fmopen.f90 modd_fmdeclar.o \
+	modd_fmmulti.o 
+
+ini_cst.o: ini_cst.f90 modd_cst.o 
+
+jdlfilaf_fuji.o: jdlfilaf_fuji.f 
+
+menu_diachro.o: menu_diachro.f90 fmread.o \
+	fmwrit.o modd_out_dia.o 
+
+modd_conf.o: modd_conf.f90 
+
+modd_diachro.o: modd_diachro.f90 
+
+modd_dimgrid_fordiachro.o: modd_dimgrid_fordiachro.f90 
+
+modd_out_dia.o: modd_out_dia.f90 
+
+modd_rea_lfi.o: modd_rea_lfi.f90 
+
+modd_time.o: modd_time.f90 modd_parameters.o \
+	modd_type_date.o 
+
+modd_type_date.o: modd_type_date.f90 
+
+read_dimgridref_fm2dia.o: read_dimgridref_fm2dia.f90 fmread.o \
+	modd_conf.o modd_diachro.o modd_dim1.o modd_param1.o \
+	modd_grid1.o modd_grid.o modd_out_dia.o \
+	modd_parameters.o modd_rea_lfi.o \
+	modd_time1.o modd_time.o modd_type_date.o set_dim.o \
+	set_light_grid.o 
+
+write_othersfields.o: write_othersfields.f90 alloc_fordiachro.o \
+	fmread.o fmwrit.o modd_alloc_fordiachro.o \
+	modd_conf.o modd_diachro.o modd_dim1.o \
+	modd_dimgrid_fordiachro.o modd_grid1.o modd_grid.o \
+	modd_out_dia.o modd_parameters.o \
+	modd_resolvcar.o modd_time1.o \
+	modd_time.o modd_type_and_lh.o modd_type_date.o \
+	read_diachro.o resolv_units.o temporal_dist.o \
+	write_diachro.o 
+
+# nombre de passe = 3
+alloc_fordiachro.o: alloc_fordiachro.f90 modd_alloc_fordiachro.o \
+	modd_type_and_lh.o 
+
+elim.o: elim.f90 modd_dimgrid_fordiachro.o 
+
+fminit.o: fminit.f90 modd_fmdeclar.o 
+
+fmread.o: fmread.f90 modd_conf.o modd_fmdeclar.o \
+	modd_type_date.o 
+
+fmwrit.o: fmwrit.f90 modd_conf.o \
+	modd_type_date.o 
+
+modd_alloc_fordiachro.o: modd_alloc_fordiachro.f90 
+
+modd_cst.o: modd_cst.f90 
+
+modd_dim1.o: modd_dim1.f90 
+
+modd_fmdeclar.o: modd_fmdeclar.f90 
+
+modd_fmmulti.o: modd_fmmulti.f90 
+
+modd_grid1.o: modd_grid1.f90 
+
+modd_grid.o: modd_grid.f90 
+
+modd_parameters.o: modd_parameters.f90 
+
+modd_resolvcar.o: modd_resolvcar.f90 
+
+modd_time1.o: modd_time1.f90 modd_type_date.o 
+
+modd_type_and_lh.o: modd_type_and_lh.f90 
+
+read_diachro.o: read_diachro.f90 alloc_fordiachro.o \
+	fmread.o modd_alloc_fordiachro.o modd_type_and_lh.o 
+
+resolv_units.o: resolv_units.f90 modd_conf.o \
+	modd_resolvcar.o 
+
+set_dim.o: set_dim.f90 fmread.o \
+	modd_conf.o modd_parameters.o 
+
+set_light_grid.o: set_light_grid.f90 fmread.o \
+	modd_conf.o modd_grid.o modd_time.o \
+	mode_gridcart.o mode_gridproj.o
+
+temporal_dist.o: temporal_dist.f90 
+
+write_diachro.o: write_diachro.f90 fmwrit.o \
+	menu_diachro.o 
+
+write_dimgridref.o: write_dimgridref.f90 modd_diachro.o \
+	write_lfifm1_fordiachro_cv.o 
+
+# nombre de passe = 4
+fm_read.o: fm_read.f90 modd_fmdeclar.o 
+
+fm_writ.o: fm_writ.f90 modd_fmdeclar.o 
+
+modd_nesting.o: modd_nesting.f90 modd_parameters.o 
+
+mode_gridcart.o: mode_gridcart.f90 modd_conf.o \
+	modd_parameters.o vert_coord.o
+
+mode_gridproj.o: mode_gridproj.f90 modd_conf.o \
+	modd_cst.o modd_grid.o modd_lunit1.o \
+	modd_parameters.o vert_coord.o
+
+vert_coord.o: vert_coord.f90
+
+write_lfifm1_fordiachro_cv.o: write_lfifm1_fordiachro_cv.f90 fmread.o \
+	fmwrit.o modd_conf.o \
+	modd_diachro.o modd_dim1.o modd_dimgrid_fordiachro.o \
+	modd_grid1.o modd_grid.o modd_lunit1.o modd_param1.o \
+	modd_nesting.o modd_out_dia.o \
+	modd_parameters.o modd_time1.o \
+	modd_time.o modd_type_date.o 
+
+# nombre de passe = 5
+modd_lunit1.o: modd_lunit1.f90 modd_parameters.o 
+modd_param1.o: modd_param1.f90
+writedir.o: writedir.f90

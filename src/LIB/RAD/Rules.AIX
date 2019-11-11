@@ -1,0 +1,8 @@
+CPPFLAGS =  -DRS6K
+SPL = cat 
+#
+OBJS2 = rrtm_kgb7.o rrtm_kgb9.o \
+        rrtm_kgb3_a.o rrtm_kgb3_b.o rrtm_kgb3_c.o \
+        rrtm_kgb4_a.o rrtm_kgb4_b.o rrtm_kgb4_c.o \
+        rrtm_kgb5_b.o rrtm_kgb5_c.o 
+$(OBJS2) : F90FLAGS = -q64 -qfree=f90 -qsuffix=f=f90 -qsave

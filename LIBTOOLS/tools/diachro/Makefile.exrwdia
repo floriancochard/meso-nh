@@ -1,0 +1,57 @@
+B ?= 32
+
+ifeq ($(origin MNH_LIBTOOLS), undefined)
+dummy :
+	@echo "ERROR : MNH_LIBTOOLS variable is not set !";echo
+else
+include $(MNH_LIBTOOLS)/tools/where.Libs
+
+DIR_OBJ=./$(ARCH)_$(B)
+ifeq ($(strip $(VERSION)),)
+VPATH=src:$(DIR_DIA)/src/BUG:$(DIR_DIA)/src/EXTRACTDIA:$(DIR_OBJ)
+else                            # string VERSION not empty
+VPATH=src:$(DIR_DIA)/src/$(VERSION):$(DIR_DIA)/src/BUG:$(DIR_DIA)/src/EXTRACTDIA:$(DIR_OBJ)
+endif
+
+# par defaut exrwdia.f90 est traite, sinon make PROG=votre_prog
+PROG ?= exrwdia
+# a completer eventuellement par vos routines
+OBJS = 
+
+INC  = -I $(DIR_OBJ) -I $(DIR_DIA)/$(DIR_OBJ) 
+LIBS = $(DIR_DIA)/$(DIR_OBJ)/$(LIBEXTRACT) $(DIR_DIA)/$(DIR_OBJ)/$(LIBDIA)\
+       $(LIBCOMP) $(LIBLFI)
+
+include $(DIR_CONF)/config.$(ARCH)
+include $(DIR_DIA)/Rules.$(ARCH)
+
+
+%.o:%.f90 $(DIR_OBJ)/.dummy
+	$(CPP) $(INC) $(CPPFLAGS) $< >  $(DIR_OBJ)/cpp_$(*F).f90
+	$(F90) $(INC) -c $(F90FLAGS) $(DIR_OBJ)/cpp_$(*F).f90 -o $(DIR_OBJ)/$(*F).o
+	-@mv *.mod $(DIR_OBJ)/. 2>/dev/null || echo pas de module dans $*.f90
+
+all: $(PROG)
+
+$(PROG): $(addsuffix .o,$(PROG)) $(OBJS) $(LIBS)
+	cd $(DIR_OBJ);$(F90) $(LDFLAGS) $(patsubst $(DIR_OBJ)/%,%,$^) -o $@
+	@echo executable $@ disponible sous $(DIR_OBJ)
+
+$(DIR_OBJ)/.dummy:
+	mkdir $(DIR_OBJ)
+	@touch $(DIR_OBJ)/.dummy
+
+clean:
+	(if [ -d $(DIR_OBJ) ] ; then cd $(DIR_OBJ); rm $(PROG) cpp_* *.mod *.o; fi)
+
+$(PROG).o: $(PROG).f90 $(OBJS)
+#
+# dependances
+#   entre unites de programme et les use MODI_myroutine
+#     si myroutine est une routine utilisateur
+#
+
+
+
+#
+endif

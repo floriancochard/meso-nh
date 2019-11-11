@@ -1,0 +1,4 @@
+F90FLAGS += 
+CPPFLAGS += -DFUJI
+LDFLAGS  += 
+
